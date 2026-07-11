@@ -1,0 +1,60 @@
+# DevPulse — Frontend Requirements
+# Frontend monorepo only. Backend lives in a separate repo and is reached
+# exclusively through the REST API gateway.
+# Versions below are the minimum/target versions at time of writing.
+
+
+## Runtime / tooling
+node                        >= 20.0.0        # Node.js 20 LTS or newer
+npm                         >= 10.0.0        # workspaces used for the monorepo
+git                         >= 2.40
+
+
+## Framework & language
+next                        ^16.2.10         # Next.js, App Router (NOT the pages router)
+react                       ^19.2.0
+react-dom                   ^19.2.0
+typescript                  ^5.9.3           # strict mode on
+
+
+## Styling
+tailwindcss                 ^4.3.2           # all styling; CSS-first config
+@tailwindcss/postcss        ^4.3.2           # PostCSS plugin for Tailwind v4
+postcss                     ^8.5.6
+
+
+## Data visualisation  (Chart.js only — do NOT use Recharts)
+chart.js                    ^4.5.1
+react-chartjs-2             ^5.3.1           # React bindings for Chart.js
+
+
+## State management
+@reduxjs/toolkit            ^2.12.0          # global client state
+react-redux                 ^9.3.0
+@tanstack/react-query       ^5.101.2         # server state: fetching, caching, refresh/polling
+
+
+## Authentication
+next-auth                   ^4.24.14         # session handling; credentials flow against the gateway
+
+
+## Dev tooling
+eslint                      ^9.39.0
+eslint-config-next          ^16.2.10
+typescript-eslint           ^8.46.4
+prettier                    ^3.6.2
+prettier-plugin-tailwindcss ^0.7.1           # sorts Tailwind class names
+@types/node                 ^20.19.0
+@types/react                ^19.2.2
+@types/react-dom            ^19.2.2
+
+
+## Workspace packages (internal — resolved via npm workspaces, not published)
+shared-ui                   workspace         # shared React components: charts, tables, layout
+shared-types                workspace         # TypeScript types mirroring backend DTOs
+
+
+## Environment variables (per app, in .env.local — never commit real values)
+NEXTAUTH_SECRET             <placeholder>
+NEXTAUTH_URL                http://localhost:3000    # dashboard-app; use :3001 for admin-app
+NEXT_PUBLIC_API_BASE_URL    http://localhost:8080    # the backend API gateway
