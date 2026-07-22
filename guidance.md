@@ -23,15 +23,33 @@ SEM5_DevPulse_Frontend/
 
 - **dashboard-app** — the analytics UI: DORA charts (deployment frequency, lead time,
   MTTR, change failure rate), developer workload, PR/review activity. Used by
-  **Managers and Developers**.
-- **admin-app** — the admin console: organisations, members and invitations, and
-  connecting/disconnecting the GitHub and Jira integrations. Used by **Admins**.
+  **Managers and Developers** — it serves **two role-gated views** from one codebase
+  (see below).
+- **admin-app** — the admin console: create/delete projects, manage organisations,
+  members and invitations, and connect/disconnect the GitHub and Jira integrations.
+  Used by **Admins**.
 - **shared-ui** — React components both apps use: chart wrappers, tables, layout.
 - **shared-types** — the API contract. TypeScript types that mirror the backend's DTOs,
   so both apps speak the same shapes as the gateway.
 
 Both apps import from `shared-ui` and `shared-types`. Anything used by both apps belongs
 in a shared package, not copy-pasted into each app.
+
+### Two apps, three role-views — not three apps
+
+Three roles does **not** mean three Next.js apps. An **app** is a separately-running
+server (its own port, build, and login); a **dashboard** is a view a role sees *inside*
+an app. The Manager and Developer views both live in **dashboard-app**, gated by role,
+because they look at the same kind of thing (project analytics) at different scopes:
+
+- **Manager view** — owns the project: whole-project DORA metrics, team workload,
+  alert rules and channels.
+- **Developer view** — scoped to the person: own PRs and reviews, personal activity,
+  received alerts.
+
+A Developer logging in simply isn't rendered the Manager-only panels. Do **not** add a
+third app for this — one codebase with `role`-based gating keeps the charts and layout
+shared instead of triplicated.
 
 ## Tech stack
 
@@ -53,14 +71,15 @@ Exact versions are in [`requirement.txt`](requirement.txt).
 
 There are exactly **three** roles. There is no Viewer role.
 
-| Role | Can do |
-|---|---|
-| **Admin** | Full org management, integrations, all dashboards |
-| **Manager** | Team DORA dashboards, alert rules and channels, team workload |
-| **Developer** | Personal and team activity, own PRs and reviews, receives alerts |
+| Role | Scope | Can do | App |
+|---|---|---|---|
+| **Admin** | The company | Create and delete projects, manage the organisation, members and invitations, connect/disconnect integrations | admin-app (3001) |
+| **Manager** | Owns a project | Whole-project DORA dashboards, team workload, alert rules and channels | dashboard-app (3000) |
+| **Developer** | Themselves | Own PRs and reviews, personal + team activity, receives alerts | dashboard-app (3000) |
 
-The UI must be **gated by role** — a Developer should never be shown Admin or
-Manager-only screens.
+The UI must be **gated by role**: an Admin manages projects in `admin-app`; a Manager and
+a Developer share `dashboard-app` but each sees only their own view. A Developer is never
+shown Admin or Manager-only screens.
 
 ## Backend API
 
