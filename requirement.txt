@@ -26,22 +26,39 @@ postcss                     ^8.5.6
 ## Data visualisation  (Chart.js only — do NOT use Recharts)
 chart.js                    ^4.5.1
 react-chartjs-2             ^5.3.1           # React bindings for Chart.js
+chartjs-adapter-date-fns    ^3.0.0           # REQUIRED for Chart.js time-scale axes (DORA trends over time)
+date-fns                    ^4.1.0           # date maths + formatting; also the adapter's peer dep
 
 
 ## State management
 @reduxjs/toolkit            ^2.12.0          # global client state
 react-redux                 ^9.3.0
 @tanstack/react-query       ^5.101.2         # server state: fetching, caching, refresh/polling
+@tanstack/react-query-devtools ^5.101.2      # dev only — inspect the query cache
 
 
 ## Authentication
 next-auth                   ^4.24.14         # session handling; credentials flow against the gateway
+jwt-decode                  ^4.0.0           # read `role` out of the gateway JWT for role-gating
+
+
+## Forms & validation  (admin-app has the most forms: projects, orgs, invitations)
+react-hook-form             ^7.71.0
+zod                         ^4.1.13          # schema validation; also validate gateway responses
+@hookform/resolvers         ^5.2.2           # bridges zod <-> react-hook-form
+
+
+## UI helpers  (used inside shared-ui for conditional / merged Tailwind classes)
+clsx                        ^2.1.1
+tailwind-merge              ^3.4.0
 
 
 ## Dev tooling
 eslint                      ^9.39.0
 eslint-config-next          ^16.2.10
 typescript-eslint           ^8.46.4
+@eslint/eslintrc            ^3.3.1           # FlatCompat — needed to load eslint-config-next under ESLint 9 flat config
+eslint-config-prettier      ^10.1.8          # turns off ESLint rules that fight Prettier
 prettier                    ^3.6.2
 prettier-plugin-tailwindcss ^0.7.1           # sorts Tailwind class names
 @types/node                 ^20.19.0
@@ -49,12 +66,49 @@ prettier-plugin-tailwindcss ^0.7.1           # sorts Tailwind class names
 @types/react-dom            ^19.2.2
 
 
+## Monorepo scripts (root only)
+npm-run-all                 ^4.1.5           # run dashboard-app + admin-app together from the root
+
+
+## Testing  (recommended — add when you start writing tests, not before)
+vitest                      ^3.2.4           # unit tests for hooks, reducers, utils
+@testing-library/react      ^16.3.0
+@testing-library/jest-dom   ^6.9.1
+jsdom                       ^26.1.0          # DOM environment for vitest
+
+
 ## Workspace packages (internal — resolved via npm workspaces, not published)
 shared-ui                   workspace         # shared React components: charts, tables, layout
 shared-types                workspace         # TypeScript types mirroring backend DTOs
+
+
+## Where each dependency is installed
+# Root (-w)              : prettier, prettier-plugin-tailwindcss, npm-run-all
+# Both apps              : next, react, react-dom, tailwindcss, @tailwindcss/postcss, postcss,
+#                          chart.js, react-chartjs-2, chartjs-adapter-date-fns, date-fns,
+#                          @reduxjs/toolkit, react-redux, @tanstack/react-query, next-auth,
+#                          jwt-decode, react-hook-form, zod, @hookform/resolvers,
+#                          shared-ui, shared-types
+# admin-app only         : (nothing app-specific yet)
+# dashboard-app only     : (nothing app-specific yet)
+# shared-ui              : react, react-dom, chart.js, react-chartjs-2, clsx, tailwind-merge  (as peerDependencies where possible)
+# shared-types           : typescript only — no runtime dependencies, ever
+# Dev deps, everywhere   : typescript, eslint, eslint-config-next, typescript-eslint,
+#                          @eslint/eslintrc, eslint-config-prettier, @types/*
+#
+# Install into a workspace with:  npm install <pkg> -w dashboard-app
+# Install at the root with:       npm install <pkg> -w . --save-dev
 
 
 ## Environment variables (per app, in .env.local — never commit real values)
 NEXTAUTH_SECRET             <placeholder>
 NEXTAUTH_URL                http://localhost:3000    # dashboard-app; use :3001 for admin-app
 NEXT_PUBLIC_API_BASE_URL    http://localhost:8080    # the backend API gateway
+
+
+## Notes
+# - `git >= 2.40` is a target, not a hard blocker. Older versions work; just make sure the
+#   whole team is on a similar version so line-ending and hook behaviour matches.
+# - Do NOT add: recharts, axios (use fetch), styled-components / MUI / Bootstrap (Tailwind only),
+#   moment (use date-fns), redux-thunk or redux-saga (RTK includes what you need).
+# - Before adding any dependency not listed here, raise it with the team first.
