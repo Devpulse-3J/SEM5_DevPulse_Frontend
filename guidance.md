@@ -1,65 +1,47 @@
-# DevPulse Frontend — Guidance
+# DevPulse Frontend — Product & Setup Guide
+
+## Which document to read
+
+- **This file (`guidance.md`)** — what DevPulse is, how to set it up and run it locally,
+  environment variables, the backend API surface, roles, and project conventions.
+- **[`instruction.md`](instruction.md)** — the engineering guide: folder structure,
+  architecture decisions, and **who owns what**. Read it before writing code.
 
 ## What this repo is
 
 This is the **frontend only** for DevPulse, a developer-productivity and code-quality
-insights dashboard for distributed engineering teams.
+dashboard for distributed engineering teams.
 
 There is **no backend code here.** The backend lives in a separate repo and is reached
-**exclusively through its REST API gateway** — every request the frontend makes goes to
-the gateway, never directly to an individual backend service.
+**exclusively through its REST API gateway** — every request the frontend makes goes to the
+gateway, never directly to an individual backend service.
 
-This repo is a **monorepo**: two Next.js apps that both consume two shared packages.
+It is a **single Next.js app** (App Router). All three roles live in one codebase, separated
+by route groups and gated by role. (An earlier plan used a two-app monorepo with
+`shared-ui` / `shared-types` packages; that was dropped for simplicity. Any references to
+those folders are stale.)
 
-## Folder layout
+## Architecture in brief
 
-```
-SEM5_DevPulse_Frontend/
-├── dashboard-app/     # Next.js app — analytics UI          (port 3000)
-├── admin-app/         # Next.js app — admin console         (port 3001)
-├── shared-ui/         # shared React component library
-└── shared-types/      # TypeScript types mirroring backend DTOs
-```
+Full detail is in [`instruction.md`](instruction.md). The essentials:
 
-- **dashboard-app** — the analytics UI: DORA charts (deployment frequency, lead time,
-  MTTR, change failure rate), developer workload, PR/review activity. Used by
-  **Managers and Developers** — it serves **two role-gated views** from one codebase
-  (see below).
-- **admin-app** — the admin console: create/delete projects, manage organisations,
-  members and invitations, and connect/disconnect the GitHub and Jira integrations.
-  Used by **Admins**.
-- **shared-ui** — React components both apps use: chart wrappers, tables, layout.
-- **shared-types** — the API contract. TypeScript types that mirror the backend's DTOs,
-  so both apps speak the same shapes as the gateway.
-
-Both apps import from `shared-ui` and `shared-types`. Anything used by both apps belongs
-in a shared package, not copy-pasted into each app.
-
-### Two apps, three role-views(3 apps  danne nathiwa imu)
-
- An **app** is a separately-running
-server (its own port, build, and login); a **dashboard** is a view a role sees *inside*
-an app. The Manager and Developer views both live in **dashboard-app**, gated by role,
-because they look at the same kind of thing (project analytics) at different scopes:
-
-- **Manager view** — owns the project: whole-project DORA metrics, team workload,
-  alert rules and channels.
-- **Developer view** — scoped to the person: own PRs and reviews, personal activity,
-  received alerts.,
-
-A Developer logging in simply isn't rendered the Manager-only panels. Do **not** add a
-third app for this — one codebase with `role`-based gating keeps the charts and layout
-shared instead of triplicated.
+- Everything lives under `src/` (`app/`, `components/`, `features/`, `services/`, `hooks/`,
+  `store/`, `lib/`, `types/`, `utils/`, `styles/`).
+- Two route groups serve three roles:
+  - **`(admin)/`** — Admin only.
+  - **`(workspace)/`** — Manager **and** Developer share this, because ~90% of their UI is
+    identical. Role-specific panels are chosen inside components, not in separate routes:
+    ```tsx
+    if (role === "MANAGER")   { /* team-wide DORA, workload, team PRs */ }
+    if (role === "DEVELOPER") { /* my PRs, my repositories, my alerts */ }
+    ```
+- Route-group `layout.tsx` files enforce role access with `lib/auth-guard.ts`.
 
 ## First-time setup
 
-> **Read this before writing any code.** When you clone this repo you get the docs and four
-> empty folders — nothing is scaffolded yet. The steps below are the agreed way to build
-> that scaffold. **One person does steps 1–9 once and pushes**; everybody else clones after
-> that and only does step 10.
->
-> Do these steps in order. Each one says *what* to create and *why* — the actual
-> implementation is yours to write.
+> The single-app scaffold (root config + the empty `src/` skeleton) is **already in the
+> repo**. Most people just clone, install, and run — steps 0–2, then 7 and 8. Steps 3–6
+> explain how the scaffold is wired and how to fill in the parts that ship empty.
 
 ### 0. Check your tools
 
@@ -69,180 +51,78 @@ npm -v      # must be >= 10
 git --version
 ```
 
-If `node -v` is below 20, install Node 20 LTS (use `nvm` if you juggle versions).
-Everyone on the team should be on the **same major** version of Node and npm.
+If `node -v` is below 20, install Node 20 LTS (use `nvm` if you juggle versions). The whole
+team should be on the **same major** version of Node and npm.
 
-### 1. Clone
+### 1. Clone and install
 
 ```bash
 git clone git@github.com:UmayaJayasuriya/SEM5_DevPulse_Frontend.git
 cd SEM5_DevPulse_Frontend
+npm install               # from the repo ROOT
 ```
 
-### 2. Add `.gitignore` — do this FIRST
-
-Before anyone runs `npm install`. Without it the first `git add .` commits `node_modules/`
-(tens of thousands of files) and possibly a real `.env.local`. Create a `.gitignore` at the
-repo root covering at minimum:
-
-```
-node_modules/
-.next/
-out/
-build/
-.env
-.env.local
-.env*.local
-*.tsbuildinfo
-next-env.d.ts
-.DS_Store
-coverage/
-.vscode/
-```
-
-**Never commit `.env.local`.** If you ever do, rotate the secret — deleting the file later
-does not remove it from git history.
-
-### 3. Create the workspace root
-
-Create a `package.json` at the repo root that:
-
-- sets `"private": true` (the root is never published)
-- declares `"workspaces": ["dashboard-app", "admin-app", "shared-ui", "shared-types"]`
-- defines scripts to run each app and both together:
-  - `dev:dashboard` → dev server for dashboard-app on **3000**
-  - `dev:admin` → dev server for admin-app on **3001**
-  - `dev` → both at once (that's what `npm-run-all` is for)
-  - `build`, `lint`, `format` → run across all workspaces
-- pins the Node version with an `"engines"` field so nobody silently uses Node 18
-
-Then install the root-only dev tools (see the *Where each dependency is installed* block in
-[`requirement.txt`](requirement.txt)).
-
-### 4. Scaffold the two Next.js apps
-
-Create each app **inside its existing folder**, with the App Router and TypeScript:
+### 2. Set up your environment file
 
 ```bash
-npx create-next-app@latest dashboard-app --ts --app --tailwind --eslint --src-dir --use-npm
-npx create-next-app@latest admin-app     --ts --app --tailwind --eslint --src-dir --use-npm
+cp .env.example .env.local     # then edit .env.local with real values — ask the team
 ```
 
-Then, in **both** apps:
+`.env.local` is git-ignored. **Never commit it.** If you ever do, rotate the secret —
+deleting the file later does not remove it from git history. See
+[Environment variables](#environment-variables).
 
-- delete any boilerplate marketing page content — keep the layout skeleton only
-- confirm `tsconfig.json` has `"strict": true` (non-negotiable)
-- make sure the folder is `app/`, **not** `pages/` — we do not use the Pages Router
-- set `admin-app`'s dev and start scripts to run on **port 3001**
+### 3. How the root is configured
 
-If the generator installs a Tailwind version older than 4, fix it — see step 6.
+The repo root already has `package.json` (single app, Node pinned via `"engines"`, scripts
+`dev`/`build`/`start`/`lint`/`format`), plus `tsconfig.json` (strict mode, `@/*` → `src/*`
+path alias), `next.config.ts`, `postcss.config.mjs`, and `eslint.config.mjs`. Don't re-run
+`create-next-app` over it.
 
-### 5. Create the two shared packages
+### 4. The `src/` skeleton
 
-Neither is published to npm; they are resolved by npm workspaces.
+The full `src/` tree exists as empty placeholder files. See [`instruction.md`](instruction.md)
+for the tree and ownership. Fill in **your own** area; don't edit another person's files.
+App Router only (folder is `src/app/`, never `pages/`); `tsconfig` stays `"strict": true`.
 
-**`shared-types/`** — the API contract. Create a `package.json` (name `shared-types`,
-`"private": true`) and a `tsconfig.json`. It holds **types only**: interfaces mirroring the
-gateway's DTOs, plus the `Role` union (`'ADMIN' | 'MANAGER' | 'DEVELOPER'`). It must have
-**zero runtime dependencies** — nothing importable at runtime, only `type`/`interface`
-declarations.
+### 5. Imports and shared code
 
-**`shared-ui/`** — the component library. Create a `package.json` (name `shared-ui`,
-`"private": true`) and a `tsconfig.json`. It holds the React components both apps use:
-chart wrappers, tables, layout shells. Declare `react`, `react-dom` and `chart.js` as
-**peerDependencies** so the apps supply them and you don't end up with two copies of React.
+There are no shared packages — shared code lives in `src/components`, `src/lib`, `src/types`,
+etc. Import it with the `@/` alias, e.g. `import { Button } from "@/components/ui/Button"`.
 
-### 6. Wire everything together
+### 6. Styling — Tailwind v4 (CSS-first)
 
-- Add `shared-ui` and `shared-types` to each app's dependencies as `"*"` — npm resolves
-  them to the local folders.
-- Run `npm install` **once from the repo root**. Never run it inside an app folder; that
-  breaks workspace linking. There will be **one** `package-lock.json`, at the root — commit it.
-- Because the shared packages ship TypeScript source (not compiled JS), add
-  `transpilePackages: ['shared-ui', 'shared-types']` to each app's `next.config.ts`.
-- Confirm Tailwind is **v4**: there should be no `tailwind.config.js` full of theme JS.
-  v4 is CSS-first — `postcss.config.mjs` uses `@tailwindcss/postcss`, and your global
-  stylesheet starts with `@import "tailwindcss";`. Configure theme tokens in CSS with
-  `@theme`, not in a JS config.
-- For Tailwind to see classes used inside `shared-ui`, declare that folder as a source in
-  your global CSS with `@source`.
+There is no `tailwind.config.js`. `postcss.config.mjs` uses `@tailwindcss/postcss`, and
+`src/styles/globals.css` starts with `@import "tailwindcss";`. Theme tokens are defined in
+CSS with `@theme` — that is the **single source of truth** for the palette. Mirror colors into
+`src/styles/theme.ts` only when Chart.js needs plain JS strings.
 
-### 7. Set up environment files
+### 7. App-wide providers (owned by Person A)
 
-In **each** app create `.env.local` (git-ignored) with the three variables listed under
-[Environment variables](#environment-variables) below. Also commit a `.env.example` in each
-app with the same keys and **placeholder values only** — that's how a new teammate knows
-what to fill in.
+`src/app/providers.tsx` is a **client component** (`'use client'`) mounted from
+`src/app/layout.tsx`, wrapping the app in three providers:
 
-Remember `NEXTAUTH_URL` differs per app: `:3000` for dashboard-app, `:3001` for admin-app.
-
-### 8. Add the app-wide providers
-
-Both apps need the same three providers wrapping the app, in a **client component** mounted
-from the root layout (providers use React context, so they cannot live in a server component):
-
-1. **React Query** — one `QueryClient` per browser session. Set sensible defaults for
-   `staleTime` and retries; add the devtools in development only.
-2. **Redux Toolkit** — the store for *client* state only: filters, selected project, UI
-   toggles. Server data never goes in here.
+1. **React Query** — one `QueryClient` per browser session; sensible `staleTime`/retries;
+   devtools in development only.
+2. **Redux Toolkit** — `src/store` for *client* state only (filters, selections, UI toggles).
+   Server data never goes here.
 3. **NextAuth `SessionProvider`** — so `useSession()` works anywhere.
 
-Also set up NextAuth itself: a Credentials provider that posts to `/api/auth/login` on the
-gateway, and callbacks that carry the gateway's JWT **and the user's `role`** into the
-session. Role-gating depends on that role being present — get it right before building any
-screen.
+Set up NextAuth in `src/app/api/auth/[...nextauth]/route.ts`: a Credentials provider that
+posts to `/api/auth/login` on the gateway, with callbacks that carry the gateway's JWT **and
+the user's `role`** into the session. Role-gating depends on that role — get it right first.
 
-### 9. Verify, then push
+### 8. Run and verify
 
 ```bash
 npm run lint
-npm run build          # both apps must build clean
-npm run dev            # dashboard on :3000, admin on :3001
-```
-
-Both apps must compile with **zero TypeScript errors** before this is pushed. Once green,
-commit the scaffold and push to `main` — from here on, everyone works off this.
-
-### 10. Everyone else: after the scaffold is pushed
-
-```bash
-git clone git@github.com:UmayaJayasuriya/SEM5_DevPulse_Frontend.git
-cd SEM5_DevPulse_Frontend
-npm install                       # from the ROOT, always
-cp dashboard-app/.env.example dashboard-app/.env.local
-cp admin-app/.env.example admin-app/.env.local
-# edit both .env.local files — ask the team for the real values
-npm run dev
+npm run build          # must build clean, zero TypeScript errors
+npm run dev            # http://localhost:3000
 ```
 
 The backend gateway must be running on `NEXT_PUBLIC_API_BASE_URL` (default
 `http://localhost:8080`) or every request will fail. That repo is separate — check with
 whoever owns it.
-
-### Working agreement
-
-- **Branch per task**: `feature/<short-name>`, `fix/<short-name>`. Never commit to `main`
-  directly; open a PR.
-- **Own your area** to avoid conflicts — split by app and by feature (e.g. one person on
-  auth + role-gating, one on DORA charts, one on the admin console). Anything touching
-  `shared-ui` or `shared-types` affects everyone: announce it before you change it.
-- **Change `shared-types` first** when the gateway contract changes, then update both apps.
-- Run `npm run lint` and `npm run build` **before** you open a PR.
-- Adding a dependency? Add it to [`requirement.txt`](requirement.txt) in the same PR, and
-  check the "Do NOT add" list there first.
-- Commit `package-lock.json` whenever it changes — it's what keeps everyone's installs identical.
-
-### Common mistakes
-
-| Symptom | Cause |
-|---|---|
-| `Module not found: shared-ui` | You ran `npm install` inside an app folder instead of the root |
-| Shared component renders unstyled | Tailwind isn't scanning `shared-ui` — add `@source` in global CSS |
-| `Cannot use import statement outside a module` from a shared package | Missing `transpilePackages` in `next.config.ts` |
-| Both apps try to start on 3000 | admin-app's dev script isn't pinned to `-p 3001` |
-| `useSession`/`useSelector` "must be used within a Provider" | Providers file isn't `'use client'`, or isn't mounted in the root layout |
-| Every API call 401s | JWT not attached as `Authorization: Bearer <token>`, or the gateway isn't running |
-| Chart with a date axis silently fails | `chartjs-adapter-date-fns` not imported — Chart.js has no built-in date support |
 
 ## Tech stack
 
@@ -251,33 +131,35 @@ whoever owns it.
 | Framework | Next.js, **App Router** |
 | Language | TypeScript (strict) |
 | UI | React |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS v4 (CSS-first) |
 | Charts | **Chart.js** via `react-chartjs-2` — **not Recharts** |
 | Global client state | Redux Toolkit |
 | Server state (fetch/cache/refresh) | React Query (`@tanstack/react-query`) |
+| HTTP | native `fetch()` — **not axios** |
 | Auth / sessions | NextAuth.js |
 | Runtime | Node.js 20+ |
 
-Exact versions are in [`requirement.txt`](requirement.txt).
+Exact pinned versions are in [`requirement.txt`](requirement.txt).
 
 ## Roles
 
 There are exactly **three** roles. There is no Viewer role.
 
-| Role | Scope | Can do | App |
+| Role | Scope | Can do | Route group |
 |---|---|---|---|
-| **Admin** | The company | Create and delete projects, manage the organisation, members and invitations, connect/disconnect integrations | admin-app (3001) |
-| **Manager** | Owns a project | Whole-project DORA dashboards, team workload, alert rules and channels | dashboard-app (3000) |
-| **Developer** | Themselves | Own PRs and reviews, personal + team activity, receives alerts | dashboard-app (3000) |
+| **Admin** | The company | Create/delete projects, manage the organisation, members and invitations, connect/disconnect integrations | `(admin)/` |
+| **Manager** | Owns a project | Whole-project DORA dashboards, team workload, alert rules and channels | `(workspace)/` |
+| **Developer** | Themselves | Own PRs and reviews, personal + team activity, receives alerts | `(workspace)/` |
 
-The UI must be **gated by role**: an Admin manages projects in `admin-app`; a Manager and
-a Developer share `dashboard-app` but each sees only their own view. A Developer is never
-shown Admin or Manager-only screens.
+The UI must be **gated by role**. `(admin)/` and `(workspace)/` are separated by
+`lib/auth-guard.ts` in each group's `layout.tsx`. **Within** `(workspace)/`, Manager-only and
+Developer-only panels are shown/hidden with `role` checks inside the components — a Developer
+is never rendered Manager-only panels, and vice versa.
 
 ## Backend API
 
 All requests go through the **API gateway**. The base URL comes from the
-`NEXT_PUBLIC_API_BASE_URL` environment variable(mama danna widihata hard code karanne na)
+`NEXT_PUBLIC_API_BASE_URL` environment variable — **never hard-code it**.
 
 Authenticate by sending the JWT as a header:
 
@@ -296,21 +178,45 @@ Rough surface (all paths are relative to the gateway base URL):
 
 ## Environment variables
 
-Each app has its own `.env.local` (git-ignored — **never commit real values**):
+One `.env.local` at the repo root (git-ignored — **never commit real values**):
 
 ```bash
 NEXTAUTH_SECRET=<placeholder>
-NEXTAUTH_URL=http://localhost:3000        # dashboard-app; use http://localhost:3001 for admin-app
+NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
 Only variables prefixed `NEXT_PUBLIC_` reach the browser. `NEXTAUTH_SECRET` must stay
-server-side.
+server-side. A `.env.example` with placeholder values is committed so new teammates know
+what to fill in.
 
 ## Conventions
 
-- Chart.js for **every** visualisation — keep the library consistent across both apps.
-- Server data goes through React Query; Redux Toolkit is for client state only (UI state,
-  filters, selections) — don't duplicate server data into Redux.
-- Shared types live in `shared-types` and mirror the backend DTOs; when the gateway
-  contract changes, update it there first.
+- **Charts:** Chart.js via `react-chartjs-2` for every visualisation — never Recharts. For a
+  date/time axis, import `chartjs-adapter-date-fns` (Chart.js has no built-in date support).
+- **Data:** server data goes through React Query; Redux Toolkit is for client state only
+  (UI state, filters, selections) — don't duplicate server data into Redux.
+- **HTTP:** all requests go through `src/services/api-client.ts` using `fetch` — never axios.
+- **Types:** shared types live in `src/types` and mirror the gateway DTOs; when the contract
+  changes, update them there first, then update consumers.
+- **Ownership:** own your area (see [`instruction.md`](instruction.md)); shared "glue" files
+  have a single editor — ask before changing them.
+
+## Working agreement
+
+- **Branch per task**: `feature/<short-name>`, `fix/<short-name>`. Never commit to `main`
+  directly; open a PR.
+- Run `npm run lint` and `npm run build` **before** you open a PR.
+- Adding a dependency? Add it to [`requirement.txt`](requirement.txt) in the same PR, and
+  check the "Do NOT add" list there first (notably: **no axios, no Recharts**).
+- Commit `package-lock.json` whenever it changes — it keeps everyone's installs identical.
+
+## Common mistakes
+
+| Symptom | Cause |
+|---|---|
+| `useSession`/`useSelector` "must be used within a Provider" | `providers.tsx` isn't `'use client'`, or isn't mounted in the root layout |
+| Every API call 401s | JWT not attached as `Authorization: Bearer <token>`, or the gateway isn't running |
+| Chart with a date axis silently fails | `chartjs-adapter-date-fns` not imported |
+| Import fails with a long relative path | Use the `@/` alias (`@/components/...`) instead of `../../..` |
+| A route renders for the wrong role | `lib/auth-guard.ts` not applied in that route group's `layout.tsx` |
