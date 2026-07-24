@@ -174,6 +174,118 @@ These files are imported across domains and therefore have exactly one editor. C
 | `components/ui/` | B | Shared controls such as buttons, cards, inputs, badges, and modals. Central ownership preserves a consistent interface. |
 | `styles/` | B | `globals.css` defines Tailwind v4 design tokens; `theme.ts` provides Chart.js values. One owner prevents competing visual systems. |
 
+## File ownership map
+
+Every file/folder tagged with its owner — `[A]` Auth & Admin, `[B]` Manager & Metrics +
+Foundation, `[C]` Developer & Integrations. Files marked "ask first" are imported across
+domains — request changes from the owner rather than editing in parallel.
+
+```text
+src/
+├── app/
+│   ├── (auth)/                    [A]  login, register
+│   ├── (admin)/                   [A]  all admin pages + layout.tsx
+│   ├── (workspace)/               [B+C] shared — split per page:
+│   │   ├── layout.tsx             [B]  role gating + shell
+│   │   ├── dashboard/
+│   │   │   ├── page.tsx           [B]  thin role router
+│   │   │   ├── SharedDashboard.tsx     [B]
+│   │   │   ├── ManagerDashboard.tsx    [B]
+│   │   │   └── DeveloperDashboard.tsx  [C]
+│   │   ├── dora/                  [B]
+│   │   ├── pull-requests/         [B]  team-wide PRs
+│   │   ├── team/                  [B]
+│   │   ├── my-prs/                [C]
+│   │   ├── repositories/          [C]
+│   │   └── alerts/                [C]
+│   ├── api/                       [A]  auth/[...nextauth]/route.ts
+│   ├── layout.tsx                 [A]  root layout (mounts providers)
+│   ├── providers.tsx              [A]  ask first — RQ + Redux + SessionProvider
+│   └── page.tsx                   [A]  root landing / redirect
+│
+├── components/
+│   ├── ui/                        [B]  ask first — Button, Card, Modal, Input, Spinner, Badge
+│   ├── charts/                    [B]  DoraChart, LeadTimeChart, ...
+│   ├── tables/                    [B]  PRTable, UserTable, ...
+│   ├── layout/                    [B]  Navbar, Sidebar, Footer, Header
+│   └── notifications/             [C]  AlertCard, Toast
+│
+├── features/
+│   ├── auth/                      [A]
+│   ├── users/                     [A]
+│   ├── projects/                  [A]
+│   ├── repositories/              [C]
+│   ├── pullRequests/              [C]
+│   ├── dora/                      [B]
+│   ├── analytics/                 [B]
+│   ├── alerts/                    [C]
+│   ├── notifications/             [C]
+│   └── integrations/             [C]
+│
+├── services/
+│   ├── api-client.ts              [A]  ask first — everyone imports this
+│   ├── auth.service.ts            [A]
+│   ├── dashboard.service.ts       [B]
+│   ├── project.service.ts         [A]
+│   ├── repository.service.ts      [C]
+│   ├── github.service.ts          [C]
+│   ├── jira.service.ts            [C]
+│   ├── dora.service.ts            [B]
+│   ├── analytics.service.ts       [B]
+│   ├── alert.service.ts           [C]
+│   └── notification.service.ts    [C]
+│
+├── hooks/
+│   ├── useAuth.ts                 [A]
+│   ├── useProjects.ts             [A]
+│   ├── useRepositories.ts         [C]
+│   ├── useDora.ts                 [B]
+│   ├── usePullRequests.ts         [C]
+│   ├── useAlerts.ts               [C]
+│   └── useNotifications.ts        [C]
+│
+├── store/
+│   ├── index.ts                   [B]  ask first — combines all slices
+│   ├── authSlice.ts               [A]
+│   ├── dashboardSlice.ts          [B]
+│   ├── projectSlice.ts            [A]
+│   ├── alertSlice.ts              [C]
+│   └── notificationSlice.ts       [C]
+│
+├── lib/
+│   ├── auth.ts                    [A]
+│   ├── auth-guard.ts              [A]
+│   ├── permissions.ts             [A]
+│   ├── constants.ts               [A]
+│   └── validators.ts              [A]
+│
+├── types/
+│   ├── auth.ts                    [A]
+│   ├── user.ts                    [A]
+│   ├── project.ts                 [A]
+│   ├── repository.ts              [C]
+│   ├── pullRequest.ts             [C]
+│   ├── dora.ts                    [B]
+│   ├── analytics.ts               [B]
+│   ├── notification.ts            [C]
+│   └── index.ts                   [B]  ask first — barrel of all types
+│
+├── utils/
+│   ├── formatDate.ts              [B]
+│   ├── calculateDuration.ts       [B]
+│   ├── helpers.ts                 [B]
+│   ├── colors.ts                  [B]
+│   └── exportCSV.ts               [C]
+│
+└── styles/
+    ├── globals.css                [B]  design tokens (single source of truth)
+    └── theme.ts                   [B]  Chart.js colors
+```
+
+**Tally:** A = auth, admin, `lib/`, and the app shell/plumbing. B = the visual foundation
+(components, styles, charts) + manager metrics + the two barrel files. C = developer-facing
+pages + external integrations + notifications.
+
 ## Development flow
 
 ```text
