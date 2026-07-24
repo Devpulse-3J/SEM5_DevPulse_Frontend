@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --font-ibm-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-ibm-mono: 'IBM Plex Mono', monospace;
+
+  --dp-canvas: oklch(0.11 0.008 260);
+  --dp-app-bg: oklch(0.15 0.01 260);
+  --dp-surface: oklch(0.185 0.012 260);
+  --dp-surface-raised: oklch(0.225 0.013 260);
+  --dp-border: oklch(0.30 0.014 260);
+  --dp-border-subtle: oklch(0.26 0.012 260);
+  --dp-border-muted: oklch(0.24 0.012 260);
+
+  --dp-text-primary: oklch(0.95 0.004 260);
+  --dp-text-secondary: oklch(0.70 0.018 260);
+  --dp-text-dim: oklch(0.52 0.02 260);
+
+  --dp-accent: oklch(0.68 0.17 264);
+  --dp-accent-hover: oklch(0.78 0.15 264);
+
+  --dp-risk-low: oklch(0.72 0.16 155);
+  --dp-risk-low-bg: rgba(34, 197, 94, 0.35);
+
+  --dp-risk-med: oklch(0.78 0.16 80);
+  --dp-risk-med-text: oklch(0.83 0.14 80);
+  --dp-risk-med-bg: rgba(245, 158, 11, 0.35);
+
+  --dp-risk-high: oklch(0.66 0.19 22);
+  --dp-risk-high-text: oklch(0.78 0.16 22);
+  --dp-risk-high-bg: rgba(239, 68, 68, 0.35);
+}
+
+body {
+  margin: 0;
+  background-color: var(--dp-canvas);
+  color: var(--dp-text-primary);
+  font-family: var(--font-ibm-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: var(--font-ibm-mono);
+}
+
+.font-sans {
+  font-family: var(--font-ibm-sans);
+}
+
+a {
+  color: var(--dp-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--dp-accent-hover);
+  text-decoration: underline;
+}
+
+/* Custom Scrollbar matching DevPulse spec */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dp-canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dp-border);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dp-text-dim);
+}
