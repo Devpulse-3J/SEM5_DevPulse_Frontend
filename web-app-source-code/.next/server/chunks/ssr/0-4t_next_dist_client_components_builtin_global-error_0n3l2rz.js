@@ -1,0 +1,3 @@
+module.exports=[66813,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(91692);a.n(d("[project]/Documents/GitHub/SEM5_DevPulse_Frontend/web-app-source-code/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},6751,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(91692);a.n(d("[project]/Documents/GitHub/SEM5_DevPulse_Frontend/web-app-source-code/node_modules/next/dist/client/components/builtin/global-error.js"))},71759,a=>{"use strict";a.i(66813);var b=a.i(6751);a.n(b)},58569,a=>{a.n(a.i(71759))}];
+
+//# sourceMappingURL=0-4t_next_dist_client_components_builtin_global-error_0n3l2rz.js.map
