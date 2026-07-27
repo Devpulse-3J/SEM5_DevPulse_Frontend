@@ -159,7 +159,7 @@ The split preserves one shared experience while giving each owner an exclusive f
 | **B** | Shared workspace foundation and manager metrics | `SharedDashboard.tsx`, `ManagerDashboard.tsx`, dashboard entry, shared `ui/`, charts, tables, layout, DORA, analytics, `styles/`, `store/index.ts`, `types/index.ts`, `dashboardSlice`, and shared utilities. | B owns the visual and metrics foundation used across the workspace, preventing inconsistent components, chart conventions, and design tokens. |
 | **C** | Developer workflow and integrations | `DeveloperDashboard.tsx`, repositories, alerts, My PRs, GitHub integration, Jira integration, notifications, `components/notifications`, relevant services, hooks, slices, types, and `exportCSV.ts`. | Developer-facing workflows and external integrations change together, creating a focused vertical slice with minimal overlap with B's shared metrics work. |
 
-Within `(workspace)`, ownership is by page: B owns its layout, dashboard, DORA, team-wide pull requests, and team views; C owns My PRs, repositories, and alerts. Do not edit another owner's page or feature area without coordinating first.
+Within `(workspace)`, ownership is by page: B owns its layout, dashboard, DORA, team-wide pull requests (list + `[id]` PR Risk Detail), and team views; C owns My PRs, repositories (list + `[id]` Repository Detail), and alerts. Detail drill-downs are dynamic `[id]/` routes and belong to whoever owns the parent list. Do not edit another owner's page or feature area without coordinating first.
 
 ## Shared infrastructure
 
@@ -193,10 +193,12 @@ src/
 │   │   │   ├── ManagerDashboard.tsx    [B]
 │   │   │   └── DeveloperDashboard.tsx  [C]
 │   │   ├── dora/                  [B]
-│   │   ├── pull-requests/         [B]  team-wide PRs
+│   │   ├── pull-requests/         [B]  team-wide PR list
+│   │   │   └── [id]/              [B]  PR Risk Detail drill-down
 │   │   ├── team/                  [B]
 │   │   ├── my-prs/                [C]
 │   │   ├── repositories/          [C]
+│   │   │   └── [id]/              [C]  Repository Detail drill-down
 │   │   └── alerts/                [C]
 │   ├── api/                       [A]  auth/[...nextauth]/route.ts
 │   ├── layout.tsx                 [A]  root layout (mounts providers)
@@ -205,7 +207,7 @@ src/
 │
 ├── components/
 │   ├── ui/                        [B]  ask first — Button, Card, Modal, Input, Spinner, Badge
-│   ├── charts/                    [B]  DoraChart, LeadTimeChart, ...
+│   ├── charts/                    [B]  DoraChart, LeadTimeChart, EffortChart (donut), ...
 │   ├── tables/                    [B]  PRTable, UserTable, ...
 │   ├── layout/                    [B]  Navbar, Sidebar, Footer, Header
 │   └── notifications/             [C]  AlertCard, Toast

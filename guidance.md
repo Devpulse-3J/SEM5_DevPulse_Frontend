@@ -36,6 +36,8 @@ Full detail is in [`instruction.md`](instruction.md). The essentials:
     if (role === "DEVELOPER") { /* my PRs, my repositories, my alerts */ }
     ```
 - Route-group `layout.tsx` files enforce role access with `lib/auth-guard.ts`.
+- Drill-down screens (PR Risk Detail, Repository Detail) are dynamic routes —
+  `(workspace)/pull-requests/[id]/` and `(workspace)/repositories/[id]/`.
 
 ## First-time setup
 
