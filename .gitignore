@@ -21,3 +21,9 @@ next-env.d.ts
 coverage/
 .vscode/
 npm-debug.log*
+
+# claude
+CLAUDE.md
+
+# spec
+DevPulse_Spec.html
