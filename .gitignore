@@ -11,6 +11,9 @@ build/
 .env.local
 .env*.local
 
+# local-only (never push)
+CLAUDE.md
+
 # misc
 *.tsbuildinfo
 next-env.d.ts
