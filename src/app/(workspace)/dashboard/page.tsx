@@ -2,6 +2,7 @@
 
 import { SharedDashboard } from "./SharedDashboard";
 import { ManagerDashboard } from "./ManagerDashboard";
+import { DeveloperDashboard } from "./DeveloperDashboard";
 
 // TODO: replace with real role from useSession() once auth is wired
 const ROLE = "MANAGER" as const;
@@ -32,10 +33,13 @@ export default function DashboardPage() {
     );
   }
 
-  // TODO: Developer path — will use <DeveloperDashboard /> (Person C)
   return (
-    <SharedDashboard title="Welcome back" subtitle="platform-core · updated 2 min ago">
-      <div className="text-sm text-muted">Developer dashboard coming soon.</div>
+    <SharedDashboard
+      title="Welcome back, Alex"
+      subtitle="platform-core · 12 connected repos · updated 2 min ago"
+      filters={<FilterBar />}
+    >
+      <DeveloperDashboard />
     </SharedDashboard>
   );
 }
