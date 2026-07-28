@@ -39,12 +39,10 @@ const developerNav: NavGroup[] = [
   {
     title: "MY WORK",
     items: [
-      { label: "Today's Tasks", href: "/dashboard", icon: "▣" },
+      { label: "Overview", href: "/dashboard", icon: "▣" },
       { label: "My PRs", href: "/my-prs", icon: "◧" },
-      { label: "My Assigned Issues", href: "/my-issues", icon: "◔" },
-      { label: "Recent Reviews", href: "/my-reviews", icon: "◫" },
-      { label: "My Risk Score", href: "/my-risk", icon: "▲" },
-      { label: "My Notifications", href: "/alerts", icon: "◎" },
+      { label: "Repositories", href: "/repositories", icon: "📦" },
+      { label: "Alerts & Rules", href: "/alerts", icon: "◎" },
     ],
   },
   {
