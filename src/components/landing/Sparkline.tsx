@@ -15,7 +15,10 @@ export function Sparkline({ data, color }: SparklineProps) {
           className="w-1.5 rounded-sm"
           style={{
             height: `${(v / max) * 100}%`,
-            background: i >= data.length - 2 ? color : `color-mix(in oklch, ${color} 40%, transparent)`,
+            background:
+              i >= data.length - 2
+                ? color
+                : `color-mix(in oklch, ${color} 40%, transparent)`,
           }}
         />
       ))}
