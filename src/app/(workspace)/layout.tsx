@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 
 // TODO: replace with real role from useSession() + auth-guard once auth is wired
-const ROLE = "DEVELOPER" as const;
+const ROLE: "MANAGER" | "DEVELOPER" = "MANAGER";
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (

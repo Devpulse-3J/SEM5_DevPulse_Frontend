@@ -5,7 +5,7 @@ import { ManagerDashboard } from "./ManagerDashboard";
 import { DeveloperDashboard } from "./DeveloperDashboard";
 
 // TODO: replace with real role from useSession() once auth is wired
-const ROLE = "MANAGER" as const;
+const ROLE: "MANAGER" | "DEVELOPER" = "MANAGER";
 
 function FilterBar() {
   return (

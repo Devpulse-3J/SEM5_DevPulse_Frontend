@@ -29,8 +29,8 @@ const managerNav: NavGroup[] = [
   {
     title: "CONFIGURE",
     items: [
-      { label: "Integrations", href: "/integrations", icon: "◎" },
-      { label: "Settings", href: "/settings", icon: "⚙" },
+      { label: "Integrations", href: "/admin/integrations", icon: "◎" },
+      { label: "Settings", href: "/admin/settings", icon: "⚙" },
     ],
   },
 ];
