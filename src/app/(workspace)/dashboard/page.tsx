@@ -1,11 +1,10 @@
 "use client";
 
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { SharedDashboard } from "./SharedDashboard";
 import { ManagerDashboard } from "./ManagerDashboard";
 import { DeveloperDashboard } from "./DeveloperDashboard";
-
-// TODO: replace with real role from useSession() once auth is wired
-const ROLE: "MANAGER" | "DEVELOPER" = "MANAGER";
 
 function FilterBar() {
   return (
@@ -21,7 +20,9 @@ function FilterBar() {
 }
 
 export default function DashboardPage() {
-  if (ROLE === "MANAGER") {
+  const role = useSelector((s: RootState) => s.dashboard.activeProject?.role);
+
+  if (role === "MANAGER") {
     return (
       <SharedDashboard
         title="Overview"
