@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             Admin ⌄
           </div>
           {/* Avatar */}
-          <div className="w-7 h-7 rounded-full bg-[oklch(0.30_0.09_80)] flex items-center justify-center text-[11px] font-bold text-ink">
+          <div className="w-7 h-7 rounded-full bg-[#262626] flex items-center justify-center text-[11px] font-bold text-ink">
             SC
           </div>
         </div>

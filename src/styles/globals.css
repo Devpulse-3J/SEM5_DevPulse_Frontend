@@ -1,29 +1,45 @@
 @import "tailwindcss";
 
 @theme {
-  /* Surfaces */
-  --color-canvas: oklch(0.11 0.008 260);
-  --color-app: oklch(0.15 0.01 260);
-  --color-surface: oklch(0.185 0.012 260);
-  --color-surface-raised: oklch(0.225 0.013 260);
+  /* Surfaces — pure black background */
+  --color-canvas: #000000;
+  --color-app: #000000;
+  --color-surface: #000000;
+  --color-surface-raised: #0a0a0a;
 
-  /* Borders */
-  --color-border: oklch(0.30 0.014 260);
-  --color-border-subtle: oklch(0.24 0.012 260);
+  /* Borders (kept subtle so black cards stay delineated) */
+  --color-border: #2a2a2a;
+  --color-border-subtle: #1a1a1a;
 
-  /* Text */
-  --color-ink: oklch(0.95 0.004 260);
-  --color-muted: oklch(0.70 0.018 260);
-  --color-subtle: oklch(0.52 0.02 260);
+  /* Text — grayscale ramp (hierarchy without hue) */
+  --color-ink: #ffffff;
+  --color-muted: #a3a3a3;
+  --color-subtle: #6b6b6b;
 
-  /* Brand */
-  --color-accent: oklch(0.68 0.17 264);
-  --color-accent-hover: oklch(0.78 0.15 264);
+  /* Brand — monochrome: white is the accent. UI chrome only (buttons, focus
+     rings, links). Data marks must NOT use this — see the viz slots below. */
+  --color-accent: #ffffff;
+  --color-accent-hover: #d4d4d4;
 
-  /* Status / risk scale */
-  --color-success: oklch(0.72 0.16 155);
-  --color-warning: oklch(0.78 0.16 80);
-  --color-danger: oklch(0.66 0.19 22);
+  /* ── The only hues in the app: data visualization ──
+     Chrome above is grayscale; anything that ENCODES data gets color, because
+     hue is the only channel that does series identity well.
+     All steps validated against the black surface (dark lightness band, chroma
+     floor, protan/deutan separation, >= 3:1 contrast). Mirrored in theme.ts —
+     change both together, and re-run the validator rather than eyeballing. */
+
+  /* Categorical — series identity. Assign in slot order, never cycled. */
+  --color-viz-1: #3987e5;
+  --color-viz-2: #d95926;
+  --color-viz-3: #199e70;
+  --color-viz-4: #c98500;
+
+  /* Status / risk — reserved meaning, never reused as "series 5".
+     Always paired with an icon or text label, never color alone. */
+  --color-success: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-danger: #d03b3b;
 
   /* Type */
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;

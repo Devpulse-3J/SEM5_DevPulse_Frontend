@@ -12,6 +12,7 @@ import {
 } from "@/components/icons";
 import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
+import { chart } from "@/styles/theme";
 
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE — GitHub-style Landing Page
@@ -36,7 +37,7 @@ export default function HomePage() {
           <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
             Sign in
           </Link>
-          <Link href="/register" className="text-[13px] font-semibold bg-accent text-canvas px-4 py-2 rounded-lg hover:brightness-110 transition-all no-underline hover:no-underline">
+          <Link href="/register" className="text-[13px] font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
             Get Started
           </Link>
         </div>
@@ -47,14 +48,14 @@ export default function HomePage() {
         <div
           className="absolute inset-0 opacity-40"
           style={{
-            backgroundImage: "radial-gradient(oklch(0.26 0.012 260) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(#1a1a1a 1px, transparent 1px)",
             backgroundSize: "28px 28px",
           }}
         />
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] opacity-30 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse at center, oklch(0.68 0.17 264 / 0.25), transparent 70%)",
+            background: "radial-gradient(ellipse at center, rgba(255,255,255,0.10), transparent 70%)",
           }}
         />
 
@@ -72,10 +73,10 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/register" className="inline-flex items-center gap-2 bg-accent text-canvas font-bold text-sm px-6 py-3 rounded-lg hover:brightness-110 transition-all no-underline hover:no-underline">
+            <Link href="/register" className="inline-flex items-center gap-2 bg-white text-black font-bold text-sm px-6 py-3 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
               Get Started Free <IconArrowRight />
             </Link>
-            <Link href="/login" className="inline-flex items-center gap-2 bg-surface-raised text-muted font-semibold text-sm px-6 py-3 rounded-lg border border-border hover:text-ink hover:border-accent/30 transition-all no-underline hover:no-underline">
+            <Link href="/login" className="inline-flex items-center gap-2 bg-surface-raised text-muted font-semibold text-sm px-6 py-3 rounded-lg border border-border hover:text-ink hover:border-white/40 transition-all no-underline hover:no-underline">
               Sign in to Dashboard
             </Link>
           </div>
@@ -93,10 +94,12 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard label="Deployment Frequency" value="6.2" unit="/day" sparkData={[40, 55, 50, 70, 65, 85, 100]} accentColor="oklch(0.72 0.16 155)" trend="▲ Elite · +0.8 vs prior period" />
-            <MetricCard label="Lead Time for Changes" value="4.1" unit="hrs" sparkData={[80, 70, 60, 55, 40, 35, 30]} accentColor="oklch(0.72 0.16 155)" trend="▼ Elite · −1.4hrs vs prior period" />
-            <MetricCard label="Mean Time to Recovery" value="2.8" unit="hrs" sparkData={[30, 35, 60, 55, 65, 50, 58]} accentColor="oklch(0.78 0.16 80)" trend="▲ High · +0.6hrs vs prior period" />
-            <MetricCard label="Change Failure Rate" value="18.4" unit="%" sparkData={[35, 40, 45, 55, 75, 80, 90]} accentColor="oklch(0.66 0.19 22)" trend="▲ Needs Attention · +3.1pp" />
+            {/* Data gets color even though the chrome is monochrome. accentColor is the
+                reserved status scale — always paired with the ▲/▼ + tier text below it. */}
+            <MetricCard label="Deployment Frequency" value="6.2" unit="/day" sparkData={[40, 55, 50, 70, 65, 85, 100]} accentColor={chart.success} trend="▲ Elite · +0.8 vs prior period" />
+            <MetricCard label="Lead Time for Changes" value="4.1" unit="hrs" sparkData={[80, 70, 60, 55, 40, 35, 30]} accentColor={chart.success} trend="▼ Elite · −1.4hrs vs prior period" />
+            <MetricCard label="Mean Time to Recovery" value="2.8" unit="hrs" sparkData={[30, 35, 60, 55, 65, 50, 58]} accentColor={chart.warning} trend="▲ High · +0.6hrs vs prior period" />
+            <MetricCard label="Change Failure Rate" value="18.4" unit="%" sparkData={[35, 40, 45, 55, 75, 80, 90]} accentColor={chart.danger} trend="▲ Needs Attention · +3.1pp" />
           </div>
         </div>
       </section>
@@ -134,8 +137,8 @@ export default function HomePage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-accent/30 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink group-hover:text-accent transition-colors">
+            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
                 <IconGitHub />
               </div>
               <div className="text-sm font-semibold">GitHub</div>
@@ -145,8 +148,8 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-accent/30 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-accent group-hover:brightness-125 transition-all">
+            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
                 <IconJira />
               </div>
               <div className="text-sm font-semibold">Jira</div>
@@ -156,8 +159,8 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-accent/30 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-sm font-bold text-warning group-hover:text-accent transition-colors">
+            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-sm font-bold text-ink transition-colors">
                 SL
               </div>
               <div className="text-sm font-semibold">Slack</div>

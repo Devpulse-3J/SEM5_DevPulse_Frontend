@@ -32,11 +32,11 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised"
-      style={{ color: isActive ? "oklch(0.72 0.16 155)" : "oklch(0.52 0.02 260)" }}
+      style={{ color: isActive ? "#ffffff" : "#6b6b6b" }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
-        style={{ background: isActive ? "oklch(0.72 0.16 155)" : "oklch(0.52 0.02 260)" }}
+        style={{ background: isActive ? "#ffffff" : "#6b6b6b" }}
       />
       {status}
     </span>

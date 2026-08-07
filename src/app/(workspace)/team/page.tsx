@@ -22,11 +22,13 @@ const loadBar: Record<LoadSeverity, string> = {
   bad: "bg-danger",
 };
 
+// Teams are identities, not states — categorical slots, not the status scale
+// (otherwise the "Data" team wears the same red that means "critical").
 const teamColor: Record<string, string> = {
-  Backend: "bg-accent",
-  Frontend: "bg-warning",
-  Mobile: "bg-success",
-  Data: "bg-danger",
+  Backend: "bg-viz-1",
+  Frontend: "bg-viz-2",
+  Mobile: "bg-viz-3",
+  Data: "bg-viz-4",
 };
 
 const statusStyle: Record<ReviewStatus, string> = {

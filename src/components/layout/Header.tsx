@@ -64,7 +64,7 @@ export function Header({
         </div>
 
         {/* Avatar */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[oklch(0.30_0.08_264)] text-[11px] font-bold">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#262626] text-[11px] font-bold">
           {initials}
         </div>
       </div>
