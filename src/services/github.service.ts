@@ -14,7 +14,7 @@ export const githubService = {
       if (!baseUrl) {
         return {
           connected: true,
-          accountName: "DevPulseOrg",
+          accountName: "OdinEyeOrg",
           installationId: "gh-inst-98721",
           connectedReposCount: 12,
           lastSyncedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
@@ -27,7 +27,7 @@ export const githubService = {
     } catch {
       return {
         connected: true,
-        accountName: "DevPulseOrg",
+        accountName: "OdinEyeOrg",
         installationId: "gh-inst-98721",
         connectedReposCount: 12,
         lastSyncedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
@@ -44,6 +44,6 @@ export const githubService = {
   },
 
   getConnectUrl(): string {
-    return "https://github.com/apps/devpulse-integration/installations/new";
+    return "https://github.com/apps/odineye-integration/installations/new";
   },
 };

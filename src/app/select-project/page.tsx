@@ -40,7 +40,7 @@ export default function SelectProjectPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="font-mono text-lg font-bold text-ink">◆ DEVPULSE</div>
+          <div className="font-mono text-lg font-bold text-ink">◆ Odin Eye</div>
           <h1 className="mt-3 text-xl font-bold text-ink">Choose a project</h1>
           <p className="mt-1 text-sm text-muted">
             Your role depends on the project you open.

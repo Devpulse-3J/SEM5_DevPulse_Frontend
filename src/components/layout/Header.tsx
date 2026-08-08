@@ -24,7 +24,7 @@ export function Header({
       {/* Left */}
       <div className="flex items-center gap-[18px]">
         <span className="font-mono text-[15px] font-bold tracking-wide">
-          ◆ DEVPULSE
+          ◆ Odin Eye
         </span>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-1.5 rounded-[7px] border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium">
@@ -64,7 +64,7 @@ export function Header({
         </div>
 
         {/* Avatar */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[oklch(0.30_0.08_264)] text-[11px] font-bold">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#262626] text-[11px] font-bold">
           {initials}
         </div>
       </div>

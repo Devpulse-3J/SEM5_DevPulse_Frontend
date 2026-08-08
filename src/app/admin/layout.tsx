@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <header className="h-14 bg-app border-b border-border flex items-center justify-between px-5 flex-shrink-0 sticky top-0 z-40">
         <div className="flex items-center gap-4">
           <Link href="/admin/overview" className="font-mono font-bold text-[15px] text-ink no-underline hover:no-underline">
-            ◆ DEVPULSE
+            ◆ Odin Eye
           </Link>
           <div className="w-px h-5 bg-border" />
           <span className="text-[12px] font-mono text-subtle tracking-widest">ADMIN CONSOLE</span>
@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             Admin ⌄
           </div>
           {/* Avatar */}
-          <div className="w-7 h-7 rounded-full bg-[oklch(0.30_0.09_80)] flex items-center justify-center text-[11px] font-bold text-ink">
+          <div className="w-7 h-7 rounded-full bg-[#262626] flex items-center justify-center text-[11px] font-bold text-ink">
             SC
           </div>
         </div>

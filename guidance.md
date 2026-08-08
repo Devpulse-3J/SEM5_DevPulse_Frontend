@@ -1,15 +1,15 @@
-# DevPulse Frontend — Product & Setup Guide
+# Odin Eye Frontend — Product & Setup Guide
 
 ## Which document to read
 
-- **This file (`guidance.md`)** — what DevPulse is, how to set it up and run it locally,
+- **This file (`guidance.md`)** — what Odin Eye is, how to set it up and run it locally,
   environment variables, the backend API surface, roles, and project conventions.
 - **[`instruction.md`](instruction.md)** — the engineering guide: folder structure,
   architecture decisions, and **who owns what**. Read it before writing code.
 
 ## What this repo is
 
-This is the **frontend only** for DevPulse, a developer-productivity and code-quality
+This is the **frontend only** for Odin Eye, a developer-productivity and code-quality
 dashboard for distributed engineering teams.
 
 There is **no backend code here.** The backend lives in a separate repo and is reached
@@ -59,8 +59,8 @@ team should be on the **same major** version of Node and npm.
 ### 1. Clone and install
 
 ```bash
-git clone git@github.com:UmayaJayasuriya/SEM5_DevPulse_Frontend.git
-cd SEM5_DevPulse_Frontend
+git clone git@github.com:UmayaJayasuriya/SEM5_Odin Eye_Frontend.git
+cd SEM5_Odin Eye_Frontend
 npm install               # from the repo ROOT
 ```
 

@@ -1,4 +1,4 @@
-export const metadata = { title: "Settings — DevPulse Admin" };
+export const metadata = { title: "Settings — Odin Eye Admin" };
 
 export default function SettingsPage() {
   return (
@@ -55,7 +55,7 @@ export default function SettingsPage() {
               <span className="text-xs text-muted">{label}</span>
               <div
                 className="relative w-9 h-5 rounded-full transition-colors"
-                style={{ background: checked ? "oklch(0.68 0.17 264)" : "oklch(0.30 0.014 260)" }}
+                style={{ background: checked ? "#ffffff" : "#2a2a2a" }}
               >
                 <div
                   className="absolute top-0.5 w-4 h-4 rounded-full bg-ink shadow transition-all"

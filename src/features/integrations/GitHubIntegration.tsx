@@ -7,7 +7,7 @@ import { githubService } from "@/services/github.service";
 export function GitHubIntegration() {
   const [status, setStatus] = useState({
     connected: true,
-    accountName: "DevPulseOrg",
+    accountName: "OdinEyeOrg",
     connectedReposCount: 12,
     lastSyncedAt: new Date().toISOString(),
   });

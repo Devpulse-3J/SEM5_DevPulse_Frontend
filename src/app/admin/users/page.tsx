@@ -1,4 +1,4 @@
-export const metadata = { title: "Users — DevPulse Admin" };
+export const metadata = { title: "Users — Odin Eye Admin" };
 
 type Role = "Manager" | "Developer" | "Admin";
 
@@ -18,18 +18,19 @@ const MEMBERS: Member[] = [
   { name: "Diego Alvarez",email: "diego.alvarez@nimbuslabs.io",role: "Developer", access: "Backend team", avatar: "DA" },
 ];
 
+/* Monochrome: role is encoded by brightness (higher privilege = brighter) */
 const ROLE_STYLES: Record<Role, { color: string; bg: string }> = {
-  Manager:   { color: "oklch(0.68 0.17 264)", bg: "oklch(0.225 0.013 260)" },
-  Developer: { color: "oklch(0.70 0.018 260)", bg: "oklch(0.225 0.013 260)" },
-  Admin:     { color: "oklch(0.78 0.16 80)",  bg: "oklch(0.225 0.013 260)" },
+  Manager:   { color: "#b5b5b5", bg: "#0a0a0a" },
+  Developer: { color: "#7a7a7a", bg: "#0a0a0a" },
+  Admin:     { color: "#ffffff", bg: "#0a0a0a" },
 };
 
 const AVATAR_COLORS: Record<string, string> = {
-  SC: "oklch(0.30 0.08 264)",
-  MW: "oklch(0.30 0.12 22)",
-  IO: "oklch(0.30 0.09 80)",
-  PM: "oklch(0.30 0.10 155)",
-  DA: "oklch(0.30 0.09 22)",
+  SC: "#1a1a1a",
+  MW: "#1a1a1a",
+  IO: "#1a1a1a",
+  PM: "#1a1a1a",
+  DA: "#1a1a1a",
 };
 
 export default function UsersPage() {
@@ -88,7 +89,7 @@ export default function UsersPage() {
               <div className="flex items-center gap-2.5">
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-ink flex-shrink-0"
-                  style={{ background: AVATAR_COLORS[m.avatar] ?? "oklch(0.30 0.08 264)" }}
+                  style={{ background: AVATAR_COLORS[m.avatar] ?? "#1a1a1a" }}
                 >
                   {m.avatar}
                 </div>

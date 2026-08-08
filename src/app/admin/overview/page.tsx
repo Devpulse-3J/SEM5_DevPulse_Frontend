@@ -1,13 +1,13 @@
 import Link from "next/link";
 
-export const metadata = { title: "Admin Overview — DevPulse" };
+export const metadata = { title: "Admin Overview — Odin Eye" };
 
 /* ── Summary stat cards ── */
 const STATS = [
-  { label: "Total Projects",    value: "4",  sub: "3 active · 1 archived",  color: "oklch(0.68 0.17 264)" },
-  { label: "Members",           value: "26", sub: "2 admin · 8 manager · 16 dev", color: "oklch(0.72 0.16 155)" },
-  { label: "Integrations",      value: "3",  sub: "2 healthy · 1 attention", color: "oklch(0.78 0.16 80)" },
-  { label: "Repositories Tracked", value: "34", sub: "across all projects",  color: "oklch(0.68 0.17 264)" },
+  { label: "Total Projects",    value: "4",  sub: "3 active · 1 archived",  color: "#ffffff" },
+  { label: "Members",           value: "26", sub: "2 admin · 8 manager · 16 dev", color: "#7a7a7a" },
+  { label: "Integrations",      value: "3",  sub: "2 healthy · 1 attention", color: "#b5b5b5" },
+  { label: "Repositories Tracked", value: "34", sub: "across all projects",  color: "#ffffff" },
 ];
 
 const RECENT_ACTIVITY = [
