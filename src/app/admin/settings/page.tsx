@@ -1,4 +1,4 @@
-export const metadata = { title: "Settings — DevPulse Admin" };
+export const metadata = { title: "Settings — Odin Eye Admin" };
 
 export default function SettingsPage() {
   return (

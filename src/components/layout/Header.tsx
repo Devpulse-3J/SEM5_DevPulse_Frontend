@@ -24,7 +24,7 @@ export function Header({
       {/* Left */}
       <div className="flex items-center gap-[18px]">
         <span className="font-mono text-[15px] font-bold tracking-wide">
-          ◆ DEVPULSE
+          ◆ Odin Eye
         </span>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-1.5 rounded-[7px] border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium">

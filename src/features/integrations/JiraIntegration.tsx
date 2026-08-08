@@ -7,7 +7,7 @@ import { jiraService } from "@/services/jira.service";
 export function JiraIntegration() {
   const [status, setStatus] = useState({
     connected: true,
-    domain: "devpulse.atlassian.net",
+    domain: "odineye.atlassian.net",
     linkedIssuesCount: 48,
     lastSyncedAt: new Date().toISOString(),
   });

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Admin Overview — DevPulse" };
+export const metadata = { title: "Admin Overview — Odin Eye" };
 
 /* ── Summary stat cards ── */
 const STATS = [

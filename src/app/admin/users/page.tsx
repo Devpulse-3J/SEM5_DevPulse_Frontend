@@ -1,4 +1,4 @@
-export const metadata = { title: "Users — DevPulse Admin" };
+export const metadata = { title: "Users — Odin Eye Admin" };
 
 type Role = "Manager" | "Developer" | "Admin";
 

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { IconGitHub } from "@/components/icons";
 
 export const metadata = {
-  title: "Create Account — DevPulse",
-  description: "Create your account or request workspace access on DevPulse",
+  title: "Create Account — Odin Eye",
+  description: "Create your account or request workspace access on Odin Eye",
 };
 
 export default function RegisterPage() {
@@ -11,7 +11,7 @@ export default function RegisterPage() {
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="mb-1 text-xl font-bold text-white">
-          Get started with DevPulse
+          Get started with Odin Eye
         </h1>
         <p className="text-xs text-neutral-400">
           Create your account or sign up with GitHub

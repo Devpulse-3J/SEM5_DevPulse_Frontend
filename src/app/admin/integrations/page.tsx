@@ -1,4 +1,4 @@
-export const metadata = { title: "Integrations — DevPulse Admin" };
+export const metadata = { title: "Integrations — Odin Eye Admin" };
 
 interface Integration {
   tag: string;

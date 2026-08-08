@@ -25,7 +25,7 @@ export default function HomePage() {
       <nav className="sticky top-0 z-50 h-14 bg-app/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-6 md:px-10">
         <div className="flex items-center gap-4">
           <span className="font-mono font-bold text-[15px] tracking-wide text-ink">
-            ◆ DEVPULSE
+            ◆ Odin Eye
           </span>
           <div className="hidden md:flex items-center gap-5 ml-6 text-[13px]">
             <a href="#features" className="text-muted hover:text-ink transition-colors">Features</a>
@@ -69,7 +69,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
-            DevPulse gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics — all in one dark-mode dashboard.
+            Odin Eye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics — all in one dark-mode dashboard.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -133,7 +133,7 @@ export default function HomePage() {
             Plugs into your <span className="text-accent">existing workflow</span>
           </h2>
           <p className="text-sm text-muted max-w-lg mx-auto mb-12">
-            DevPulse connects to GitHub, Jira, and Slack out of the box — no custom scripts, no manual exports. Set up in minutes.
+            Odin Eye connects to GitHub, Jira, and Slack out of the box — no custom scripts, no manual exports. Set up in minutes.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
@@ -177,11 +177,11 @@ export default function HomePage() {
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-mono font-bold text-sm text-ink">◆ DEVPULSE</span>
+            <span className="font-mono font-bold text-sm text-ink">◆ Odin Eye</span>
             <span className="text-xs text-subtle">Developer Productivity Dashboard</span>
           </div>
           <div className="text-xs text-subtle">
-            © {new Date().getFullYear()} DevPulse. Built for engineering teams.
+            © {new Date().getFullYear()} Odin Eye. Built for engineering teams.
           </div>
         </div>
       </footer>

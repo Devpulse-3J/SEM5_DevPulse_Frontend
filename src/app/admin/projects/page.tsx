@@ -1,4 +1,4 @@
-export const metadata = { title: "Projects — DevPulse Admin" };
+export const metadata = { title: "Projects — Odin Eye Admin" };
 
 const PROJECTS = [
   {

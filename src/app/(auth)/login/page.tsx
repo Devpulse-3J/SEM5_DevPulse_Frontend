@@ -2,8 +2,8 @@ import Link from "next/link";
 import { IconGitHub } from "@/components/icons";
 
 export const metadata = {
-  title: "Sign In — DevPulse",
-  description: "Sign in to your DevPulse workspace",
+  title: "Sign In — Odin Eye",
+  description: "Sign in to your Odin Eye workspace",
 };
 
 export default function LoginPage() {

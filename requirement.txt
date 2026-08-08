@@ -1,4 +1,4 @@
-# DevPulse — Frontend Requirements
+# Odin Eye — Frontend Requirements
 # Frontend monorepo only. Backend lives in a separate repo and is reached
 # exclusively through the REST API gateway.
 # Versions below are the minimum/target versions at time of writing.

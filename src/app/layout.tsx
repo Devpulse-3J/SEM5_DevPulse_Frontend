@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "DevPulse - Developer Productivity & Quality Dashboard",
-  description: "DevPulse frontend workspace",
+  title: "Odin Eye - Developer Productivity & Quality Dashboard",
+  description: "Odin Eye frontend workspace",
 };
 
 type RootLayoutProps = {
