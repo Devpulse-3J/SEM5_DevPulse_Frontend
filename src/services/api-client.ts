@@ -24,22 +24,6 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
-function sanitizeForLog(data: unknown): unknown {
-  if (!data || typeof data !== "object") return data;
-  if (Array.isArray(data)) return data.map(sanitizeForLog);
-  const copy: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    if (/password|secret|token|accessToken/i.test(key)) {
-      copy[key] = `[PROTECTED length=${String(value).length}]`;
-    } else if (typeof value === "object" && value !== null) {
-      copy[key] = sanitizeForLog(value);
-    } else {
-      copy[key] = value;
-    }
-  }
-  return copy;
-}
-
 export function getApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (envUrl && envUrl.trim().length > 0) {
@@ -69,7 +53,8 @@ async function request<T>(
     }
   }
 
-  const { token, params: _params, ...fetchOptions } = options;
+  const { token, params: _, ...fetchOptions } = options;
+  void _;
   const resolvedToken = token || authService.getToken();
 
   const headers = new Headers(fetchOptions.headers);
