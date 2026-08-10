@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
@@ -41,7 +41,7 @@ const DEMO_ROLES: RoleConfig[] = [
   },
 ];
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const searchParams = useSearchParams();
@@ -376,5 +376,19 @@ export default function LoginPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
