@@ -34,6 +34,9 @@ export default function HomePage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/adminlogin" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
+            Admin login
+          </Link>
           <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
             Sign in
           </Link>

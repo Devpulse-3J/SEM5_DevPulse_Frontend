@@ -153,7 +153,6 @@ export default function RegisterPage() {
                 : "text-muted hover:text-ink hover:bg-surface/50"
             }`}
           >
-            <span className="text-xs">🏢</span>
             <span>Register as a Company</span>
           </button>
         </div>
