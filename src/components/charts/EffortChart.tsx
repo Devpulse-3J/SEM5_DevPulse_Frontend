@@ -2,17 +2,23 @@
 
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { chart } from "@/styles/theme";
+import { chart, series } from "@/styles/theme";
 import type { EffortSlice } from "@/types";
 
 ChartJS.register(ArcElement, Tooltip);
 
-/** Slice colors, in the order the spec's Effort Distribution legend uses. */
+/**
+ * Slice colors, in the order the spec's Effort Distribution legend uses.
+ *
+ * These slices are identities (feature work vs review vs bugs), not states, so
+ * they take categorical slots rather than the reserved status scale — otherwise
+ * "Code review" would wear the same amber that means "warning" elsewhere.
+ */
 export const EFFORT_COLORS = [
-  chart.accent, // Feature work
-  chart.warning, // Code review
-  chart.success, // Bug fixes
-  chart.subtle, // Meetings / other
+  series[0], // Feature work
+  series[1], // Code review
+  series[2], // Bug fixes
+  series[3], // Meetings / other
 ] as const;
 
 export interface EffortChartProps {

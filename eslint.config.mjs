@@ -7,5 +7,13 @@ export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
   prettier,
-  globalIgnores([".next/**", "node_modules/**"]),
+  globalIgnores([
+    ".next/**",
+    "**/.next/**",
+    "node_modules/**",
+    "**/node_modules/**",
+    "web-app-source-code/**",
+    "dist/**",
+    "build/**",
+  ]),
 ]);

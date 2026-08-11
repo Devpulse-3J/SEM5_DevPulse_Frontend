@@ -225,7 +225,7 @@ export function ManagerDashboard() {
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded bg-surface-raised">
                   <div
-                    className="h-full rounded bg-accent"
+                    className="h-full rounded bg-viz-1"
                     style={{ width: `${r.pct}%` }}
                   />
                 </div>

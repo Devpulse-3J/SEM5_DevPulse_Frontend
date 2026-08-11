@@ -115,7 +115,7 @@ export default function DoraPage() {
                 </span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-raised">
                   <div
-                    className="h-full rounded-full bg-accent"
+                    className="h-full rounded-full bg-viz-1"
                     style={{ width: `${r.pct}%` }}
                   />
                 </div>

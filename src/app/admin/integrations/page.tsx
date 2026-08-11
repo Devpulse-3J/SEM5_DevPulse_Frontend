@@ -1,4 +1,4 @@
-export const metadata = { title: "Integrations — DevPulse Admin" };
+export const metadata = { title: "Integrations — Odin Eye Admin" };
 
 interface Integration {
   tag: string;
@@ -13,9 +13,9 @@ const INTEGRATIONS: Integration[] = [
     name: "GitHub",
     status: "CONNECTED",
     stats: [
-      { label: "Last Sync",     value: "2 min ago",  valueColor: "oklch(0.72 0.16 155)" },
+      { label: "Last Sync",     value: "2 min ago",  valueColor: "#7a7a7a" },
       { label: "Repositories",  value: "34" },
-      { label: "Webhook",       value: "● Healthy",  valueColor: "oklch(0.72 0.16 155)" },
+      { label: "Webhook",       value: "● Healthy",  valueColor: "#7a7a7a" },
     ],
   },
   {
@@ -23,9 +23,9 @@ const INTEGRATIONS: Integration[] = [
     name: "Jira",
     status: "ATTENTION",
     stats: [
-      { label: "Last Sync",  value: "18 min ago",              valueColor: "oklch(0.83 0.14 80)" },
+      { label: "Last Sync",  value: "18 min ago",              valueColor: "#b5b5b5" },
       { label: "Projects",   value: "6" },
-      { label: "Webhook",    value: "● Token expiring in 3 days", valueColor: "oklch(0.83 0.14 80)" },
+      { label: "Webhook",    value: "● Token expiring in 3 days", valueColor: "#b5b5b5" },
     ],
   },
   {
@@ -33,17 +33,17 @@ const INTEGRATIONS: Integration[] = [
     name: "Slack",
     status: "CONNECTED",
     stats: [
-      { label: "Last Sync", value: "Just now",    valueColor: "oklch(0.72 0.16 155)" },
+      { label: "Last Sync", value: "Just now",    valueColor: "#7a7a7a" },
       { label: "Channel",   value: "#eng-alerts" },
-      { label: "Webhook",   value: "● Healthy",   valueColor: "oklch(0.72 0.16 155)" },
+      { label: "Webhook",   value: "● Healthy",   valueColor: "#7a7a7a" },
     ],
   },
 ];
 
 const STATUS_STYLES = {
-  CONNECTED:    { label: "✓ CONNECTED",    color: "oklch(0.72 0.16 155)" },
-  ATTENTION:    { label: "⚠ ATTENTION",    color: "oklch(0.78 0.16 80)" },
-  DISCONNECTED: { label: "✕ NOT CONNECTED", color: "oklch(0.52 0.02 260)" },
+  CONNECTED:    { label: "✓ CONNECTED",    color: "#7a7a7a" },
+  ATTENTION:    { label: "⚠ ATTENTION",    color: "#b5b5b5" },
+  DISCONNECTED: { label: "✕ NOT CONNECTED", color: "#ffffff" },
 } as const;
 
 export default function IntegrationsPage() {
@@ -84,7 +84,7 @@ export default function IntegrationsPage() {
                     <span className="text-[11px] text-subtle">{stat.label}</span>
                     <span
                       className="text-xs font-mono font-semibold"
-                      style={{ color: stat.valueColor ?? "oklch(0.95 0.004 260)" }}
+                      style={{ color: stat.valueColor ?? "#ffffff" }}
                     >
                       {stat.value}
                     </span>
@@ -109,9 +109,9 @@ export default function IntegrationsPage() {
         <h2 className="text-[13px] font-semibold mb-4">Webhook Health</h2>
         <div className="flex flex-col gap-2">
           {[
-            { label: "GitHub Webhook",  status: "Healthy",                   color: "oklch(0.72 0.16 155)" },
-            { label: "Jira Webhook",    status: "Token expiring in 3 days",  color: "oklch(0.78 0.16 80)" },
-            { label: "Slack Webhook",   status: "Healthy",                   color: "oklch(0.72 0.16 155)" },
+            { label: "GitHub Webhook",  status: "Healthy",                   color: "#7a7a7a" },
+            { label: "Jira Webhook",    status: "Token expiring in 3 days",  color: "#b5b5b5" },
+            { label: "Slack Webhook",   status: "Healthy",                   color: "#7a7a7a" },
           ].map(({ label, status, color }) => (
             <div key={label} className="flex items-center justify-between py-1.5 border-b border-border-subtle last:border-0">
               <span className="text-xs text-muted">{label}</span>

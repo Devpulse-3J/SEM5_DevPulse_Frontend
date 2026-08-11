@@ -13,7 +13,7 @@ export const jiraService = {
       if (!baseUrl) {
         return {
           connected: true,
-          domain: "devpulse.atlassian.net",
+          domain: "odineye.atlassian.net",
           projectKeys: ["CORE", "SECU", "UIX"],
           linkedIssuesCount: 48,
           lastSyncedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
@@ -25,7 +25,7 @@ export const jiraService = {
     } catch {
       return {
         connected: true,
-        domain: "devpulse.atlassian.net",
+        domain: "odineye.atlassian.net",
         projectKeys: ["CORE", "SECU", "UIX"],
         linkedIssuesCount: 48,
         lastSyncedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),

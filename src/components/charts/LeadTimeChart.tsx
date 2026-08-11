@@ -37,7 +37,7 @@ export function LeadTimeChart({ labels, data }: LeadTimeChartProps) {
           {
             data,
             borderColor: chart.accent,
-            backgroundColor: "rgba(99,102,241,0.12)",
+            backgroundColor: "rgba(57,135,229,0.14)",
             borderWidth: 2.5,
             pointRadius: 0,
             pointHitRadius: 8,

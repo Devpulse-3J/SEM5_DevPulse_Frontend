@@ -17,7 +17,7 @@ const MOCK_MY_PRS: PullRequest[] = [
     additions: 340,
     deletions: 45,
     changedFiles: 8,
-    url: "https://github.com/DevPulseOrg/auth-service/pull/142",
+    url: "https://github.com/OdinEyeOrg/auth-service/pull/142",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
     reviews: [
@@ -65,7 +65,7 @@ const MOCK_MY_PRS: PullRequest[] = [
     additions: 28,
     deletions: 14,
     changedFiles: 2,
-    url: "https://github.com/DevPulseOrg/metrics-pipeline/pull/89",
+    url: "https://github.com/OdinEyeOrg/metrics-pipeline/pull/89",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     reviews: [
@@ -103,7 +103,7 @@ const MOCK_MY_PRS: PullRequest[] = [
     additions: 92,
     deletions: 64,
     changedFiles: 5,
-    url: "https://github.com/DevPulseOrg/dashboard-frontend/pull/204",
+    url: "https://github.com/OdinEyeOrg/dashboard-frontend/pull/204",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     mergedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),

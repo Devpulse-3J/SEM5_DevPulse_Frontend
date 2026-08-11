@@ -1,8 +1,8 @@
-# DevPulse Frontend Engineering Guide
+# Odin Eye Frontend Engineering Guide
 
 ## Purpose
 
-DevPulse is a developer-productivity and code-quality dashboard for distributed engineering teams. This document defines the frontend architecture, directory responsibilities, and team ownership so that a new contributor can identify their work area and start safely.
+Odin Eye is a developer-productivity and code-quality dashboard for distributed engineering teams. This document defines the frontend architecture, directory responsibilities, and team ownership so that a new contributor can identify their work area and start safely.
 
 For local setup, environment variables, API details, and the full product guidance, read [guidance.md](guidance.md).
 
@@ -21,7 +21,7 @@ For local setup, environment variables, API details, and the full product guidan
 
 ## Application architecture
 
-DevPulse is one Next.js application. It has three roles: **ADMIN**, **MANAGER**, and **DEVELOPER**.
+Odin Eye is one Next.js application. It has three roles: **ADMIN**, **MANAGER**, and **DEVELOPER**.
 
 Admin functionality is structurally different from the day-to-day product workspace, so it lives in the `(admin)` route group. Managers and developers use a single `(workspace)` route group because roughly 90% of their interface, navigation, metrics framing, and data presentation are shared. Role-specific panels are selected inside components instead of maintaining two near-duplicate route trees.
 
