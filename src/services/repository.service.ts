@@ -1,4 +1,4 @@
-import type { Repository, RepositoryBranch, RepositoryCommit } from "@/types/repository";
+import type { Repository } from "@/types/repository";
 
 const MOCK_REPOSITORIES: Repository[] = [
   {
