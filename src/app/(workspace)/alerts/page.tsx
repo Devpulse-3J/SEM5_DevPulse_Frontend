@@ -3,40 +3,43 @@
 import React from "react";
 import { SharedDashboard } from "../dashboard/SharedDashboard";
 import { AlertList } from "@/features/alerts/AlertList";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  useAlerts,
   useAlertRules,
-  useAcknowledgeAlert,
   useCreateAlertRule,
+  useDeleteAlertRule,
 } from "@/hooks/useAlerts";
 
 export default function AlertsPage() {
-  const { data: alerts = [], isLoading: isLoadingAlerts } = useAlerts();
-  const { data: rules = [], isLoading: isLoadingRules } = useAlertRules();
-  const ackMutation = useAcknowledgeAlert();
-  const createRuleMutation = useCreateAlertRule();
+  // companyId comes from GET /api/auth/me — never hardcoded.
+  const { companyId, user } = useAuth();
+  const currentUserId = user?.userId ?? null;
 
-  const handleAcknowledge = (id: string) => {
-    ackMutation.mutate(id);
-  };
-
-  const handleCreateRule = (ruleData: Parameters<typeof createRuleMutation.mutate>[0]) => {
-    createRuleMutation.mutate(ruleData);
-  };
+  const { data: rules = [], isLoading, error } = useAlertRules(companyId);
+  const createRule = useCreateAlertRule(companyId);
+  const deleteRule = useDeleteAlertRule(companyId);
 
   return (
     <SharedDashboard
-      title="Alerts & Notification Rules"
-      subtitle="Real-time productivity thresholds, risk alerts, and automated notifications"
+      title="Alert rules"
+      subtitle="Conditions that trigger Slack notifications"
     >
-      {isLoadingAlerts || isLoadingRules ? (
-        <div className="p-8 text-center text-xs text-subtle">Loading alerts & rules...</div>
+      {companyId === undefined ? (
+        <FeatureUnavailable
+          title="No company on your account"
+          message="Alert rules are scoped to a company, and your profile does not report one. Register a company account or ask an admin to add you to one."
+        />
       ) : (
         <AlertList
-          alerts={alerts}
           rules={rules}
-          onAcknowledgeAlert={handleAcknowledge}
-          onCreateRule={handleCreateRule}
+          companyId={companyId}
+          currentUserId={currentUserId}
+          isLoading={isLoading}
+          error={error as Error | null}
+          onCreateRule={(rule) => createRule.mutate(rule)}
+          onDeleteRule={(ruleId) => deleteRule.mutate(ruleId)}
+          isMutating={createRule.isPending || deleteRule.isPending}
         />
       )}
     </SharedDashboard>

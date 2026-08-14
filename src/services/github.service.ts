@@ -1,3 +1,14 @@
+import { NotImplementedError } from "@/lib/errors";
+
+/**
+ * GitHub integration — NO BACKEND.
+ *
+ * There is no /api/integrations/** route. Note there is also no connect URL to
+ * offer: the GitHub App identity lives server-side, so the client cannot build
+ * an install link on its own without hardcoding an app slug.
+ */
+const BLOCKED_ON = "integration-service";
+
 export interface GitHubIntegrationStatus {
   connected: boolean;
   accountName?: string;
@@ -9,41 +20,10 @@ export interface GitHubIntegrationStatus {
 
 export const githubService = {
   async getStatus(): Promise<GitHubIntegrationStatus> {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!baseUrl) {
-        return {
-          connected: true,
-          accountName: "OdinEyeOrg",
-          installationId: "gh-inst-98721",
-          connectedReposCount: 12,
-          lastSyncedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-          scopes: ["repo", "read:user", "read:org", "workflow"],
-        };
-      }
-      const res = await fetch(`${baseUrl}/api/integrations/github`);
-      if (!res.ok) throw new Error("Failed to fetch GitHub integration status");
-      return await res.json();
-    } catch {
-      return {
-        connected: true,
-        accountName: "OdinEyeOrg",
-        installationId: "gh-inst-98721",
-        connectedReposCount: 12,
-        lastSyncedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-        scopes: ["repo", "read:user", "read:org", "workflow"],
-      };
-    }
+    throw new NotImplementedError("GitHub integration", BLOCKED_ON);
   },
 
-  async triggerSync(): Promise<{ success: boolean; message: string }> {
-    return {
-      success: true,
-      message: "GitHub repository synchronization triggered successfully.",
-    };
-  },
-
-  getConnectUrl(): string {
-    return "https://github.com/apps/odineye-integration/installations/new";
+  async triggerSync(): Promise<void> {
+    throw new NotImplementedError("GitHub sync", BLOCKED_ON);
   },
 };

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { IconGitHub, IconEye, IconEyeOff } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
+import { validateRegisterForm, type RegisterFormErrors } from "@/lib/validators";
 
 type RegisterMode = "INDIVIDUAL" | "COMPANY";
 
@@ -24,46 +25,22 @@ export default function RegisterPage() {
 
   // Company specific fields
   const [companyName, setCompanyName] = useState("");
-  const [companySize, setCompanySize] = useState("11-50");
 
-  const [clientErrors, setClientErrors] = useState<{
-    fullName?: string;
-    email?: string;
-    password?: string;
-    companyName?: string;
-  }>({});
+  const [clientErrors, setClientErrors] = useState<RegisterFormErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  // Rules live in lib/validators so login and register cannot drift apart, and
+  // so they stay an exact mirror of the server's checks.
   const validate = () => {
-    const errors: {
-      fullName?: string;
-      email?: string;
-      password?: string;
-      companyName?: string;
-    } = {};
-
-    if (mode === "COMPANY" && !companyName.trim()) {
-      errors.companyName = "Company name is required";
-    }
-
-    if (!fullName.trim()) {
-      errors.fullName = mode === "COMPANY" ? "Admin full name is required" : "Full name is required";
-    }
-
-    if (!email.trim()) {
-      errors.email = mode === "COMPANY" ? "Company admin email is required" : "Work email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = "Please enter a valid email address";
-    }
-
-    if (!password) {
-      errors.password = "Password is required";
-    } else if (password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
-    }
-
-    setClientErrors(errors);
-    return Object.keys(errors).length === 0 ? null : errors;
+    const errors = validateRegisterForm({
+      email,
+      password,
+      fullName,
+      companyName,
+      isCompany: mode === "COMPANY",
+    });
+    setClientErrors(errors ?? {});
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,8 +63,8 @@ export default function RegisterPage() {
         isCompany,
       });
 
-      // If registered as company admin, route to admin overview or dashboard
-      if (authResponse.systemRole === "ADMIN" || isCompany) {
+      // systemRole is lowercase: "admin" for a company creator, else "member".
+      if (authResponse.systemRole === "admin") {
         router.push("/admin/overview");
       } else {
         router.push("/select-project");
@@ -113,7 +90,7 @@ export default function RegisterPage() {
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-xl font-bold mb-1 tracking-tight text-ink">
-          {mode === "COMPANY" ? "Register your Company" : "Get started with DevPulse"}
+          {mode === "COMPANY" ? "Register your Company" : "Get started with Odin Eye"}
         </h1>
         <p className="text-xs text-muted">
           {mode === "COMPANY"
@@ -252,24 +229,9 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Company Size */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="companySize" className="text-xs text-muted font-medium">
-                  Organization Size
-                </label>
-                <select
-                  id="companySize"
-                  value={companySize}
-                  onChange={(e) => setCompanySize(e.target.value)}
-                  disabled={isLoading}
-                  className="h-10 px-3 rounded-lg bg-surface border border-border text-ink text-xs transition-colors focus:border-accent focus:outline-none cursor-pointer"
-                >
-                  <option value="1-10">1 - 10 engineers</option>
-                  <option value="11-50">11 - 50 engineers</option>
-                  <option value="51-200">51 - 200 engineers</option>
-                  <option value="201+">201+ engineers (Enterprise)</option>
-                </select>
-              </div>
+              {/* Organization size was removed: the register endpoint has no
+                  field for it, so the value was collected and silently thrown
+                  away. Re-add it only when the backend can store it. */}
             </div>
           )}
 

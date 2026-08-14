@@ -1,127 +1,83 @@
-export const metadata = { title: "Integrations — Odin Eye Admin" };
+"use client";
 
-interface Integration {
-  tag: string;
-  name: string;
-  status: "CONNECTED" | "ATTENTION" | "DISCONNECTED";
-  stats: { label: string; value: string; valueColor?: string }[];
-}
+import { useState } from "react";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+import { Button } from "@/components/ui/Button";
+import { webhookService } from "@/services/webhook.service";
+import { ApiError } from "@/services/api-client";
 
-const INTEGRATIONS: Integration[] = [
-  {
-    tag: "GH",
-    name: "GitHub",
-    status: "CONNECTED",
-    stats: [
-      { label: "Last Sync",     value: "2 min ago",  valueColor: "#7a7a7a" },
-      { label: "Repositories",  value: "34" },
-      { label: "Webhook",       value: "● Healthy",  valueColor: "#7a7a7a" },
-    ],
-  },
-  {
-    tag: "JR",
-    name: "Jira",
-    status: "ATTENTION",
-    stats: [
-      { label: "Last Sync",  value: "18 min ago",              valueColor: "#b5b5b5" },
-      { label: "Projects",   value: "6" },
-      { label: "Webhook",    value: "● Token expiring in 3 days", valueColor: "#b5b5b5" },
-    ],
-  },
-  {
-    tag: "SL",
-    name: "Slack",
-    status: "CONNECTED",
-    stats: [
-      { label: "Last Sync", value: "Just now",    valueColor: "#7a7a7a" },
-      { label: "Channel",   value: "#eng-alerts" },
-      { label: "Webhook",   value: "● Healthy",   valueColor: "#7a7a7a" },
-    ],
-  },
-];
-
-const STATUS_STYLES = {
-  CONNECTED:    { label: "✓ CONNECTED",    color: "#7a7a7a" },
-  ATTENTION:    { label: "⚠ ATTENTION",    color: "#b5b5b5" },
-  DISCONNECTED: { label: "✕ NOT CONNECTED", color: "#ffffff" },
-} as const;
+type DemoState = "idle" | "sending" | "sent" | "failed";
 
 export default function IntegrationsPage() {
+  const [demoState, setDemoState] = useState<DemoState>("idle");
+  const [demoError, setDemoError] = useState<string | null>(null);
+
+  /**
+   * POST /api/webhooks/test-high-risk-alert publishes a synthetic high-risk-PR
+   * event through RabbitMQ. It is the only way to exercise the notification
+   * pipeline end to end, since nothing else produces events yet.
+   */
+  const handleTriggerDemo = async () => {
+    setDemoState("sending");
+    setDemoError(null);
+    try {
+      await webhookService.triggerHighRiskAlertDemo();
+      setDemoState("sent");
+    } catch (err: unknown) {
+      setDemoState("failed");
+      setDemoError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not reach the webhook endpoint."
+      );
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
+    <div className="flex max-w-4xl flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold mb-0.5">Integrations</h1>
-        <p className="text-xs text-subtle">Connect and manage external services for your organisation</p>
+        <h1 className="mb-0.5 text-xl font-bold">Integrations</h1>
+        <p className="text-xs text-subtle">
+          Connected data sources and the event pipeline
+        </p>
       </div>
 
-      {/* Integration cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {INTEGRATIONS.map((integration) => {
-          const statusStyle = STATUS_STYLES[integration.status];
-          return (
-            <div key={integration.tag} className="bg-surface border border-border rounded-card p-5 flex flex-col gap-3">
-              {/* Logo + status */}
-              <div className="flex items-center justify-between">
-                <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-[11px] font-bold text-ink">
-                  {integration.tag}
-                </div>
-                <span
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised"
-                  style={{ color: statusStyle.color }}
-                >
-                  {statusStyle.label}
-                </span>
-              </div>
+      {/* Real, working endpoint. */}
+      <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Event pipeline</h2>
+          <p className="mt-1 text-xs text-muted">
+            Publishes a synthetic high-risk pull request event through RabbitMQ into
+            notification-service. Alert rules matching <code>HIGH_RISK_PR</code> will
+            fire against their configured Slack channel.
+          </p>
+        </div>
 
-              {/* Name */}
-              <div className="text-sm font-semibold text-ink">{integration.name}</div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleTriggerDemo}
+            disabled={demoState === "sending"}
+          >
+            {demoState === "sending" ? "Sending…" : "Trigger demo alert"}
+          </Button>
 
-              {/* Stats */}
-              <div className="flex flex-col gap-2 pt-3 border-t border-border-subtle">
-                {integration.stats.map((stat) => (
-                  <div key={stat.label} className="flex items-baseline justify-between">
-                    <span className="text-[11px] text-subtle">{stat.label}</span>
-                    <span
-                      className="text-xs font-mono font-semibold"
-                      style={{ color: stat.valueColor ?? "#ffffff" }}
-                    >
-                      {stat.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Configure link */}
-              <button
-                type="button"
-                className="text-left text-xs text-accent font-medium hover:underline cursor-pointer bg-transparent border-none p-0 mt-1"
-              >
-                Configure →
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Webhook health summary */}
-      <div className="bg-surface border border-border rounded-card p-5">
-        <h2 className="text-[13px] font-semibold mb-4">Webhook Health</h2>
-        <div className="flex flex-col gap-2">
-          {[
-            { label: "GitHub Webhook",  status: "Healthy",                   color: "#7a7a7a" },
-            { label: "Jira Webhook",    status: "Token expiring in 3 days",  color: "#b5b5b5" },
-            { label: "Slack Webhook",   status: "Healthy",                   color: "#7a7a7a" },
-          ].map(({ label, status, color }) => (
-            <div key={label} className="flex items-center justify-between py-1.5 border-b border-border-subtle last:border-0">
-              <span className="text-xs text-muted">{label}</span>
-              <span className="text-xs font-semibold font-mono" style={{ color }}>
-                ● {status}
-              </span>
-            </div>
-          ))}
+          {demoState === "sent" && (
+            <span className="text-xs text-success">
+              Event published — check your Slack channel.
+            </span>
+          )}
+          {demoState === "failed" && (
+            <span className="text-xs text-danger">{demoError}</span>
+          )}
         </div>
       </div>
+
+      <FeatureUnavailable
+        title="GitHub, Jira, and Slack connections are not available yet"
+        message="Connecting and syncing external accounts requires integration-service, which is not yet implemented. Slack delivery is configured per alert rule instead."
+      />
     </div>
   );
 }

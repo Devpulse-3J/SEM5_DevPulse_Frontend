@@ -1,23 +1,19 @@
-"use client";
-
-import React from "react";
-import { SharedDashboard } from "../dashboard/SharedDashboard";
-import { MyPRList } from "@/features/pullRequests/MyPRList";
-import { useMyPullRequests } from "@/hooks/usePullRequests";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 
 export default function MyPRsPage() {
-  const { data: pullRequests = [], isLoading } = useMyPullRequests();
-
   return (
-    <SharedDashboard
-      title="My Pull Requests"
-      subtitle="Track review status, code change metrics, and automated risk scores for your PRs"
-    >
-      {isLoading ? (
-        <div className="p-8 text-center text-xs text-subtle">Loading pull requests...</div>
-      ) : (
-        <MyPRList pullRequests={pullRequests} />
-      )}
-    </SharedDashboard>
+    <div className="flex flex-col gap-5 p-6 md:p-7">
+      <div>
+        <h1 className="text-[22px] font-bold tracking-tight text-ink">My Pull Requests</h1>
+        <p className="mt-1 font-mono text-xs text-subtle">
+          Review status, change size, and risk scores
+        </p>
+      </div>
+
+      <FeatureUnavailable
+        title="Pull requests are not available yet"
+        message="Your pull requests come from metrics-service, which is not yet implemented."
+      />
+    </div>
   );
 }

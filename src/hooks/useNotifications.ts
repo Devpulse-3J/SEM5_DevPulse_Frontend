@@ -1,30 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService } from "@/services/notification.service";
+import { unavailable } from "@/lib/errors";
+
+/**
+ * Notification hooks — notification-service exposes alert RULES only
+ * (see useAlerts), not delivered notifications.
+ */
+const BLOCKED_ON = "a notification history endpoint";
 
 export function useNotifications() {
-  return useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => notificationService.getNotifications(),
-    staleTime: 1000 * 30,
-  });
+  return unavailable("Notifications", BLOCKED_ON);
 }
 
 export function useMarkNotificationRead() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => notificationService.markAsRead(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
+  return {
+    ...unavailable("Marking notifications read", BLOCKED_ON),
+    mutate: () => undefined,
+    isPending: false as const,
+  };
 }
 
 export function useMarkAllNotificationsRead() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => notificationService.markAllAsRead(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
+  return {
+    ...unavailable("Marking notifications read", BLOCKED_ON),
+    mutate: () => undefined,
+    isPending: false as const,
+  };
 }
