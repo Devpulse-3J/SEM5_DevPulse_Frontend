@@ -29,6 +29,18 @@ export const QUERY_KEYS = {
   myMemberships: ["auth", "me", "memberships"] as const,
   alertRules: (companyId?: number) => ["alerts", "rules", companyId ?? null] as const,
   alertRule: (id: number) => ["alerts", "rules", id] as const,
+  dora: (projectId?: number, windowDays = 30, historyDays = 30) =>
+    ["metrics", "dora", projectId ?? null, windowDays, historyDays] as const,
+  workload: (projectId?: number, windowDays = 30) =>
+    ["metrics", "workload", projectId ?? null, windowDays] as const,
+  deployments: (projectId?: number, filters: object = {}) =>
+    ["metrics", "deployments", projectId ?? null, filters] as const,
+  pullRequests: (projectId?: number, limit = 100, offset = 0) =>
+    ["metrics", "prs", projectId ?? null, limit, offset] as const,
+  myPullRequests: (projectId?: number, authorName?: string, limit = 100) =>
+    ["metrics", "my-prs", projectId ?? null, authorName ?? null, limit] as const,
+  pullRequest: (projectId?: number, id?: string) =>
+    ["metrics", "prs", projectId ?? null, id ?? null] as const,
 } as const;
 
 export const PAGE_SIZES = {

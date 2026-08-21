@@ -1,35 +1,41 @@
-import { NotImplementedError } from "@/lib/errors";
-import type { DoraSummary, LeadTimeTrend, RepoDeploy } from "@/types/dora";
-
-/**
- * DORA metrics — NO BACKEND.
- *
- * metrics-service is a single empty entrypoint class; there is no
- * /api/metrics/** route serving anything. These signatures and return types are
- * kept exactly as the real ones will be, so that when metrics-service ships
- * only the function bodies change and no caller has to be rewritten.
- */
-const BLOCKED_ON = "metrics-service";
+import { apiClient } from "./api-client";
+import type {
+  Deployment,
+  DeploymentEnvironment,
+  DeploymentStatus,
+  DoraSummary,
+  WorkloadEntry,
+} from "@/types/dora";
 
 export interface DoraQuery {
-  projectId?: number;
-  days?: number;
-  team?: string;
+  projectId: number;
+  windowDays?: number;
+  historyDays?: number;
+}
+
+export interface WorkloadQuery {
+  projectId: number;
+  windowDays?: number;
+}
+
+export interface DeploymentQuery {
+  projectId: number;
+  environment?: DeploymentEnvironment;
+  status?: DeploymentStatus;
+  limit?: number;
+  offset?: number;
 }
 
 export const doraService = {
-  async getSummary(_query: DoraQuery = {}): Promise<DoraSummary> {
-    void _query;
-    throw new NotImplementedError("DORA metrics", BLOCKED_ON);
+  getSummary(query: DoraQuery): Promise<DoraSummary> {
+    return apiClient.get<DoraSummary>("/api/metrics/dora", { params: { ...query } });
   },
 
-  async getLeadTimeTrend(_query: DoraQuery = {}): Promise<LeadTimeTrend> {
-    void _query;
-    throw new NotImplementedError("Lead time trend", BLOCKED_ON);
+  getWorkload(query: WorkloadQuery): Promise<WorkloadEntry[]> {
+    return apiClient.get<WorkloadEntry[]>("/api/metrics/workload", { params: { ...query } });
   },
 
-  async getDeploysByRepo(_query: DoraQuery = {}): Promise<RepoDeploy[]> {
-    void _query;
-    throw new NotImplementedError("Deployment frequency", BLOCKED_ON);
+  getDeployments(query: DeploymentQuery): Promise<Deployment[]> {
+    return apiClient.get<Deployment[]>("/api/metrics/deployments", { params: { ...query } });
   },
 };

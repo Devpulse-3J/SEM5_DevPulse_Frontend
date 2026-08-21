@@ -10,6 +10,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -47,6 +49,7 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "@tanstack/react-query-devtools": "^5.101.2"
+    "@tanstack/react-query-devtools": "^5.101.2",
+    "vitest": "^3.2.4"
   }
 }

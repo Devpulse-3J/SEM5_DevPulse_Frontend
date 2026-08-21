@@ -75,12 +75,17 @@ function parseErrorBody(
   if (typeof data === "object" && data !== null) {
     const body = data as {
       message?: string;
-      error?: string;
+      error?: string | { code?: string; message?: string };
       fieldErrors?: Record<string, string>;
     };
     fieldErrors = body.fieldErrors;
-    title = body.error;
-    message = body.message || body.error || "";
+    if (typeof body.error === "object" && body.error !== null) {
+      title = body.error.code;
+      message = body.error.message || "";
+    } else {
+      title = body.error;
+      message = body.message || body.error || "";
+    }
   } else if (typeof data === "string" && data.trim()) {
     message = data;
   }
