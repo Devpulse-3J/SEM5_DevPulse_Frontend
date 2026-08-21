@@ -1,19 +1,26 @@
 export type PRStatus = "open" | "merged" | "closed" | "draft";
 export type PRRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
+export type PRReviewState =
+  | "pending"
+  | "approved"
+  | "changes_requested"
+  | "commented"
+  | "dismissed";
+
 export interface PRReview {
   id: string;
   reviewerName: string;
-  reviewerAvatar?: string;
-  state: "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "PENDING";
-  submittedAt?: string;
+  reviewerAvatar: string | null;
+  state: PRReviewState;
+  submittedAt: string | null;
 }
 
 export interface PRCheck {
   id: string;
   name: string;
   status: "SUCCESS" | "FAILURE" | "IN_PROGRESS" | "QUEUED";
-  url?: string;
+  url: string | null;
 }
 
 export interface PRRiskFactor {
@@ -33,29 +40,28 @@ export interface PullRequest {
   id: string;
   number: number;
   title: string;
-  description: string;
+  description: string | null;
   author: string;
-  authorAvatar?: string;
+  authorAvatar: string | null;
   repositoryId: string;
   repositoryName: string;
   status: PRStatus;
-  headBranch: string;
+  headBranch: string | null;
   baseBranch: string;
   additions: number;
   deletions: number;
   changedFiles: number;
-  url: string;
+  url: string | null;
   createdAt: string;
   updatedAt: string;
-  mergedAt?: string;
+  mergedAt: string | null;
   reviews: PRReview[];
   checks: PRCheck[];
-  riskAnalysis: PRRiskAnalysis;
+  riskAnalysis: PRRiskAnalysis | null;
 }
 
 export interface PRFilterState {
   search: string;
   status: PRStatus | "all";
-  riskLevel: PRRiskLevel | "all";
   repositoryId: string | "all";
 }

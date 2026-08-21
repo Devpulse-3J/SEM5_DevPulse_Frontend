@@ -1,33 +1,71 @@
-import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+"use client";
 
-/**
- * PR risk detail.
- *
- * The previous version rendered a hardcoded `pr` object and ignored its route
- * param entirely — every PR id showed the same fabricated "#4128". The param is
- * now read and displayed so the route is at least honest about what was asked
- * for, but there is no endpoint to resolve it.
- */
-export default async function PullRequestDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+import { useParams } from "next/navigation";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { usePullRequest } from "@/hooks/usePullRequests";
+import { PRRiskCard } from "@/features/pullRequests/PRRiskCard";
+import { Card } from "@/components/ui/Card";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+import { Spinner } from "@/components/ui/Spinner";
+
+export default function PullRequestDetailPage() {
+  const params = useParams<{ id: string }>();
+  const activeProject = useSelector((state: RootState) => state.dashboard.activeProject);
+  const query = usePullRequest(activeProject ? Number(activeProject.id) : undefined, params.id);
+
+  if (query.isPending) {
+    return <div className="flex min-h-[320px] items-center justify-center"><Spinner /></div>;
+  }
+
+  if (query.isError || !query.data) {
+    return (
+      <div className="p-6 md:p-7">
+        <FeatureUnavailable
+          title="Unable to load pull request"
+          message={query.error instanceof Error ? query.error.message : "The request failed."}
+        />
+      </div>
+    );
+  }
+
+  const pullRequest = query.data;
 
   return (
     <div className="flex flex-col gap-5 p-6 md:p-7">
       <div>
         <h1 className="text-[22px] font-bold tracking-tight text-ink">
-          Pull request #{id}
+          Pull request #{pullRequest.number}
         </h1>
-        <p className="mt-1 font-mono text-xs text-subtle">Risk detail</p>
+        <p className="mt-1 font-mono text-xs text-subtle">
+          {pullRequest.repositoryName} · {pullRequest.status}
+        </p>
       </div>
 
-      <FeatureUnavailable
-        title="Pull request detail is not available yet"
-        message="Fetching a pull request requires metrics-service, and its risk breakdown requires analytics-service; neither is implemented yet."
-      />
+      <Card className="grid gap-4 md:grid-cols-2">
+        <div>
+          <p className="text-[11px] uppercase text-subtle">Title</p>
+          <p className="mt-1 text-sm font-semibold text-ink">{pullRequest.title}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-subtle">Author</p>
+          <p className="mt-1 text-sm text-ink">{pullRequest.author}</p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-subtle">Branches</p>
+          <p className="mt-1 font-mono text-xs text-ink">
+            {pullRequest.headBranch ?? "unknown"} → {pullRequest.baseBranch}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase text-subtle">Change size</p>
+          <p className="mt-1 font-mono text-xs text-ink">
+            +{pullRequest.additions} / −{pullRequest.deletions} · {pullRequest.changedFiles} files
+          </p>
+        </div>
+      </Card>
+
+      <PRRiskCard pullRequest={pullRequest} />
     </div>
   );
 }

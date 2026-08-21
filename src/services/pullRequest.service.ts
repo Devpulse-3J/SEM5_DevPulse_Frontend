@@ -1,34 +1,33 @@
+import { apiClient, ApiError } from "./api-client";
 import { NotImplementedError } from "@/lib/errors";
 import type { PullRequest, PRRiskAnalysis } from "@/types/pullRequest";
 
-/**
- * Pull requests and ML risk scoring — NO BACKEND.
- *
- * /api/metrics/prs does not exist (metrics-service is an empty entrypoint) and
- * neither does /api/analytics/prs/{id}/risk.
- */
-const BLOCKED_ON = "metrics-service";
-
 export interface PullRequestQuery {
-  projectId?: number;
-  repositoryId?: string;
-  status?: string;
-  riskLevel?: string;
+  projectId: number;
+  limit?: number;
+  offset?: number;
 }
 
 export const pullRequestService = {
-  async getPullRequests(_query: PullRequestQuery = {}): Promise<PullRequest[]> {
-    void _query;
-    throw new NotImplementedError("Pull requests", BLOCKED_ON);
+  getPullRequests(query: PullRequestQuery): Promise<PullRequest[]> {
+    return apiClient.get<PullRequest[]>("/api/metrics/prs", { params: { ...query } });
   },
 
-  async getMyPullRequests(): Promise<PullRequest[]> {
-    throw new NotImplementedError("Pull requests", BLOCKED_ON);
+  async getMyPullRequests(
+    query: PullRequestQuery,
+    authorName: string,
+  ): Promise<PullRequest[]> {
+    const pullRequests = await this.getPullRequests(query);
+    return pullRequests.filter((pullRequest) => pullRequest.author === authorName);
   },
 
-  async getPullRequestById(_id: string): Promise<PullRequest> {
-    void _id;
-    throw new NotImplementedError("Pull request detail", BLOCKED_ON);
+  async getPullRequestById(query: PullRequestQuery, id: string): Promise<PullRequest> {
+    const pullRequests = await this.getPullRequests({ ...query, limit: 500, offset: 0 });
+    const pullRequest = pullRequests.find((item) => item.id === id);
+    if (!pullRequest) {
+      throw new ApiError(404, `Pull request ${id} was not returned for this project.`);
+    }
+    return pullRequest;
   },
 
   async getRiskAnalysis(_id: string): Promise<PRRiskAnalysis> {

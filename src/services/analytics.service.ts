@@ -1,10 +1,10 @@
 import { NotImplementedError } from "@/lib/errors";
 import type {
-  WorkloadEntry,
   EffortSlice,
   CycleStage,
   ReviewBottleneck,
 } from "@/types/analytics";
+import type { WorkloadEntry } from "@/types/dora";
 
 /**
  * Team analytics — NO BACKEND.
