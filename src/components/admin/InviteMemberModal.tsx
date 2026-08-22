@@ -53,7 +53,7 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
     <Modal open={open} onClose={handleClose}>
       <ModalHeader
         title="Invite Member"
-        description="Not sent — there is no invitation endpoint yet."
+        description="Local only — the invite is not sent, and the member stays pending."
         onClose={handleClose}
       />
       <form onSubmit={handleSubmit}>
