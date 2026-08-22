@@ -3,33 +3,84 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PROJECT_ROLES } from "@/lib/constants";
+import { validateEmail } from "@/lib/validators";
+import { projectService } from "@/services/project.service";
+import type { ProjectRoleLabel } from "@/types/adminProject";
 
 /**
  * Admin → Members & Roles.
  *
- * UI SCAFFOLD ONLY — there is no backend for this yet.
+ * The invite form posts to POST /api/projects/{id}/invite via
+ * `projectService.inviteMember`. Admin-only: a non-admin caller gets a 403 and
+ * an email already owned by another company gets a 409, so the form stays open
+ * and keeps its values on failure — both rejections are worth re-reading with
+ * the input still on screen.
  *
- * TODO: wire to an invitation endpoint when one exists. It needs at minimum
- * { email, projectId, role } where role is "manager" | "developer", matching
- * the per-project roles returned by GET /api/auth/me. Until then `handleSubmit`
- * does not clear the form or claim the invite was sent.
- *
- * Note: today a new user joins by registering with your company id — there is
- * no invitation flow on the backend at all.
+ * There is still no endpoint that lists every user in a company; members are
+ * listed per project on /admin/projects/{id}.
  */
 export default function UsersPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [role, setRole] = useState<string>(PROJECT_ROLES.DEVELOPER);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [role, setRole] = useState<ProjectRoleLabel>("DEVELOPER");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    projectId?: string;
+  }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setFieldErrors({});
+    setSubmitError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setNotice(
-      "Not connected yet — there is no invitation endpoint on the backend. Your input has been kept in the form."
-    );
+    setSubmitError(null);
+    setSuccessNotice(null);
+
+    const trimmedEmail = email.trim();
+    const trimmedProjectId = projectId.trim();
+    const errors: { email?: string; projectId?: string } = {};
+
+    const emailError = validateEmail(trimmedEmail);
+    if (emailError) errors.email = emailError;
+    if (!trimmedProjectId) {
+      errors.projectId = "Project id is required";
+    } else if (!/^\d+$/.test(trimmedProjectId)) {
+      errors.projectId = "Project id must be a number";
+    }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsSubmitting(true);
+    try {
+      // `role` is already UPPERCASE — the gateway's enum binding is
+      // case-sensitive and answers a lowercase value with a 500, not a 400.
+      await projectService.inviteMember(trimmedProjectId, {
+        email: trimmedEmail,
+        role,
+      });
+      setSuccessNotice(
+        `${trimmedEmail} was invited to project ${trimmedProjectId} as ${role.toLowerCase()}.`
+      );
+      setEmail("");
+      setProjectId("");
+      setRole("DEVELOPER");
+      setIsFormOpen(false);
+    } catch (error: unknown) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Could not send the invite."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,10 +92,20 @@ export default function UsersPage() {
             Organisation members, roles, and access permissions
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => setIsFormOpen((v) => !v)}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => (isFormOpen ? closeForm() : setIsFormOpen(true))}
+        >
           {isFormOpen ? "Cancel" : "+ Invite Member"}
         </Button>
       </div>
+
+      {successNotice && !isFormOpen && (
+        <p role="status" className="text-xs text-success">
+          {successNotice}
+        </p>
+      )}
 
       {isFormOpen && (
         <form
@@ -54,7 +115,8 @@ export default function UsersPage() {
           <div>
             <h2 className="text-[15px] font-bold">Invite Member</h2>
             <p className="mt-1 text-[11px] text-subtle">
-              Not wired to the backend yet — no invitation endpoint exists.
+              Only company admins can invite. The invitee must not already belong
+              to another company.
             </p>
           </div>
 
@@ -63,7 +125,14 @@ export default function UsersPage() {
             type="email"
             placeholder="newmember@yourcompany.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            error={fieldErrors.email}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (fieldErrors.email) {
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }
+            }}
           />
 
           <Input
@@ -71,7 +140,14 @@ export default function UsersPage() {
             type="number"
             placeholder="1"
             value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
+            error={fieldErrors.projectId}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              setProjectId(e.target.value);
+              if (fieldErrors.projectId) {
+                setFieldErrors((prev) => ({ ...prev, projectId: undefined }));
+              }
+            }}
           />
 
           <div className="flex flex-col gap-1.5">
@@ -81,11 +157,12 @@ export default function UsersPage() {
             <select
               id="invite-role"
               value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="h-9 w-full cursor-pointer rounded-lg border border-border bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/40"
+              disabled={isSubmitting}
+              onChange={(e) => setRole(e.target.value as ProjectRoleLabel)}
+              className="h-9 w-full cursor-pointer rounded-lg border border-border bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/40 disabled:opacity-60"
             >
-              <option value={PROJECT_ROLES.MANAGER}>manager</option>
-              <option value={PROJECT_ROLES.DEVELOPER}>developer</option>
+              <option value="MANAGER">manager</option>
+              <option value="DEVELOPER">developer</option>
             </select>
             <p className="text-[11px] text-subtle">
               Roles are per project — the same person can be a manager on one and a
@@ -93,9 +170,9 @@ export default function UsersPage() {
             </p>
           </div>
 
-          {notice && (
-            <p role="status" className="text-[11px] text-warning">
-              {notice}
+          {submitError && (
+            <p role="alert" className="text-[11px] text-danger">
+              {submitError}
             </p>
           )}
 
@@ -104,14 +181,18 @@ export default function UsersPage() {
               type="button"
               variant="secondary"
               size="md"
-              onClick={() => {
-                setIsFormOpen(false);
-                setNotice(null);
-              }}
+              disabled={isSubmitting}
+              onClick={closeForm}
             >
               Close
             </Button>
-            <Button type="submit" variant="primary" size="md">
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
               Send Invite
             </Button>
           </div>
@@ -121,8 +202,9 @@ export default function UsersPage() {
       <div className="rounded-panel border border-dashed border-border p-8 text-center">
         <h2 className="text-sm font-semibold text-ink">No members to list</h2>
         <p className="mx-auto mt-1.5 max-w-md text-xs text-muted">
-          There is no endpoint that lists users in a company. New users currently
-          join by registering with your company id.
+          There is no endpoint that lists every user in a company. Members are
+          listed per project — open a project from Projects to see and manage its
+          members.
         </p>
       </div>
     </div>
