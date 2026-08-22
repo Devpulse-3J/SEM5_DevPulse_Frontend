@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -48,6 +48,7 @@ export default function ProjectDetailPage() {
     syncRepo,
     cycleGithubStatus,
     inviteMember,
+    refreshMembers,
     changeMemberRole,
     removeMember,
   } = useAdminProjects();
@@ -62,6 +63,15 @@ export default function ProjectDetailPage() {
   const [pendingRemoval, setPendingRemoval] = useState<ProjectMember | null>(
     null
   );
+
+  // Members are fetched here, not by the provider's project refresh — the list
+  // endpoint returns a count only. Guarded on `project` so a bad id renders the
+  // not-found panel instead of firing a doomed request.
+  const projectExists = project !== undefined;
+  useEffect(() => {
+    if (!projectExists) return;
+    void refreshMembers(projectId);
+  }, [projectExists, projectId, refreshMembers]);
 
   // A project created in a previous session, or a hand-typed id: the provider
   // reseeds on reload, so locally created ids do not survive one.
@@ -97,10 +107,10 @@ export default function ProjectDetailPage() {
     router.push("/admin/projects");
   };
 
-  const handleInvite = (data: InviteMemberRequest) => {
+  // The modal closes itself once the POST resolves, and stays open on a
+  // rejection so the form can be corrected and resubmitted.
+  const handleInvite = (data: InviteMemberRequest) =>
     inviteMember(projectId, data);
-    setIsInviteOpen(false);
-  };
 
   const handleChangeRole = (memberId: string, role: ProjectRoleLabel) => {
     changeMemberRole(projectId, memberId, role);

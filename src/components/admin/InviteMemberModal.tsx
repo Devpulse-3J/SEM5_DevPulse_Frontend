@@ -16,13 +16,14 @@ import type { InviteMemberRequest, ProjectRoleLabel } from "@/types/adminProject
 export interface InviteMemberModalProps {
   open: boolean;
   onClose: () => void;
-  onInvite: (data: InviteMemberRequest) => void;
+  onInvite: (data: InviteMemberRequest) => Promise<void>;
 }
 
 export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModalProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ProjectRoleLabel>("DEVELOPER");
   const [emailError, setEmailError] = useState<string | undefined>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => {
     setEmail("");
@@ -35,8 +36,9 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     // Same rule the server enforces on register — see lib/validators.
     const error = validateEmail(email);
@@ -45,15 +47,25 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
       return;
     }
 
-    onInvite({ email: email.trim(), role });
-    reset();
+    setIsSubmitting(true);
+    try {
+      await onInvite({ email: email.trim(), role });
+      // Only clear on success. A rejected invite (403 non-admin, 409 email
+      // belongs to another company) leaves the form filled in to retry.
+      reset();
+      onClose();
+    } catch {
+      // The provider has already raised the error toast.
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Modal open={open} onClose={handleClose}>
       <ModalHeader
         title="Invite Member"
-        description="Local only — the invite is not sent, and the member stays pending."
+        description="Adds the person to this project. Company admins only."
         onClose={handleClose}
       />
       <form onSubmit={handleSubmit}>
@@ -97,10 +109,16 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
         </ModalBody>
 
         <ModalFooter>
-          <Button type="button" variant="secondary" size="md" onClick={handleClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="md">
+          <Button type="submit" variant="primary" size="md" loading={isSubmitting}>
             Send Invite
           </Button>
         </ModalFooter>

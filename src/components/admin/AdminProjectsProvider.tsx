@@ -13,7 +13,10 @@ import type { ReactNode } from "react";
 import { Toast } from "@/components/notifications/Toast";
 import type { ToastMessage } from "@/store/notificationSlice";
 import { projectService } from "@/services/project.service";
-import type { ProjectApiResponse } from "@/services/project.service";
+import type {
+  ProjectApiResponse,
+  ProjectMemberApiResponse,
+} from "@/services/project.service";
 import {
   normaliseGithubRepoUrl,
   parseGithubRepoUrl,
@@ -71,6 +74,32 @@ function mapApiProjectRepo(project: ProjectApiResponse): LinkedRepo | undefined 
   };
 }
 
+function mapApiMember(
+  member: ProjectMemberApiResponse,
+  index: number
+): ProjectMember {
+  const id = String(
+    member.memberId ?? member.id ?? member.userId ?? `member-${index}`
+  );
+  const email = member.email ?? "";
+  const role: ProjectRoleLabel =
+    String(member.role ?? "").toUpperCase() === "MANAGER"
+      ? "MANAGER"
+      : "DEVELOPER";
+  return {
+    id,
+    userId: String(member.userId ?? id),
+    email,
+    // No real name until the invite is accepted — the email is all we know.
+    fullName: member.fullName ?? member.name ?? email.split("@")[0] ?? "Unknown",
+    role,
+    joinedAt: member.joinedAt ?? member.createdAt ?? new Date().toISOString(),
+    status: String(member.status ?? "").toUpperCase() === "PENDING"
+      ? "PENDING"
+      : "ACTIVE",
+  };
+}
+
 interface AdminProjectsContextValue {
   projects: Project[];
   isLoadingProjects: boolean;
@@ -89,7 +118,8 @@ interface AdminProjectsContextValue {
   syncRepo: (projectId: string) => void;
   cycleGithubStatus: (projectId: string) => void;
 
-  inviteMember: (projectId: string, data: InviteMemberRequest) => void;
+  inviteMember: (projectId: string, data: InviteMemberRequest) => Promise<void>;
+  refreshMembers: (projectId: string) => Promise<void>;
   changeMemberRole: (
     projectId: string,
     memberId: string,
@@ -194,6 +224,35 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => void refreshProjects(), 0);
     return () => clearTimeout(timer);
   }, [refreshProjects]);
+
+  /**
+   * Members are NOT loaded by `refreshProjects` — the list endpoint carries a
+   * count, not the people. The detail page calls this on mount, and every
+   * member mutation re-runs it so the list reflects the server, not a guess.
+   */
+  const refreshMembers = useCallback(
+    async (projectId: string) => {
+      try {
+        const response = await projectService.getMembers(projectId);
+        setMembersByProject((prev) => ({
+          ...prev,
+          [projectId]: response.map(mapApiMember),
+        }));
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId
+              ? { ...project, memberCount: response.length }
+              : project
+          )
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not load members.";
+        showToast("error", "Members could not be loaded", message);
+      }
+    },
+    [showToast]
+  );
 
   const getProject = useCallback(
     (projectId: string) => projects.find((p) => p.id === projectId),
@@ -404,42 +463,34 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // TODO: Replace with `projectService.inviteMember(projectId, data)`
-  //       Endpoint: POST /api/projects/{id}/invite
+  /**
+   * POST /api/projects/{id}/invite.
+   *
+   * Rethrows so the modal can stay open on failure — the two rejections that
+   * actually happen (403 non-admin, 409 email owned by another company) are
+   * both worth re-reading with the form still on screen.
+   */
   const inviteMember = useCallback(
-    (projectId: string, data: InviteMemberRequest) => {
-      console.log("[TODO API] Invite member:", { projectId, ...data });
-
-      const member: ProjectMember = {
-        id: `local-m-${Date.now()}`,
-        userId: `local-u-${Date.now()}`,
-        email: data.email,
-        // No real name until the invite is accepted — the email is all we know.
-        fullName: data.email.split("@")[0],
-        role: data.role,
-        joinedAt: new Date().toISOString(),
-        status: "PENDING",
-      };
-
-      setMembersByProject((prev) => ({
-        ...prev,
-        [projectId]: [...(prev[projectId] ?? []), member],
-      }));
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === projectId
-            ? { ...project, memberCount: project.memberCount + 1 }
-            : project
-        )
-      );
-
-      showToast(
-        "success",
-        "Invite queued",
-        `${data.email} added locally as ${data.role} (pending).`
-      );
+    async (projectId: string, data: InviteMemberRequest): Promise<void> => {
+      try {
+        await projectService.inviteMember(projectId, {
+          email: data.email,
+          role: data.role,
+        });
+        await refreshMembers(projectId);
+        showToast(
+          "success",
+          "Invite sent",
+          `${data.email} invited as ${data.role}.`
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not send the invite.";
+        showToast("error", "Invite failed", message);
+        throw error;
+      }
     },
-    [showToast]
+    [refreshMembers, showToast]
   );
 
   // TODO: Replace with `projectService.updateMemberRole(projectId, userId, role)`
@@ -513,6 +564,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       changeMemberRole,
       removeMember,
       refreshProjects,
+      refreshMembers,
       showToast,
     }),
     [
@@ -533,6 +585,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       changeMemberRole,
       removeMember,
       refreshProjects,
+      refreshMembers,
       showToast,
     ]
   );
