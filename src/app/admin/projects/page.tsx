@@ -12,12 +12,8 @@ import type { CreateProjectRequest, Project } from "@/types/adminProject";
 /**
  * Admin → Projects (list).
  *
- * UI is complete; the backend is not. Every handler goes through
- * `AdminProjectsProvider`, whose mutators log under `[TODO API]` and update
- * local state — grep that file for the endpoints they will become.
- *
- * Rows are seeded from `lib/mock/projects.ts`. A full page reload restores the
- * seed; "Reset demo data" does the same without reloading.
+ * Projects are fetched and created through the API by
+ * `AdminProjectsProvider`.
  */
 
 function formatDate(iso: string): string {
@@ -31,17 +27,18 @@ function formatDate(iso: string): string {
 export default function ProjectsPage() {
   const {
     projects,
+    isLoadingProjects,
     reposByProject,
     createProject,
     deleteProject,
-    resetDemoData,
+    refreshProjects,
   } = useAdminProjects();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
 
-  const handleCreate = (data: CreateProjectRequest) => {
-    createProject(data);
+  const handleCreate = async (data: CreateProjectRequest) => {
+    await createProject(data);
     setIsCreateOpen(false);
   };
 
@@ -61,8 +58,13 @@ export default function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <Button variant="secondary" size="md" onClick={resetDemoData}>
-            Reset demo data
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => void refreshProjects()}
+            loading={isLoadingProjects}
+          >
+            Refresh
           </Button>
           <Button
             variant="primary"
@@ -74,19 +76,15 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      <div className="rounded-panel border border-dashed border-border px-4 py-2.5">
-        <p className="text-[11px] text-subtle">
-          Mock data. There is no <code>/api/projects</code> endpoint yet — every
-          change here lives in memory and is lost on reload.
-        </p>
-      </div>
-
-      {projects.length === 0 ? (
+      {isLoadingProjects && projects.length === 0 ? (
+        <div className="rounded-panel border border-border p-8 text-center text-sm text-muted">
+          Loading projects…
+        </div>
+      ) : projects.length === 0 ? (
         <div className="rounded-panel border border-dashed border-border p-8 text-center">
           <h2 className="text-sm font-semibold text-ink">No projects</h2>
           <p className="mx-auto mt-1.5 max-w-md text-xs text-muted">
-            You deleted every seeded project. Use “Reset demo data” to bring
-            them back.
+            Create your first project to connect its GitHub repository.
           </p>
         </div>
       ) : (

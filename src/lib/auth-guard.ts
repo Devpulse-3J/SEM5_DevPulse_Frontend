@@ -47,13 +47,17 @@ export function useRequireAdmin(): { isChecking: boolean; isAllowed: boolean } {
   const { isAuthed } = useRequireAuth();
   const user = useSelector((s: RootState) => s.auth.user);
 
-  const isAllowed = isAuthed && isCompanyAdmin(user);
+  // On a hard refresh the token is available in localStorage before Redux has
+  // rehydrated the stored user/profile. Do not interpret that temporary null
+  // user as a non-admin and redirect away from /admin prematurely.
+  const hasResolvedUser = user !== null;
+  const isAllowed = isAuthed && hasResolvedUser && isCompanyAdmin(user);
 
   useEffect(() => {
-    if (isAuthed && !isCompanyAdmin(user)) {
+    if (isAuthed && hasResolvedUser && !isCompanyAdmin(user)) {
       router.replace("/dashboard");
     }
-  }, [isAuthed, user, router]);
+  }, [hasResolvedUser, isAuthed, user, router]);
 
-  return { isChecking: !isAllowed, isAllowed };
+  return { isChecking: !isAuthed || !hasResolvedUser, isAllowed };
 }

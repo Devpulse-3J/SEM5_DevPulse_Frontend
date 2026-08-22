@@ -12,11 +12,8 @@ import {
 import type { ReactNode } from "react";
 import { Toast } from "@/components/notifications/Toast";
 import type { ToastMessage } from "@/store/notificationSlice";
-import {
-  cloneSeedMembers,
-  cloneSeedProjects,
-  cloneSeedRepos,
-} from "@/lib/mock/projects";
+import { projectService } from "@/services/project.service";
+import type { ProjectApiResponse } from "@/services/project.service";
 import {
   normaliseGithubRepoUrl,
   parseGithubRepoUrl,
@@ -41,17 +38,42 @@ import type {
  * impossible to demo. The state still IS `useState` — this only lifts it above
  * the route boundary. No store library is involved.
  *
- * A full page reload still resets to the seed data, by design.
- *
- * Every mutator here is a placeholder: it logs under `[TODO API]` and updates
- * local state. The TODO comment above each names the endpoint that replaces it.
+ * Mutators without a backend endpoint still update local state. Project
+ * creation and GitHub linking are persisted through `projectService`.
  */
 
 /** How long the mocked sync sits in SYNCING before settling. */
 const MOCK_SYNC_MS = 1800;
 
+function mapApiProject(project: ProjectApiResponse): Project {
+  return {
+    id: String(project.projectId),
+    name: project.projectName,
+    description: project.description,
+    jiraProjectKey: project.jiraProjectKey,
+    githubRepoUrl: project.githubRepoUrl,
+    memberCount: project.memberCount ?? 0,
+    createdAt: project.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function mapApiProjectRepo(project: ProjectApiResponse): LinkedRepo | undefined {
+  if (!project.githubRepoUrl) return undefined;
+  const url = normaliseGithubRepoUrl(project.githubRepoUrl);
+  const parsed = parseGithubRepoUrl(url);
+  return {
+    id: `repo-${project.projectId}`,
+    projectId: String(project.projectId),
+    url,
+    owner: parsed?.owner ?? "unknown",
+    name: parsed?.name ?? "unknown",
+    status: "CONNECTED",
+  };
+}
+
 interface AdminProjectsContextValue {
   projects: Project[];
+  isLoadingProjects: boolean;
   reposByProject: Record<string, LinkedRepo | undefined>;
   membersByProject: Record<string, ProjectMember[]>;
 
@@ -59,7 +81,7 @@ interface AdminProjectsContextValue {
   getRepo: (projectId: string) => LinkedRepo | undefined;
   getMembers: (projectId: string) => ProjectMember[];
 
-  createProject: (data: CreateProjectRequest) => Project;
+  createProject: (data: CreateProjectRequest) => Promise<Project>;
   updateProject: (projectId: string, data: UpdateProjectRequest) => void;
   deleteProject: (projectId: string) => void;
 
@@ -75,7 +97,7 @@ interface AdminProjectsContextValue {
   ) => void;
   removeMember: (projectId: string, memberId: string) => void;
 
-  resetDemoData: () => void;
+  refreshProjects: () => Promise<void>;
   showToast: (
     type: ToastMessage["type"],
     title: string,
@@ -98,13 +120,14 @@ export function useAdminProjects(): AdminProjectsContextValue {
 }
 
 export function AdminProjectsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(cloneSeedProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [reposByProject, setReposByProject] = useState<
     Record<string, LinkedRepo | undefined>
-  >(cloneSeedRepos);
+  >({});
   const [membersByProject, setMembersByProject] = useState<
     Record<string, ProjectMember[]>
-  >(cloneSeedMembers);
+  >({});
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Pending mock-sync timers, so unmounting mid-sync does not fire setState on
@@ -139,6 +162,39 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  const refreshProjects = useCallback(async () => {
+    setIsLoadingProjects(true);
+    try {
+      const response = await projectService.getAll();
+      const loadedProjects = response.map(mapApiProject);
+      setProjects(loadedProjects);
+      setReposByProject(
+        Object.fromEntries(
+          response.map((project) => [
+            String(project.projectId),
+            mapApiProjectRepo(project),
+          ])
+        )
+      );
+      setMembersByProject((previous) =>
+        Object.fromEntries(
+          loadedProjects.map((project) => [project.id, previous[project.id] ?? []])
+        )
+      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Could not load projects.";
+      showToast("error", "Projects could not be loaded", message);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void refreshProjects(), 0);
+    return () => clearTimeout(timer);
+  }, [refreshProjects]);
+
   const getProject = useCallback(
     (projectId: string) => projects.find((p) => p.id === projectId),
     [projects]
@@ -154,51 +210,58 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     [membersByProject]
   );
 
-  // TODO: Replace with `projectService.create(data)` then
-  //       `projectService.linkGithub(id, { url, secret })`
-  //       Endpoints: POST /api/projects
-  //                  POST /api/projects/{id}/github/link
   const createProject = useCallback(
-    (data: CreateProjectRequest): Project => {
-      console.log("[TODO API] Create project + link GitHub:", data);
-
-      const id = `local-${Date.now()}`;
+    async (data: CreateProjectRequest): Promise<Project> => {
       const url = normaliseGithubRepoUrl(data.githubRepoUrl);
       const parsed = parseGithubRepoUrl(url);
+      try {
+        const created = await projectService.create({
+          projectName: data.name,
+          description: data.description,
+          githubRepoUrl: url,
+          jiraProjectKey: data.jiraProjectKey,
+        });
+        const id = String(created.projectId);
+        const linked = await projectService.linkGithub(id, {
+          repoUrl: url,
+          webhookSecret: data.webhookSecret,
+        });
 
-      const project: Project = {
-        id,
-        name: data.name,
-        description: data.description,
-        jiraProjectKey: data.jiraProjectKey,
-        githubRepoUrl: url,
-        memberCount: 0,
-        createdAt: new Date().toISOString(),
-      };
+        const project: Project = {
+          id,
+          name: created.projectName,
+          description: created.description ?? data.description,
+          jiraProjectKey: created.jiraProjectKey ?? data.jiraProjectKey,
+          githubRepoUrl: created.githubRepoUrl ?? url,
+          memberCount: created.memberCount ?? 0,
+          createdAt: created.createdAt ?? new Date().toISOString(),
+        };
+        const repo: LinkedRepo = {
+          id: String(linked.repositoryId ?? linked.id ?? `repo-${id}`),
+          projectId: id,
+          url: linked.repoUrl ?? linked.url ?? url,
+          owner: linked.owner ?? parsed?.owner ?? "unknown",
+          name: linked.repositoryName ?? linked.name ?? parsed?.name ?? "unknown",
+          webhookSecret: linked.webhookSecret ?? data.webhookSecret,
+          status: linked.status ?? "CONNECTED",
+          lastSyncedAt: linked.lastSyncedAt,
+        };
 
-      const repo: LinkedRepo = {
-        id: `local-repo-${Date.now()}`,
-        projectId: id,
-        url,
-        // The form will not submit an unparseable URL, so this fallback is
-        // defensive only.
-        owner: parsed?.owner ?? "unknown",
-        name: parsed?.name ?? "unknown",
-        webhookSecret: data.webhookSecret,
-        status: "CONNECTED",
-        lastSyncedAt: undefined,
-      };
-
-      setProjects((prev) => [...prev, project]);
-      setReposByProject((prev) => ({ ...prev, [id]: repo }));
-      setMembersByProject((prev) => ({ ...prev, [id]: [] }));
-
-      showToast(
-        "success",
-        "Project created",
-        `“${project.name}” added locally and linked to ${repo.owner}/${repo.name}.`
-      );
-      return project;
+        setProjects((prev) => [...prev, project]);
+        setReposByProject((prev) => ({ ...prev, [id]: repo }));
+        setMembersByProject((prev) => ({ ...prev, [id]: [] }));
+        showToast(
+          "success",
+          "Project created",
+          `“${project.name}” created and linked to ${repo.owner}/${repo.name}.`
+        );
+        return project;
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not create the project.";
+        showToast("error", "Project creation failed", message);
+        throw error;
+      }
     },
     [showToast]
   );
@@ -431,21 +494,10 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     [membersByProject, showToast]
   );
 
-  /** Restores the seed data so the same demo can be run again. */
-  const resetDemoData = useCallback(() => {
-    console.log("[TODO API] Reset demo data (no endpoint — local only)");
-    syncTimers.current.forEach((timer) => clearTimeout(timer));
-    syncTimers.current.clear();
-
-    setProjects(cloneSeedProjects());
-    setReposByProject(cloneSeedRepos());
-    setMembersByProject(cloneSeedMembers());
-    showToast("info", "Demo data reset", "All local changes discarded.");
-  }, [showToast]);
-
   const value = useMemo<AdminProjectsContextValue>(
     () => ({
       projects,
+      isLoadingProjects,
       reposByProject,
       membersByProject,
       getProject,
@@ -460,11 +512,12 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       inviteMember,
       changeMemberRole,
       removeMember,
-      resetDemoData,
+      refreshProjects,
       showToast,
     }),
     [
       projects,
+      isLoadingProjects,
       reposByProject,
       membersByProject,
       getProject,
@@ -479,7 +532,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       inviteMember,
       changeMemberRole,
       removeMember,
-      resetDemoData,
+      refreshProjects,
       showToast,
     ]
   );

@@ -65,6 +65,15 @@ export function parseGithubRepoUrl(
 const SECRET_ALPHABET =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 export const WEBHOOK_SECRET_LENGTH = 32;
+export const WEBHOOK_SECRET_MIN_LENGTH = 16;
+
+export function validateWebhookSecret(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (trimmed && trimmed.length < WEBHOOK_SECRET_MIN_LENGTH) {
+    return `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`;
+  }
+  return undefined;
+}
 
 /**
  * A 32-character webhook secret.

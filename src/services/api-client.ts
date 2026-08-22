@@ -155,17 +155,26 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     headers.set("Authorization", `Bearer ${resolvedToken}`);
   }
 
+  const method = fetchOptions.method ?? "GET";
+  const startedAt = Date.now();
+  console.log(`[API] ${method} ${url}`);
+
   let response: Response;
   try {
     response = await fetch(url, { ...fetchOptions, headers });
   } catch (error: unknown) {
     const raw = error instanceof Error ? error.message : String(error);
+    console.error(`[API] ${method} ${url} NETWORK_ERROR (${Date.now() - startedAt}ms)`, error);
     throw new ApiError(
       0,
       `Unable to reach the API at ${baseUrl}. Is the gateway running, and does its CORS config allow this origin?`,
       raw
     );
   }
+
+  console.log(
+    `[API] ${method} ${url} ${response.status} ${response.statusText} (${Date.now() - startedAt}ms)`
+  );
 
   // 204 and other empty successes have no body to parse.
   if (response.status === 204 || response.headers.get("content-length") === "0") {

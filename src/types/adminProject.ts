@@ -1,9 +1,8 @@
 /**
  * Admin → Projects UI types.
  *
- * These describe the shapes the admin Projects screens work with locally. No
- * endpoint serves them yet, so everything is seeded from `lib/mock/projects.ts`
- * and mutated in memory — see `components/admin/AdminProjectsProvider.tsx`.
+ * These describe the admin Projects screens and the project/GitHub-link API
+ * responses. Existing demo rows are still seeded from `lib/mock/projects.ts`.
  *
  * Kept separate from `src/types/project.ts`, which mirrors what
  * `GET /api/auth/me` actually returns (a project id and role, nothing more).

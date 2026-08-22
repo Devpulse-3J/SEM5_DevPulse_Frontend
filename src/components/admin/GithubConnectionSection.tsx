@@ -47,9 +47,8 @@ export function GithubConnectionSection({
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <p className="text-sm text-ink">No repository linked</p>
           <p className="mx-auto mt-1.5 max-w-md text-xs text-muted">
-            This project has no GitHub repository. Linking one after creation
-            needs <code>POST /api/projects/{"{id}"}/github/link</code>, which
-            does not exist yet.
+            This project has no GitHub repository linked. Use the project
+            creation flow to create and link a repository together.
           </p>
         </div>
       </section>
