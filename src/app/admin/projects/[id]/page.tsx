@@ -49,6 +49,7 @@ export default function ProjectDetailPage() {
     cycleGithubStatus,
     inviteMember,
     refreshMembers,
+    refreshRepoStatus,
     changeMemberRole,
     removeMember,
   } = useAdminProjects();
@@ -64,14 +65,13 @@ export default function ProjectDetailPage() {
     null
   );
 
-  // Members are fetched here, not by the provider's project refresh — the list
-  // endpoint returns a count only. Guarded on `project` so a bad id renders the
-  // not-found panel instead of firing a doomed request.
+  // Members and live repository status are fetched here when viewing project detail
   const projectExists = project !== undefined;
   useEffect(() => {
     if (!projectExists) return;
     void refreshMembers(projectId);
-  }, [projectExists, projectId, refreshMembers]);
+    void refreshRepoStatus(projectId);
+  }, [projectExists, projectId, refreshMembers, refreshRepoStatus]);
 
   // A project created in a previous session, or a hand-typed id: the provider
   // reseeds on reload, so locally created ids do not survive one.
@@ -180,6 +180,7 @@ export default function ProjectDetailPage() {
 
       {/* ── B. GitHub connection ── */}
       <GithubConnectionSection
+        projectId={projectId}
         repo={repo}
         onReconnect={() => reconnectGithub(projectId)}
         onSync={() => syncRepo(projectId)}

@@ -22,7 +22,11 @@ export type MemberStatus = "ACTIVE" | "PENDING";
  * Mocked GitHub link health. SYNCING is a transient state the "Trigger sync"
  * button drops into before returning to CONNECTED.
  */
-export type GithubConnectionStatus = "CONNECTED" | "DISCONNECTED" | "SYNCING";
+export type GithubConnectionStatus =
+  | "CONNECTED"
+  | "DISCONNECTED"
+  | "SYNCING"
+  | "ERROR";
 
 export interface Project {
   id: string;
@@ -73,8 +77,7 @@ export interface CreateProjectRequest {
   name: string;
   description?: string;
   jiraProjectKey?: string;
-  githubRepoUrl: string;
-  webhookSecret?: string;
+  githubRepoUrl?: string;
 }
 
 export interface UpdateProjectRequest {

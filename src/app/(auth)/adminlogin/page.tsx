@@ -15,8 +15,8 @@ function AdminLoginForm() {
   const { login, isLoading, error: authError, fieldErrors: serverFieldErrors, clearErrors } =
     useAuth();
 
-  const [email, setEmail] = useState<string>("admin@devpulse.io");
-  const [password, setPassword] = useState<string>("admin123");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [clientErrors, setClientErrors] = useState<{ email?: string; password?: string }>({});

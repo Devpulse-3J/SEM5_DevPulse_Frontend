@@ -45,8 +45,37 @@ import type {
  * creation and GitHub linking are persisted through `projectService`.
  */
 
-/** How long the mocked sync sits in SYNCING before settling. */
-const MOCK_SYNC_MS = 1800;
+/** How often to poll GET .../github/status while a sync is in flight. */
+const SYNC_POLL_MS = 1800;
+/** Give up polling after this many attempts (~1 min at SYNC_POLL_MS). */
+const MAX_SYNC_POLLS = 40;
+
+const LINKED_REPOS_KEY = "devpulse_linked_repos";
+
+function loadCachedRepos(): Record<string, LinkedRepo> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(LINKED_REPOS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCachedRepo(projectId: string, repo: LinkedRepo | undefined) {
+  if (typeof window === "undefined") return;
+  try {
+    const cached = loadCachedRepos();
+    if (repo) {
+      cached[projectId] = repo;
+    } else {
+      delete cached[projectId];
+    }
+    localStorage.setItem(LINKED_REPOS_KEY, JSON.stringify(cached));
+  } catch {
+    // ignore storage quota errors
+  }
+}
 
 function mapApiProject(project: ProjectApiResponse): Project {
   return {
@@ -114,12 +143,15 @@ interface AdminProjectsContextValue {
   updateProject: (projectId: string, data: UpdateProjectRequest) => void;
   deleteProject: (projectId: string) => void;
 
+  getConnectUrl: (projectId: string) => Promise<string>;
+  linkRepoUrl: (projectId: string, repoUrl: string) => Promise<void>;
   reconnectGithub: (projectId: string) => void;
   syncRepo: (projectId: string) => void;
   cycleGithubStatus: (projectId: string) => void;
 
   inviteMember: (projectId: string, data: InviteMemberRequest) => Promise<void>;
   refreshMembers: (projectId: string) => Promise<void>;
+  refreshRepoStatus: (projectId: string) => Promise<void>;
   changeMemberRole: (
     projectId: string,
     memberId: string,
@@ -154,7 +186,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [reposByProject, setReposByProject] = useState<
     Record<string, LinkedRepo | undefined>
-  >({});
+  >(() => loadCachedRepos());
   const [membersByProject, setMembersByProject] = useState<
     Record<string, ProjectMember[]>
   >({});
@@ -198,14 +230,14 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       const response = await projectService.getAll();
       const loadedProjects = response.map(mapApiProject);
       setProjects(loadedProjects);
-      setReposByProject(
-        Object.fromEntries(
-          response.map((project) => [
-            String(project.projectId),
-            mapApiProjectRepo(project),
-          ])
-        )
+      const cached = loadCachedRepos();
+      const serverRepos = Object.fromEntries(
+        response.map((project) => [
+          String(project.projectId),
+          mapApiProjectRepo(project) ?? cached[String(project.projectId)],
+        ])
       );
+      setReposByProject((prev) => ({ ...cached, ...serverRepos, ...prev }));
       setMembersByProject((previous) =>
         Object.fromEntries(
           loadedProjects.map((project) => [project.id, previous[project.id] ?? []])
@@ -271,8 +303,8 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
 
   const createProject = useCallback(
     async (data: CreateProjectRequest): Promise<Project> => {
-      const url = normaliseGithubRepoUrl(data.githubRepoUrl);
-      const parsed = parseGithubRepoUrl(url);
+      const url = data.githubRepoUrl ? normaliseGithubRepoUrl(data.githubRepoUrl) : undefined;
+      const parsed = url ? parseGithubRepoUrl(url) : undefined;
       try {
         const created = await projectService.create({
           projectName: data.name,
@@ -281,10 +313,21 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
           jiraProjectKey: data.jiraProjectKey,
         });
         const id = String(created.projectId);
-        const linked = await projectService.linkGithub(id, {
-          repoUrl: url,
-          webhookSecret: data.webhookSecret,
-        });
+        
+        let repo: LinkedRepo | undefined;
+        if (url) {
+          const linked = await projectService.linkGithub(id, { repoUrl: url });
+          repo = {
+            id: String(linked.repositoryId ?? linked.id ?? `repo-${id}`),
+            projectId: id,
+            url: linked.repoUrl ?? linked.url ?? url,
+            owner: linked.owner ?? parsed?.owner ?? "unknown",
+            name: linked.repositoryName ?? linked.name ?? parsed?.name ?? "unknown",
+            status: linked.status ?? "CONNECTED",
+            lastSyncedAt: linked.lastSyncedAt,
+          };
+          saveCachedRepo(id, repo);
+        }
 
         const project: Project = {
           id,
@@ -295,16 +338,6 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
           memberCount: created.memberCount ?? 0,
           createdAt: created.createdAt ?? new Date().toISOString(),
         };
-        const repo: LinkedRepo = {
-          id: String(linked.repositoryId ?? linked.id ?? `repo-${id}`),
-          projectId: id,
-          url: linked.repoUrl ?? linked.url ?? url,
-          owner: linked.owner ?? parsed?.owner ?? "unknown",
-          name: linked.repositoryName ?? linked.name ?? parsed?.name ?? "unknown",
-          webhookSecret: linked.webhookSecret ?? data.webhookSecret,
-          status: linked.status ?? "CONNECTED",
-          lastSyncedAt: linked.lastSyncedAt,
-        };
 
         setProjects((prev) => [...prev, project]);
         setReposByProject((prev) => ({ ...prev, [id]: repo }));
@@ -312,7 +345,9 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
         showToast(
           "success",
           "Project created",
-          `“${project.name}” created and linked to ${repo.owner}/${repo.name}.`
+          repo
+            ? `“${project.name}” created and linked to ${repo.owner}/${repo.name}.`
+            : `“${project.name}” created.`
         );
         return project;
       } catch (error: unknown) {
@@ -325,85 +360,186 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     [showToast]
   );
 
-  // TODO: Replace with `projectService.update(projectId, data)`
-  //       Endpoint: PUT /api/projects/{id}
+  /** GET /api/integrations/projects/{id}/github/status */
+  const refreshRepoStatus = useCallback(
+    async (projectId: string) => {
+      try {
+        const status = await projectService.githubStatus(projectId);
+        const urlRaw = status.url ?? status.repoUrl;
+        if (urlRaw || status.owner) {
+          const url = urlRaw ? normaliseGithubRepoUrl(urlRaw) : (reposByProject[projectId]?.url ?? "");
+          const parsed = parseGithubRepoUrl(url);
+          const repo: LinkedRepo = {
+            id: String(status.repositoryId ?? status.id ?? `repo-${projectId}`),
+            projectId,
+            url,
+            owner: status.owner ?? parsed?.owner ?? reposByProject[projectId]?.owner ?? "unknown",
+            name: status.repositoryName ?? status.name ?? parsed?.name ?? reposByProject[projectId]?.name ?? "unknown",
+            status: status.status ?? "CONNECTED",
+            lastSyncedAt: status.lastSyncedAt ?? reposByProject[projectId]?.lastSyncedAt,
+          };
+          saveCachedRepo(projectId, repo);
+          setReposByProject((prev) => ({ ...prev, [projectId]: repo }));
+          setProjects((prev) =>
+            prev.map((project) =>
+              project.id === projectId
+                ? { ...project, githubRepoUrl: url || project.githubRepoUrl }
+                : project
+            )
+          );
+        }
+      } catch {
+        // status endpoint might return error/404 if project has no repo linked yet
+      }
+    },
+    [reposByProject]
+  );
+
+  /** PUT /api/projects/{id} */
   const updateProject = useCallback(
-    (projectId: string, data: UpdateProjectRequest) => {
-      console.log("[TODO API] Update project:", { projectId, ...data });
+    async (projectId: string, data: UpdateProjectRequest) => {
+      try {
+        await projectService.update(projectId, {
+          projectName: data.name,
+          description: data.description,
+          jiraProjectKey: data.jiraProjectKey,
+        });
 
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === projectId
-            ? {
-                ...project,
-                name: data.name,
-                description: data.description,
-                jiraProjectKey: data.jiraProjectKey,
-              }
-            : project
-        )
-      );
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId
+              ? {
+                  ...project,
+                  name: data.name,
+                  description: data.description,
+                  jiraProjectKey: data.jiraProjectKey,
+                }
+              : project
+          )
+        );
 
-      showToast("success", "Project updated", `“${data.name}” saved locally.`);
+        showToast("success", "Project updated", `“${data.name}” saved.`);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not update the project.";
+        showToast("error", "Project update failed", message);
+      }
     },
     [showToast]
   );
 
-  // TODO: Replace with `projectService.remove(projectId)`
-  //       Endpoint: DELETE /api/projects/{id}
+  /** DELETE /api/projects/{id} */
   const deleteProject = useCallback(
-    (projectId: string) => {
+    async (projectId: string) => {
       const name = projects.find((p) => p.id === projectId)?.name ?? projectId;
-      console.log("[TODO API] Delete project:", { projectId, name });
+      try {
+        await projectService.remove(projectId);
 
-      setProjects((prev) => prev.filter((project) => project.id !== projectId));
-      setReposByProject((prev) => {
-        const next = { ...prev };
-        delete next[projectId];
-        return next;
-      });
-      setMembersByProject((prev) => {
-        const next = { ...prev };
-        delete next[projectId];
-        return next;
-      });
+        saveCachedRepo(projectId, undefined);
+        setProjects((prev) => prev.filter((project) => project.id !== projectId));
+        setReposByProject((prev) => {
+          const next = { ...prev };
+          delete next[projectId];
+          return next;
+        });
+        setMembersByProject((prev) => {
+          const next = { ...prev };
+          delete next[projectId];
+          return next;
+        });
 
-      showToast("success", "Project deleted", `“${name}” removed locally.`);
+        showToast("success", "Project deleted", `“${name}” removed.`);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not delete the project.";
+        showToast("error", "Project deletion failed", message);
+      }
     },
     [projects, showToast]
   );
 
-  // TODO: Replace with `projectService.linkGithub(projectId, { url, secret })`
-  //       Endpoint: POST /api/projects/{id}/github/link
+  /** GET /api/integrations/projects/{id}/github/connect-url */
+  const getConnectUrl = useCallback(async (projectId: string): Promise<string> => {
+    const res = await projectService.getConnectUrl(projectId);
+    return res.connectUrl;
+  }, []);
+
+  /** POST /api/integrations/projects/{id}/github/link */
+  const linkRepoUrl = useCallback(
+    async (projectId: string, repoUrl: string): Promise<void> => {
+      const url = normaliseGithubRepoUrl(repoUrl);
+      const parsed = parseGithubRepoUrl(url);
+      try {
+        const linked = await projectService.linkGithub(projectId, { repoUrl: url });
+        const repo: LinkedRepo = {
+          id: String(linked.repositoryId ?? linked.id ?? `repo-${projectId}`),
+          projectId,
+          url: linked.repoUrl ?? linked.url ?? url,
+          owner: linked.owner ?? parsed?.owner ?? "unknown",
+          name: linked.repositoryName ?? linked.name ?? parsed?.name ?? "unknown",
+          status: linked.status ?? "CONNECTED",
+          lastSyncedAt: linked.lastSyncedAt,
+        };
+        saveCachedRepo(projectId, repo);
+        setReposByProject((prev) => ({ ...prev, [projectId]: repo }));
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId
+              ? { ...project, githubRepoUrl: url }
+              : project
+          )
+        );
+        showToast(
+          "success",
+          "GitHub connected",
+          `${repo.owner}/${repo.name} linked successfully.`
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Failed to link repository.";
+        showToast("error", "Link failed", message);
+        throw error;
+      }
+    },
+    [showToast]
+  );
+
+  /** POST /api/integrations/projects/{id}/github/link */
   const reconnectGithub = useCallback(
-    (projectId: string) => {
+    async (projectId: string) => {
       const repo = reposByProject[projectId];
-      console.log("[TODO API] Reconnect GitHub:", {
-        projectId,
-        url: repo?.url,
-      });
+      if (!repo?.url) {
+        showToast("error", "Reconnect failed", "No repository URL found for project.");
+        return;
+      }
+      try {
+        await projectService.linkGithub(projectId, { repoUrl: repo.url });
 
-      setReposByProject((prev) => {
-        const current = prev[projectId];
-        if (!current) return prev;
-        return { ...prev, [projectId]: { ...current, status: "CONNECTED" } };
-      });
+        setReposByProject((prev) => {
+          const current = prev[projectId];
+          if (!current) return prev;
+          return { ...prev, [projectId]: { ...current, status: "CONNECTED" } };
+        });
 
-      showToast(
-        "success",
-        "GitHub reconnected",
-        repo ? `${repo.owner}/${repo.name} marked connected.` : "Marked connected."
-      );
+        showToast(
+          "success",
+          "GitHub reconnected",
+          `${repo.owner}/${repo.name} connected.`
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not reconnect GitHub.";
+        showToast("error", "Reconnect failed", message);
+      }
     },
     [reposByProject, showToast]
   );
 
-  // TODO: Replace with `projectService.syncGithub(projectId)`
-  //       Endpoint: POST /api/projects/{id}/github/sync
+  // POST /api/integrations/projects/{id}/github/sync, then poll
+  // GET .../github/status until the sync settles (CONNECTED) or fails (ERROR).
   const syncRepo = useCallback(
-    (projectId: string) => {
+    async (projectId: string) => {
       const repo = reposByProject[projectId];
-      console.log("[TODO API] Sync repo:", { projectId, url: repo?.url });
 
       setReposByProject((prev) => {
         const current = prev[projectId];
@@ -414,8 +550,80 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       const existing = syncTimers.current.get(projectId);
       if (existing) clearTimeout(existing);
 
-      const timer = setTimeout(() => {
+      const markError = (message: string) => {
         syncTimers.current.delete(projectId);
+        setReposByProject((prev) => {
+          const current = prev[projectId];
+          if (!current) return prev;
+          return { ...prev, [projectId]: { ...current, status: "ERROR" } };
+        });
+        showToast("error", "Sync failed", message);
+      };
+
+      const poll = async (attempt: number) => {
+        try {
+          const status = await projectService.githubStatus(projectId);
+          const nextStatus = status.status ?? "CONNECTED";
+
+          setReposByProject((prev) => {
+            const current = prev[projectId];
+            if (!current) return prev;
+            return {
+              ...prev,
+              [projectId]: {
+                ...current,
+                status: nextStatus,
+                lastSyncedAt: status.lastSyncedAt ?? current.lastSyncedAt,
+              },
+            };
+          });
+
+          if (nextStatus === "CONNECTED" || nextStatus === "ERROR") {
+            syncTimers.current.delete(projectId);
+            showToast(
+              nextStatus === "CONNECTED" ? "success" : "error",
+              nextStatus === "CONNECTED" ? "Sync finished" : "Sync failed",
+              nextStatus === "CONNECTED"
+                ? "GitHub data synced."
+                : "The sync did not complete. Check the integration service logs."
+            );
+            return;
+          }
+
+          if (attempt >= MAX_SYNC_POLLS) {
+            markError("Status polling timed out. Try triggering the sync again.");
+            return;
+          }
+
+          const timer = setTimeout(() => void poll(attempt + 1), SYNC_POLL_MS);
+          syncTimers.current.set(projectId, timer);
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : "Could not read sync status.";
+          markError(message);
+        }
+      };
+
+      try {
+        await projectService.syncGithub(projectId);
+        showToast("info", "Sync started", "Fetching GitHub data…");
+        const timer = setTimeout(() => void poll(0), SYNC_POLL_MS);
+        syncTimers.current.set(projectId, timer);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not start the sync.";
+        markError(message);
+      }
+    },
+    [reposByProject, showToast]
+  );
+
+  /** GET /api/integrations/projects/{id}/github/status */
+  const cycleGithubStatus = useCallback(
+    async (projectId: string) => {
+      try {
+        const status = await projectService.githubStatus(projectId);
+        const nextStatus = status.status ?? "CONNECTED";
         setReposByProject((prev) => {
           const current = prev[projectId];
           if (!current) return prev;
@@ -423,44 +631,23 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
             ...prev,
             [projectId]: {
               ...current,
-              status: "CONNECTED",
-              lastSyncedAt: new Date().toISOString(),
+              status: nextStatus,
+              lastSyncedAt: status.lastSyncedAt ?? current.lastSyncedAt,
             },
           };
         });
         showToast(
-          "success",
-          "Sync finished",
-          "Mock sync completed — no data was fetched."
+          "info",
+          "GitHub Status",
+          `Current GitHub status: ${nextStatus}`
         );
-      }, MOCK_SYNC_MS);
-
-      syncTimers.current.set(projectId, timer);
-      showToast("info", "Sync started", "Mock sync running…");
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not fetch GitHub status.";
+        showToast("error", "Status check failed", message);
+      }
     },
-    [reposByProject, showToast]
-  );
-
-  // TODO: Replace with `projectService.githubStatus(projectId)`
-  //       Endpoint: GET /api/projects/{id}/github/status
-  //       Until that exists this button just rotates the badge so all three
-  //       states are reachable in a demo.
-  const cycleGithubStatus = useCallback(
-    (projectId: string) => {
-      setReposByProject((prev) => {
-        const current = prev[projectId];
-        if (!current) return prev;
-        const order = ["CONNECTED", "SYNCING", "DISCONNECTED"] as const;
-        const next = order[(order.indexOf(current.status) + 1) % order.length];
-        console.log("[TODO API] Check GitHub status:", {
-          projectId,
-          from: current.status,
-          to: next,
-        });
-        return { ...prev, [projectId]: { ...current, status: next } };
-      });
-    },
-    []
+    [showToast]
   );
 
   /**
@@ -493,54 +680,60 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
     [refreshMembers, showToast]
   );
 
-  // TODO: Replace with `projectService.updateMemberRole(projectId, userId, role)`
-  //       Endpoint: PUT /api/projects/{id}/members/{userId}
+  /** PUT /api/projects/{id}/members/{memberId} */
   const changeMemberRole = useCallback(
-    (projectId: string, memberId: string, role: ProjectRoleLabel) => {
-      console.log("[TODO API] Change role:", { projectId, memberId, role });
+    async (projectId: string, memberId: string, role: ProjectRoleLabel) => {
+      try {
+        await projectService.updateMemberRole(projectId, memberId, role);
 
-      setMembersByProject((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] ?? []).map((member) =>
-          member.id === memberId ? { ...member, role } : member
-        ),
-      }));
+        setMembersByProject((prev) => ({
+          ...prev,
+          [projectId]: (prev[projectId] ?? []).map((member) =>
+            member.id === memberId ? { ...member, role } : member
+          ),
+        }));
 
-      showToast("success", "Role updated", `Member is now ${role}.`);
+        showToast("success", "Role updated", `Member is now ${role}.`);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not update member role.";
+        showToast("error", "Role update failed", message);
+      }
     },
     [showToast]
   );
 
-  // TODO: Replace with `projectService.removeMember(projectId, userId)`
-  //       Endpoint: DELETE /api/projects/{id}/members/{userId}
+  /** DELETE /api/projects/{id}/members/{memberId} */
   const removeMember = useCallback(
-    (projectId: string, memberId: string) => {
+    async (projectId: string, memberId: string) => {
       const member = (membersByProject[projectId] ?? []).find(
         (m) => m.id === memberId
       );
-      console.log("[TODO API] Remove member:", {
-        projectId,
-        memberId,
-        email: member?.email,
-      });
+      try {
+        await projectService.removeMember(projectId, memberId);
 
-      setMembersByProject((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] ?? []).filter((m) => m.id !== memberId),
-      }));
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === projectId
-            ? { ...project, memberCount: Math.max(0, project.memberCount - 1) }
-            : project
-        )
-      );
+        setMembersByProject((prev) => ({
+          ...prev,
+          [projectId]: (prev[projectId] ?? []).filter((m) => m.id !== memberId),
+        }));
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId
+              ? { ...project, memberCount: Math.max(0, project.memberCount - 1) }
+              : project
+          )
+        );
 
-      showToast(
-        "success",
-        "Member removed",
-        `${member?.email ?? "Member"} removed from the project.`
-      );
+        showToast(
+          "success",
+          "Member removed",
+          `${member?.email ?? "Member"} removed from the project.`
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not remove member.";
+        showToast("error", "Member removal failed", message);
+      }
     },
     [membersByProject, showToast]
   );
@@ -557,6 +750,8 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       createProject,
       updateProject,
       deleteProject,
+      getConnectUrl,
+      linkRepoUrl,
       reconnectGithub,
       syncRepo,
       cycleGithubStatus,
@@ -565,6 +760,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       removeMember,
       refreshProjects,
       refreshMembers,
+      refreshRepoStatus,
       showToast,
     }),
     [
@@ -578,6 +774,8 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       createProject,
       updateProject,
       deleteProject,
+      getConnectUrl,
+      linkRepoUrl,
       reconnectGithub,
       syncRepo,
       cycleGithubStatus,
@@ -586,6 +784,7 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
       removeMember,
       refreshProjects,
       refreshMembers,
+      refreshRepoStatus,
       showToast,
     ]
   );
