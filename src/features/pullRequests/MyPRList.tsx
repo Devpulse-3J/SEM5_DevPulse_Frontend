@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { PullRequest, PRStatus, PRRiskLevel } from "@/types/pullRequest";
+import type { PullRequest, PRStatus } from "@/types/pullRequest";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -14,7 +14,6 @@ interface MyPRListProps {
 export function MyPRList({ pullRequests }: MyPRListProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PRStatus | "all">("all");
-  const [riskFilter, setRiskFilter] = useState<PRRiskLevel | "all">("all");
 
   const filteredPrs = pullRequests.filter((pr) => {
     const matchesSearch =
@@ -22,8 +21,7 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
       pr.repositoryName.toLowerCase().includes(search.toLowerCase()) ||
       String(pr.number).includes(search);
     const matchesStatus = statusFilter === "all" || pr.status === statusFilter;
-    const matchesRisk = riskFilter === "all" || pr.riskAnalysis.riskLevel === riskFilter;
-    return matchesSearch && matchesStatus && matchesRisk;
+    return matchesSearch && matchesStatus;
   });
 
   const handleExport = () => {
@@ -34,8 +32,8 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
       Status: pr.status,
       Additions: pr.additions,
       Deletions: pr.deletions,
-      RiskLevel: pr.riskAnalysis.riskLevel,
-      RiskScore: pr.riskAnalysis.riskScore,
+      Reviews: pr.reviews.length,
+      Checks: pr.checks.length,
       CreatedAt: pr.createdAt,
     }));
     exportToCSV("my_pull_requests", rows);
@@ -58,20 +56,10 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
             className="rounded-[7px] border border-border bg-surface px-3 py-[7px] text-xs text-ink focus:outline-none focus:border-accent"
           >
             <option value="all">All Statuses</option>
+            <option value="draft">Draft</option>
             <option value="open">Open</option>
             <option value="merged">Merged</option>
             <option value="closed">Closed</option>
-          </select>
-          <select
-            value={riskFilter}
-            onChange={(e) => setRiskFilter(e.target.value as PRRiskLevel | "all")}
-            className="rounded-[7px] border border-border bg-surface px-3 py-[7px] text-xs text-ink focus:outline-none focus:border-accent"
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="CRITICAL">Critical</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
           </select>
         </div>
 
@@ -92,7 +80,7 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
               <th className="py-3 px-4">Repository</th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4">Changes</th>
-              <th className="py-3 px-4">Risk Level</th>
+              <th className="py-3 px-4">Reviews / Checks</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -108,16 +96,20 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
                 <tr key={pr.id} className="hover:bg-surface-raised/30 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex flex-col">
-                      <a
-                        href={pr.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-bold text-ink hover:text-accent font-sans"
-                      >
-                        #{pr.number} {pr.title}
-                      </a>
+                      {pr.url ? (
+                        <a
+                          href={pr.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-ink hover:text-accent font-sans"
+                        >
+                          #{pr.number} {pr.title}
+                        </a>
+                      ) : (
+                        <span className="font-bold text-ink">#{pr.number} {pr.title}</span>
+                      )}
                       <span className="text-[11px] text-subtle font-mono">
-                        {pr.headBranch} → {pr.baseBranch}
+                        {pr.headBranch ?? "unknown branch"} → {pr.baseBranch}
                       </span>
                     </div>
                   </td>
@@ -140,28 +132,23 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
                     <span className="text-danger">-{pr.deletions}</span>
                   </td>
                   <td className="py-3 px-4">
-                    <Badge
-                      variant={
-                        pr.riskAnalysis.riskLevel === "HIGH" ||
-                        pr.riskAnalysis.riskLevel === "CRITICAL"
-                          ? "danger"
-                          : pr.riskAnalysis.riskLevel === "MEDIUM"
-                          ? "warning"
-                          : "success"
-                      }
-                    >
-                      {pr.riskAnalysis.riskLevel} ({pr.riskAnalysis.riskScore})
-                    </Badge>
+                    <span className="font-mono text-[11px] text-muted">
+                      {pr.reviews.length} / {pr.checks.length}
+                    </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <a
-                      href={pr.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-accent hover:underline font-semibold"
-                    >
-                      View ↗
-                    </a>
+                    {pr.url ? (
+                      <a
+                        href={pr.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent hover:underline font-semibold"
+                      >
+                        View ↗
+                      </a>
+                    ) : (
+                      <span className="text-subtle">No link</span>
+                    )}
                   </td>
                 </tr>
               ))

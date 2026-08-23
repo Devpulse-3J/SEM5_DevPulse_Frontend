@@ -1,135 +1,199 @@
-export const metadata = { title: "Projects — DevPulse Admin" };
+"use client";
 
-const PROJECTS = [
-  {
-    name: "platform-core",
-    repo: "nimbuslabs/platform-core",
-    status: "ACTIVE",
-    members: 12,
-  },
-  {
-    name: "payments-svc",
-    repo: "nimbuslabs/payments-svc",
-    status: "ACTIVE",
-    members: 8,
-  },
-  {
-    name: "mobile-ios",
-    repo: "nimbuslabs/mobile-ios",
-    status: "ACTIVE",
-    members: 6,
-  },
-  {
-    name: "data-pipeline",
-    repo: "nimbuslabs/data-pipeline",
-    status: "ARCHIVED",
-    members: 4,
-  },
-];
+import { useState } from "react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { CreateProjectModal } from "@/components/admin/CreateProjectModal";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useAdminProjects } from "@/components/admin/AdminProjectsProvider";
+import type { CreateProjectRequest, Project } from "@/types/adminProject";
 
-function StatusBadge({ status }: { status: string }) {
-  const isActive = status === "ACTIVE";
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised"
-      style={{ color: isActive ? "oklch(0.72 0.16 155)" : "oklch(0.52 0.02 260)" }}
-    >
-      <span
-        className="w-1.5 h-1.5 rounded-full"
-        style={{ background: isActive ? "oklch(0.72 0.16 155)" : "oklch(0.52 0.02 260)" }}
-      />
-      {status}
-    </span>
-  );
+/**
+ * Admin → Projects (list).
+ *
+ * Projects are fetched and created through the API by
+ * `AdminProjectsProvider`.
+ */
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function ProjectsPage() {
+  const {
+    projects,
+    isLoadingProjects,
+    reposByProject,
+    createProject,
+    deleteProject,
+    refreshProjects,
+  } = useAdminProjects();
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
+
+  const handleCreate = async (data: CreateProjectRequest) => {
+    await createProject(data);
+    setIsCreateOpen(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!pendingDelete) return;
+    deleteProject(pendingDelete.id);
+    setPendingDelete(null);
+  };
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex max-w-5xl flex-col gap-6">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold mb-0.5">Projects</h1>
-          <p className="text-xs text-subtle">Manage organisation projects and their linked repositories</p>
+          <h1 className="mb-0.5 text-xl font-bold">Projects</h1>
+          <p className="text-xs text-subtle">
+            Organisation projects, their GitHub links, and their members
+          </p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-accent text-canvas text-xs font-bold hover:brightness-110 transition-all cursor-pointer border-none"
-        >
-          + Add Project
-        </button>
-      </div>
-
-      {/* Projects table */}
-      <div className="bg-surface border border-border rounded-card overflow-hidden">
-        {/* Column headers */}
-        <div className="grid grid-cols-[2fr_2fr_1fr_0.7fr_0.5fr] px-5 py-2.5 border-b border-border-subtle text-[11px] text-subtle font-semibold tracking-widest">
-          <div>PROJECT</div>
-          <div>REPOSITORY</div>
-          <div>STATUS</div>
-          <div>MEMBERS</div>
-          <div />
-        </div>
-
-        {PROJECTS.map((p, i) => (
-          <div
-            key={p.name}
-            className={`grid grid-cols-[2fr_2fr_1fr_0.7fr_0.5fr] items-center px-5 py-3.5 text-xs ${
-              i < PROJECTS.length - 1 ? "border-b border-border-subtle" : ""
-            } hover:bg-surface-raised/50 transition-colors`}
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => void refreshProjects()}
+            loading={isLoadingProjects}
           >
-            <div className="font-semibold text-ink">{p.name}</div>
-            <div className="font-mono text-[11px] text-muted">{p.repo}</div>
-            <div>
-              <StatusBadge status={p.status} />
-            </div>
-            <div className="text-muted">{p.members}</div>
-            <div>
-              <button
-                type="button"
-                className="text-accent text-xs font-medium hover:underline cursor-pointer bg-transparent border-none p-0"
-              >
-                Manage →
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Add Project inline form card (spec shows modal; rendered inline for static UI) */}
-      <div className="bg-surface-raised border border-border rounded-panel p-6 flex flex-col gap-4 max-w-md">
-        <h2 className="text-[15px] font-bold">Add Project</h2>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="proj-repo" className="text-xs text-muted">Repository (GitHub)</label>
-          <div className="h-10 rounded-lg bg-app border border-border flex items-center justify-between px-3 text-[13px] text-muted cursor-pointer">
-            nimbuslabs/checkout-api <span className="text-subtle">⌄</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="proj-jira" className="text-xs text-muted">Linked Jira Project</label>
-          <div className="h-10 rounded-lg bg-app border border-border flex items-center justify-between px-3 text-[13px] text-muted cursor-pointer">
-            CHK — Checkout <span className="text-subtle">⌄</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="proj-members" className="text-xs text-muted">Team members</label>
-          <div className="h-10 rounded-lg bg-app border border-border flex items-center px-3 text-[13px] text-subtle">
-            Search members to add…
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2.5 mt-2">
-          <button type="button" className="h-9 px-4 rounded-lg text-[13px] font-semibold text-muted border border-border bg-transparent cursor-pointer hover:border-border hover:text-ink transition-colors">
-            Cancel
-          </button>
-          <button type="button" className="h-9 px-4 rounded-lg bg-accent text-canvas text-[13px] font-bold border-none cursor-pointer hover:brightness-110 transition-all">
-            Create Project
-          </button>
+            Refresh
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            + Create Project
+          </Button>
         </div>
       </div>
+
+      {isLoadingProjects && projects.length === 0 ? (
+        <div className="rounded-panel border border-border p-8 text-center text-sm text-muted">
+          Loading projects…
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="rounded-panel border border-dashed border-border p-8 text-center">
+          <h2 className="text-sm font-semibold text-ink">No projects</h2>
+          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted">
+            Create your first project to connect its GitHub repository.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-panel border border-border bg-surface">
+          <table className="w-full border-collapse text-left text-xs text-ink">
+            <thead className="border-b border-border bg-surface-raised/60 font-semibold tracking-widest text-subtle">
+              <tr>
+                <th className="px-5 py-2.5 text-[11px]">PROJECT</th>
+                <th className="px-5 py-2.5 text-[11px]">GITHUB</th>
+                <th className="px-5 py-2.5 text-[11px]">MEMBERS</th>
+                <th className="px-5 py-2.5 text-[11px]">CREATED</th>
+                <th className="px-5 py-2.5 text-right text-[11px]">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {projects.map((project) => {
+                const repo = reposByProject[project.id];
+                return (
+                  <tr
+                    key={project.id}
+                    className="transition-colors hover:bg-surface-raised/30"
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="font-semibold text-ink">
+                        {project.name}
+                      </div>
+                      {project.description && (
+                        <div className="mt-0.5 max-w-sm truncate text-[11px] text-muted">
+                          {project.description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {repo ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono text-[11px] text-muted">
+                            {repo.owner}/{repo.name}
+                          </span>
+                          <Badge
+                            variant={
+                              repo.status === "CONNECTED"
+                                ? "success"
+                                : repo.status === "SYNCING"
+                                  ? "warning"
+                                  : "danger"
+                            }
+                          >
+                            {repo.status === "CONNECTED"
+                              ? "Connected"
+                              : repo.status === "SYNCING"
+                                ? "Syncing"
+                                : "Disconnected"}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-subtle">
+                          Not linked
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-muted">
+                      {project.memberCount}
+                    </td>
+                    <td className="px-5 py-3.5 font-mono text-[11px] text-muted">
+                      {formatDate(project.createdAt)}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          href={`/admin/projects/${project.id}`}
+                          className="text-xs font-medium text-accent no-underline hover:underline"
+                        >
+                          View / Manage
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setPendingDelete(project)}
+                          className="cursor-pointer border-none bg-transparent text-xs font-medium text-danger hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <CreateProjectModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={handleCreate}
+      />
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete project"
+        message={
+          pendingDelete
+            ? `Are you sure you want to delete “${pendingDelete.name}”? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

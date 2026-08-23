@@ -1,0 +1,607 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
+import { Toast } from "@/components/notifications/Toast";
+import type { ToastMessage } from "@/store/notificationSlice";
+import { projectService } from "@/services/project.service";
+import type {
+  ProjectApiResponse,
+  ProjectMemberApiResponse,
+} from "@/services/project.service";
+import {
+  normaliseGithubRepoUrl,
+  parseGithubRepoUrl,
+} from "@/lib/projectValidation";
+import type {
+  CreateProjectRequest,
+  InviteMemberRequest,
+  LinkedRepo,
+  Project,
+  ProjectMember,
+  ProjectRoleLabel,
+  UpdateProjectRequest,
+} from "@/types/adminProject";
+
+/**
+ * In-memory store for the admin Projects screens.
+ *
+ * Why a context rather than `useState` inside each page: the list and the
+ * detail route are two separate components, and a plain `useState` in either
+ * one is discarded the moment Next swaps the route. Every invite, role change
+ * and rename would vanish on "← Back to projects", which makes the flow
+ * impossible to demo. The state still IS `useState` — this only lifts it above
+ * the route boundary. No store library is involved.
+ *
+ * Mutators without a backend endpoint still update local state. Project
+ * creation and GitHub linking are persisted through `projectService`.
+ */
+
+/** How long the mocked sync sits in SYNCING before settling. */
+const MOCK_SYNC_MS = 1800;
+
+function mapApiProject(project: ProjectApiResponse): Project {
+  return {
+    id: String(project.projectId),
+    name: project.projectName,
+    description: project.description,
+    jiraProjectKey: project.jiraProjectKey,
+    githubRepoUrl: project.githubRepoUrl,
+    memberCount: project.memberCount ?? 0,
+    createdAt: project.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function mapApiProjectRepo(project: ProjectApiResponse): LinkedRepo | undefined {
+  if (!project.githubRepoUrl) return undefined;
+  const url = normaliseGithubRepoUrl(project.githubRepoUrl);
+  const parsed = parseGithubRepoUrl(url);
+  return {
+    id: `repo-${project.projectId}`,
+    projectId: String(project.projectId),
+    url,
+    owner: parsed?.owner ?? "unknown",
+    name: parsed?.name ?? "unknown",
+    status: "CONNECTED",
+  };
+}
+
+function mapApiMember(
+  member: ProjectMemberApiResponse,
+  index: number
+): ProjectMember {
+  const id = String(
+    member.memberId ?? member.id ?? member.userId ?? `member-${index}`
+  );
+  const email = member.email ?? "";
+  const role: ProjectRoleLabel =
+    String(member.role ?? "").toUpperCase() === "MANAGER"
+      ? "MANAGER"
+      : "DEVELOPER";
+  return {
+    id,
+    userId: String(member.userId ?? id),
+    email,
+    // No real name until the invite is accepted — the email is all we know.
+    fullName: member.fullName ?? member.name ?? email.split("@")[0] ?? "Unknown",
+    role,
+    joinedAt: member.joinedAt ?? member.createdAt ?? new Date().toISOString(),
+    status: String(member.status ?? "").toUpperCase() === "PENDING"
+      ? "PENDING"
+      : "ACTIVE",
+  };
+}
+
+interface AdminProjectsContextValue {
+  projects: Project[];
+  isLoadingProjects: boolean;
+  reposByProject: Record<string, LinkedRepo | undefined>;
+  membersByProject: Record<string, ProjectMember[]>;
+
+  getProject: (projectId: string) => Project | undefined;
+  getRepo: (projectId: string) => LinkedRepo | undefined;
+  getMembers: (projectId: string) => ProjectMember[];
+
+  createProject: (data: CreateProjectRequest) => Promise<Project>;
+  updateProject: (projectId: string, data: UpdateProjectRequest) => void;
+  deleteProject: (projectId: string) => void;
+
+  reconnectGithub: (projectId: string) => void;
+  syncRepo: (projectId: string) => void;
+  cycleGithubStatus: (projectId: string) => void;
+
+  inviteMember: (projectId: string, data: InviteMemberRequest) => Promise<void>;
+  refreshMembers: (projectId: string) => Promise<void>;
+  changeMemberRole: (
+    projectId: string,
+    memberId: string,
+    role: ProjectRoleLabel
+  ) => void;
+  removeMember: (projectId: string, memberId: string) => void;
+
+  refreshProjects: () => Promise<void>;
+  showToast: (
+    type: ToastMessage["type"],
+    title: string,
+    message: string
+  ) => void;
+}
+
+const AdminProjectsContext = createContext<AdminProjectsContextValue | null>(
+  null
+);
+
+export function useAdminProjects(): AdminProjectsContextValue {
+  const context = useContext(AdminProjectsContext);
+  if (!context) {
+    throw new Error(
+      "useAdminProjects must be used inside <AdminProjectsProvider>"
+    );
+  }
+  return context;
+}
+
+export function AdminProjectsProvider({ children }: { children: ReactNode }) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [reposByProject, setReposByProject] = useState<
+    Record<string, LinkedRepo | undefined>
+  >({});
+  const [membersByProject, setMembersByProject] = useState<
+    Record<string, ProjectMember[]>
+  >({});
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Pending mock-sync timers, so unmounting mid-sync does not fire setState on
+  // a dead component.
+  const syncTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
+  useEffect(() => {
+    const timers = syncTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
+  const showToast = useCallback(
+    (type: ToastMessage["type"], title: string, message: string) => {
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          type,
+          title,
+          message,
+        },
+      ]);
+    },
+    []
+  );
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const refreshProjects = useCallback(async () => {
+    setIsLoadingProjects(true);
+    try {
+      const response = await projectService.getAll();
+      const loadedProjects = response.map(mapApiProject);
+      setProjects(loadedProjects);
+      setReposByProject(
+        Object.fromEntries(
+          response.map((project) => [
+            String(project.projectId),
+            mapApiProjectRepo(project),
+          ])
+        )
+      );
+      setMembersByProject((previous) =>
+        Object.fromEntries(
+          loadedProjects.map((project) => [project.id, previous[project.id] ?? []])
+        )
+      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Could not load projects.";
+      showToast("error", "Projects could not be loaded", message);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void refreshProjects(), 0);
+    return () => clearTimeout(timer);
+  }, [refreshProjects]);
+
+  /**
+   * Members are NOT loaded by `refreshProjects` — the list endpoint carries a
+   * count, not the people. The detail page calls this on mount, and every
+   * member mutation re-runs it so the list reflects the server, not a guess.
+   */
+  const refreshMembers = useCallback(
+    async (projectId: string) => {
+      try {
+        const response = await projectService.getMembers(projectId);
+        setMembersByProject((prev) => ({
+          ...prev,
+          [projectId]: response.map(mapApiMember),
+        }));
+        setProjects((prev) =>
+          prev.map((project) =>
+            project.id === projectId
+              ? { ...project, memberCount: response.length }
+              : project
+          )
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not load members.";
+        showToast("error", "Members could not be loaded", message);
+      }
+    },
+    [showToast]
+  );
+
+  const getProject = useCallback(
+    (projectId: string) => projects.find((p) => p.id === projectId),
+    [projects]
+  );
+
+  const getRepo = useCallback(
+    (projectId: string) => reposByProject[projectId],
+    [reposByProject]
+  );
+
+  const getMembers = useCallback(
+    (projectId: string) => membersByProject[projectId] ?? [],
+    [membersByProject]
+  );
+
+  const createProject = useCallback(
+    async (data: CreateProjectRequest): Promise<Project> => {
+      const url = normaliseGithubRepoUrl(data.githubRepoUrl);
+      const parsed = parseGithubRepoUrl(url);
+      try {
+        const created = await projectService.create({
+          projectName: data.name,
+          description: data.description,
+          githubRepoUrl: url,
+          jiraProjectKey: data.jiraProjectKey,
+        });
+        const id = String(created.projectId);
+        const linked = await projectService.linkGithub(id, {
+          repoUrl: url,
+          webhookSecret: data.webhookSecret,
+        });
+
+        const project: Project = {
+          id,
+          name: created.projectName,
+          description: created.description ?? data.description,
+          jiraProjectKey: created.jiraProjectKey ?? data.jiraProjectKey,
+          githubRepoUrl: created.githubRepoUrl ?? url,
+          memberCount: created.memberCount ?? 0,
+          createdAt: created.createdAt ?? new Date().toISOString(),
+        };
+        const repo: LinkedRepo = {
+          id: String(linked.repositoryId ?? linked.id ?? `repo-${id}`),
+          projectId: id,
+          url: linked.repoUrl ?? linked.url ?? url,
+          owner: linked.owner ?? parsed?.owner ?? "unknown",
+          name: linked.repositoryName ?? linked.name ?? parsed?.name ?? "unknown",
+          webhookSecret: linked.webhookSecret ?? data.webhookSecret,
+          status: linked.status ?? "CONNECTED",
+          lastSyncedAt: linked.lastSyncedAt,
+        };
+
+        setProjects((prev) => [...prev, project]);
+        setReposByProject((prev) => ({ ...prev, [id]: repo }));
+        setMembersByProject((prev) => ({ ...prev, [id]: [] }));
+        showToast(
+          "success",
+          "Project created",
+          `“${project.name}” created and linked to ${repo.owner}/${repo.name}.`
+        );
+        return project;
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not create the project.";
+        showToast("error", "Project creation failed", message);
+        throw error;
+      }
+    },
+    [showToast]
+  );
+
+  // TODO: Replace with `projectService.update(projectId, data)`
+  //       Endpoint: PUT /api/projects/{id}
+  const updateProject = useCallback(
+    (projectId: string, data: UpdateProjectRequest) => {
+      console.log("[TODO API] Update project:", { projectId, ...data });
+
+      setProjects((prev) =>
+        prev.map((project) =>
+          project.id === projectId
+            ? {
+                ...project,
+                name: data.name,
+                description: data.description,
+                jiraProjectKey: data.jiraProjectKey,
+              }
+            : project
+        )
+      );
+
+      showToast("success", "Project updated", `“${data.name}” saved locally.`);
+    },
+    [showToast]
+  );
+
+  // TODO: Replace with `projectService.remove(projectId)`
+  //       Endpoint: DELETE /api/projects/{id}
+  const deleteProject = useCallback(
+    (projectId: string) => {
+      const name = projects.find((p) => p.id === projectId)?.name ?? projectId;
+      console.log("[TODO API] Delete project:", { projectId, name });
+
+      setProjects((prev) => prev.filter((project) => project.id !== projectId));
+      setReposByProject((prev) => {
+        const next = { ...prev };
+        delete next[projectId];
+        return next;
+      });
+      setMembersByProject((prev) => {
+        const next = { ...prev };
+        delete next[projectId];
+        return next;
+      });
+
+      showToast("success", "Project deleted", `“${name}” removed locally.`);
+    },
+    [projects, showToast]
+  );
+
+  // TODO: Replace with `projectService.linkGithub(projectId, { url, secret })`
+  //       Endpoint: POST /api/projects/{id}/github/link
+  const reconnectGithub = useCallback(
+    (projectId: string) => {
+      const repo = reposByProject[projectId];
+      console.log("[TODO API] Reconnect GitHub:", {
+        projectId,
+        url: repo?.url,
+      });
+
+      setReposByProject((prev) => {
+        const current = prev[projectId];
+        if (!current) return prev;
+        return { ...prev, [projectId]: { ...current, status: "CONNECTED" } };
+      });
+
+      showToast(
+        "success",
+        "GitHub reconnected",
+        repo ? `${repo.owner}/${repo.name} marked connected.` : "Marked connected."
+      );
+    },
+    [reposByProject, showToast]
+  );
+
+  // TODO: Replace with `projectService.syncGithub(projectId)`
+  //       Endpoint: POST /api/projects/{id}/github/sync
+  const syncRepo = useCallback(
+    (projectId: string) => {
+      const repo = reposByProject[projectId];
+      console.log("[TODO API] Sync repo:", { projectId, url: repo?.url });
+
+      setReposByProject((prev) => {
+        const current = prev[projectId];
+        if (!current) return prev;
+        return { ...prev, [projectId]: { ...current, status: "SYNCING" } };
+      });
+
+      const existing = syncTimers.current.get(projectId);
+      if (existing) clearTimeout(existing);
+
+      const timer = setTimeout(() => {
+        syncTimers.current.delete(projectId);
+        setReposByProject((prev) => {
+          const current = prev[projectId];
+          if (!current) return prev;
+          return {
+            ...prev,
+            [projectId]: {
+              ...current,
+              status: "CONNECTED",
+              lastSyncedAt: new Date().toISOString(),
+            },
+          };
+        });
+        showToast(
+          "success",
+          "Sync finished",
+          "Mock sync completed — no data was fetched."
+        );
+      }, MOCK_SYNC_MS);
+
+      syncTimers.current.set(projectId, timer);
+      showToast("info", "Sync started", "Mock sync running…");
+    },
+    [reposByProject, showToast]
+  );
+
+  // TODO: Replace with `projectService.githubStatus(projectId)`
+  //       Endpoint: GET /api/projects/{id}/github/status
+  //       Until that exists this button just rotates the badge so all three
+  //       states are reachable in a demo.
+  const cycleGithubStatus = useCallback(
+    (projectId: string) => {
+      setReposByProject((prev) => {
+        const current = prev[projectId];
+        if (!current) return prev;
+        const order = ["CONNECTED", "SYNCING", "DISCONNECTED"] as const;
+        const next = order[(order.indexOf(current.status) + 1) % order.length];
+        console.log("[TODO API] Check GitHub status:", {
+          projectId,
+          from: current.status,
+          to: next,
+        });
+        return { ...prev, [projectId]: { ...current, status: next } };
+      });
+    },
+    []
+  );
+
+  /**
+   * POST /api/projects/{id}/invite.
+   *
+   * Rethrows so the modal can stay open on failure — the two rejections that
+   * actually happen (403 non-admin, 409 email owned by another company) are
+   * both worth re-reading with the form still on screen.
+   */
+  const inviteMember = useCallback(
+    async (projectId: string, data: InviteMemberRequest): Promise<void> => {
+      try {
+        await projectService.inviteMember(projectId, {
+          email: data.email,
+          role: data.role,
+        });
+        await refreshMembers(projectId);
+        showToast(
+          "success",
+          "Invite sent",
+          `${data.email} invited as ${data.role}.`
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Could not send the invite.";
+        showToast("error", "Invite failed", message);
+        throw error;
+      }
+    },
+    [refreshMembers, showToast]
+  );
+
+  // TODO: Replace with `projectService.updateMemberRole(projectId, userId, role)`
+  //       Endpoint: PUT /api/projects/{id}/members/{userId}
+  const changeMemberRole = useCallback(
+    (projectId: string, memberId: string, role: ProjectRoleLabel) => {
+      console.log("[TODO API] Change role:", { projectId, memberId, role });
+
+      setMembersByProject((prev) => ({
+        ...prev,
+        [projectId]: (prev[projectId] ?? []).map((member) =>
+          member.id === memberId ? { ...member, role } : member
+        ),
+      }));
+
+      showToast("success", "Role updated", `Member is now ${role}.`);
+    },
+    [showToast]
+  );
+
+  // TODO: Replace with `projectService.removeMember(projectId, userId)`
+  //       Endpoint: DELETE /api/projects/{id}/members/{userId}
+  const removeMember = useCallback(
+    (projectId: string, memberId: string) => {
+      const member = (membersByProject[projectId] ?? []).find(
+        (m) => m.id === memberId
+      );
+      console.log("[TODO API] Remove member:", {
+        projectId,
+        memberId,
+        email: member?.email,
+      });
+
+      setMembersByProject((prev) => ({
+        ...prev,
+        [projectId]: (prev[projectId] ?? []).filter((m) => m.id !== memberId),
+      }));
+      setProjects((prev) =>
+        prev.map((project) =>
+          project.id === projectId
+            ? { ...project, memberCount: Math.max(0, project.memberCount - 1) }
+            : project
+        )
+      );
+
+      showToast(
+        "success",
+        "Member removed",
+        `${member?.email ?? "Member"} removed from the project.`
+      );
+    },
+    [membersByProject, showToast]
+  );
+
+  const value = useMemo<AdminProjectsContextValue>(
+    () => ({
+      projects,
+      isLoadingProjects,
+      reposByProject,
+      membersByProject,
+      getProject,
+      getRepo,
+      getMembers,
+      createProject,
+      updateProject,
+      deleteProject,
+      reconnectGithub,
+      syncRepo,
+      cycleGithubStatus,
+      inviteMember,
+      changeMemberRole,
+      removeMember,
+      refreshProjects,
+      refreshMembers,
+      showToast,
+    }),
+    [
+      projects,
+      isLoadingProjects,
+      reposByProject,
+      membersByProject,
+      getProject,
+      getRepo,
+      getMembers,
+      createProject,
+      updateProject,
+      deleteProject,
+      reconnectGithub,
+      syncRepo,
+      cycleGithubStatus,
+      inviteMember,
+      changeMemberRole,
+      removeMember,
+      refreshProjects,
+      refreshMembers,
+      showToast,
+    ]
+  );
+
+  return (
+    <AdminProjectsContext.Provider value={value}>
+      {toasts.length > 0 && (
+        <div className="fixed right-6 top-20 z-50 flex w-80 flex-col gap-2">
+          {toasts.map((toast) => (
+            <Toast key={toast.id} toast={toast} onDismiss={dismissToast} />
+          ))}
+        </div>
+      )}
+      {children}
+    </AdminProjectsContext.Provider>
+  );
+}
+
+export default AdminProjectsProvider;

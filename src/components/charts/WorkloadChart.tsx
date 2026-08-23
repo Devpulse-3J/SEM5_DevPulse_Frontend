@@ -14,7 +14,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 export interface DeveloperLoad {
   name: string;
-  /** Load percentage, e.g. 190 means 190% of team average */
+  /** Load percentage against the configured active-PR target. */
   load: number;
 }
 
@@ -71,13 +71,13 @@ export function WorkloadChart({
             padding: 10,
             cornerRadius: 8,
             callbacks: {
-              label: (ctx) => `${ctx.parsed.x}% of team avg`,
+              label: (ctx) => `${ctx.parsed.x}% of active-PR target`,
             },
           },
         },
         scales: {
           x: {
-            max: 200,
+            suggestedMax: 200,
             grid: {
               color: chart.border,
             },

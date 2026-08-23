@@ -19,6 +19,18 @@ const riskVariantMap: Record<PRRiskLevel, "danger" | "warning" | "info" | "succe
 export function PRRiskCard({ pullRequest }: PRRiskCardProps) {
   const { riskAnalysis } = pullRequest;
 
+  if (!riskAnalysis) {
+    return (
+      <Card className="flex flex-col gap-2 p-5">
+        <span className="text-sm font-bold text-ink">PR #{pullRequest.number} Risk Report</span>
+        <p className="text-xs text-muted">
+          Risk analysis is not included by metrics-service. It will be shown when the
+          analytics endpoint is available.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <Card className="flex flex-col gap-4 p-5">
       <div className="flex items-center justify-between">

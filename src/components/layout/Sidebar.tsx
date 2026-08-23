@@ -26,13 +26,6 @@ const managerNav: NavGroup[] = [
       { label: "Team & Workload", href: "/team", icon: "◫" },
     ],
   },
-  {
-    title: "CONFIGURE",
-    items: [
-      { label: "Integrations", href: "/integrations", icon: "◎" },
-      { label: "Settings", href: "/settings", icon: "⚙" },
-    ],
-  },
 ];
 
 const developerNav: NavGroup[] = [

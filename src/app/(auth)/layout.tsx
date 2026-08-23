@@ -7,22 +7,33 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-canvas text-ink flex flex-col justify-center items-center relative py-12 px-4 overflow-hidden">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-4 py-12 text-white">
       {/* Background Dot Grid */}
       <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "radial-gradient(oklch(0.26 0.012 260) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(#1c1c1c 1px, transparent 1px)",
           backgroundSize: "28px 28px",
+        }}
+      />
+
+      {/* Soft vignette so the card lifts off the grid */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 50% 45%, transparent 0%, rgba(0,0,0,0.85) 100%)",
         }}
       />
 
       {/* Top Brand Logo */}
       <div className="relative z-10 mb-6 text-center">
-        <Link href="/" className="inline-flex items-center gap-2 no-underline hover:no-underline">
-          <span className="font-mono font-bold text-2xl tracking-wide text-ink">
-            ◆ DEVPULSE
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-white no-underline hover:text-white hover:no-underline"
+        >
+          <span className="font-mono text-2xl font-bold tracking-wide">
+            ◆ Odin Eye
           </span>
         </Link>
       </div>

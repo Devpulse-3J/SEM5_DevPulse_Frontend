@@ -1,143 +1,211 @@
-export const metadata = { title: "Users — DevPulse Admin" };
+"use client";
 
-type Role = "Manager" | "Developer" | "Admin";
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { validateEmail } from "@/lib/validators";
+import { projectService } from "@/services/project.service";
+import type { ProjectRoleLabel } from "@/types/adminProject";
 
-interface Member {
-  name: string;
-  email: string;
-  role: Role;
-  access: string;
-  avatar: string;
-}
-
-const MEMBERS: Member[] = [
-  { name: "Sarah Chen",   email: "sarah.chen@nimbuslabs.io",   role: "Manager",   access: "All teams",    avatar: "SC" },
-  { name: "Marcus Webb",  email: "marcus.webb@nimbuslabs.io",  role: "Developer", access: "Backend team", avatar: "MW" },
-  { name: "IT Ops",       email: "itops@nimbuslabs.io",        role: "Admin",     access: "Org-wide",     avatar: "IO" },
-  { name: "Priya Mehta",  email: "priya.mehta@nimbuslabs.io",  role: "Developer", access: "Frontend team",avatar: "PM" },
-  { name: "Diego Alvarez",email: "diego.alvarez@nimbuslabs.io",role: "Developer", access: "Backend team", avatar: "DA" },
-];
-
-const ROLE_STYLES: Record<Role, { color: string; bg: string }> = {
-  Manager:   { color: "oklch(0.68 0.17 264)", bg: "oklch(0.225 0.013 260)" },
-  Developer: { color: "oklch(0.70 0.018 260)", bg: "oklch(0.225 0.013 260)" },
-  Admin:     { color: "oklch(0.78 0.16 80)",  bg: "oklch(0.225 0.013 260)" },
-};
-
-const AVATAR_COLORS: Record<string, string> = {
-  SC: "oklch(0.30 0.08 264)",
-  MW: "oklch(0.30 0.12 22)",
-  IO: "oklch(0.30 0.09 80)",
-  PM: "oklch(0.30 0.10 155)",
-  DA: "oklch(0.30 0.09 22)",
-};
-
+/**
+ * Admin → Members & Roles.
+ *
+ * The invite form posts to POST /api/projects/{id}/invite via
+ * `projectService.inviteMember`. Admin-only: a non-admin caller gets a 403 and
+ * an email already owned by another company gets a 409, so the form stays open
+ * and keeps its values on failure — both rejections are worth re-reading with
+ * the input still on screen.
+ *
+ * There is still no endpoint that lists every user in a company; members are
+ * listed per project on /admin/projects/{id}.
+ */
 export default function UsersPage() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [role, setRole] = useState<ProjectRoleLabel>("DEVELOPER");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    projectId?: string;
+  }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setFieldErrors({});
+    setSubmitError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setSuccessNotice(null);
+
+    const trimmedEmail = email.trim();
+    const trimmedProjectId = projectId.trim();
+    const errors: { email?: string; projectId?: string } = {};
+
+    const emailError = validateEmail(trimmedEmail);
+    if (emailError) errors.email = emailError;
+    if (!trimmedProjectId) {
+      errors.projectId = "Project id is required";
+    } else if (!/^\d+$/.test(trimmedProjectId)) {
+      errors.projectId = "Project id must be a number";
+    }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsSubmitting(true);
+    try {
+      // `role` is already UPPERCASE — the gateway's enum binding is
+      // case-sensitive and answers a lowercase value with a 500, not a 400.
+      await projectService.inviteMember(trimmedProjectId, {
+        email: trimmedEmail,
+        role,
+      });
+      setSuccessNotice(
+        `${trimmedEmail} was invited to project ${trimmedProjectId} as ${role.toLowerCase()}.`
+      );
+      setEmail("");
+      setProjectId("");
+      setRole("DEVELOPER");
+      setIsFormOpen(false);
+    } catch (error: unknown) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Could not send the invite."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex max-w-5xl flex-col gap-6">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold mb-0.5">Members &amp; Roles</h1>
-          <p className="text-xs text-subtle">Manage organisation members, roles, and access permissions</p>
+          <h1 className="mb-0.5 text-xl font-bold">Members &amp; Roles</h1>
+          <p className="text-xs text-subtle">
+            Organisation members, roles, and access permissions
+          </p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-accent text-canvas text-xs font-bold hover:brightness-110 transition-all cursor-pointer border-none"
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => (isFormOpen ? closeForm() : setIsFormOpen(true))}
         >
-          + Invite Member
-        </button>
+          {isFormOpen ? "Cancel" : "+ Invite Member"}
+        </Button>
       </div>
 
-      {/* Role summary chips */}
-      <div className="flex gap-3 flex-wrap">
-        {(
-          [
-            { label: "2 Admins",    color: "text-warning" },
-            { label: "1 Manager",   color: "text-accent" },
-            { label: "16 Developers", color: "text-success" },
-          ] as const
-        ).map(({ label, color }) => (
-          <div key={label} className={`text-[11px] font-semibold px-3 py-1.5 rounded-md bg-surface border border-border ${color}`}>
-            {label}
+      {successNotice && !isFormOpen && (
+        <p role="status" className="text-xs text-success">
+          {successNotice}
+        </p>
+      )}
+
+      {isFormOpen && (
+        <form
+          onSubmit={handleSubmit}
+          className="flex max-w-md flex-col gap-4 rounded-panel border border-border bg-surface-raised p-6"
+        >
+          <div>
+            <h2 className="text-[15px] font-bold">Invite Member</h2>
+            <p className="mt-1 text-[11px] text-subtle">
+              Only company admins can invite. The invitee must not already belong
+              to another company.
+            </p>
           </div>
-        ))}
-      </div>
 
-      {/* Members table */}
-      <div className="bg-surface border border-border rounded-card overflow-hidden">
-        {/* Column headers */}
-        <div className="grid grid-cols-[2fr_2.5fr_1fr_1.2fr_0.5fr] px-5 py-2.5 border-b border-border-subtle text-[11px] text-subtle font-semibold tracking-widest">
-          <div>MEMBER</div>
-          <div>EMAIL</div>
-          <div>ROLE</div>
-          <div>ACCESS</div>
-          <div />
-        </div>
-
-        {MEMBERS.map((m, i) => {
-          const style = ROLE_STYLES[m.role];
-          return (
-            <div
-              key={m.email}
-              className={`grid grid-cols-[2fr_2.5fr_1fr_1.2fr_0.5fr] items-center px-5 py-3 text-xs ${
-                i < MEMBERS.length - 1 ? "border-b border-border-subtle" : ""
-              } hover:bg-surface-raised/50 transition-colors`}
-            >
-              {/* Name + avatar */}
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-ink flex-shrink-0"
-                  style={{ background: AVATAR_COLORS[m.avatar] ?? "oklch(0.30 0.08 264)" }}
-                >
-                  {m.avatar}
-                </div>
-                <span className="font-medium text-ink">{m.name}</span>
-              </div>
-
-              <div className="font-mono text-[11px] text-muted">{m.email}</div>
-
-              {/* Role badge */}
-              <div>
-                <span
-                  className="text-[11px] font-semibold px-2 py-1 rounded-md"
-                  style={{ color: style.color, background: style.bg }}
-                >
-                  {m.role}
-                </span>
-              </div>
-
-              <div className="text-muted">{m.access}</div>
-
-              <div>
-                <button
-                  type="button"
-                  className="text-accent text-xs font-medium hover:underline cursor-pointer bg-transparent border-none p-0"
-                >
-                  Edit →
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Invite form */}
-      <div className="bg-surface-raised border border-border rounded-panel p-5 flex flex-col gap-3 max-w-md">
-        <h2 className="text-sm font-bold">Invite Member</h2>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted">Work email</label>
-          <input
+          <Input
+            label="Work email"
             type="email"
-            placeholder="newmember@nimbuslabs.io"
-            className="h-9 px-3 rounded-lg bg-app border border-border text-xs text-ink focus:outline-none focus:border-accent transition-colors placeholder:text-subtle"
+            placeholder="newmember@yourcompany.com"
+            value={email}
+            error={fieldErrors.email}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (fieldErrors.email) {
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }
+            }}
           />
-        </div>
-        <div className="flex justify-end">
-          <button type="button" className="h-9 px-4 rounded-lg bg-accent text-canvas text-xs font-bold border-none cursor-pointer hover:brightness-110 transition-all">
-            Send Invite
-          </button>
-        </div>
+
+          <Input
+            label="Project id"
+            type="number"
+            placeholder="1"
+            value={projectId}
+            error={fieldErrors.projectId}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              setProjectId(e.target.value);
+              if (fieldErrors.projectId) {
+                setFieldErrors((prev) => ({ ...prev, projectId: undefined }));
+              }
+            }}
+          />
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="invite-role" className="text-xs font-medium text-muted">
+              Project role
+            </label>
+            <select
+              id="invite-role"
+              value={role}
+              disabled={isSubmitting}
+              onChange={(e) => setRole(e.target.value as ProjectRoleLabel)}
+              className="h-9 w-full cursor-pointer rounded-lg border border-border bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent/40 disabled:opacity-60"
+            >
+              <option value="MANAGER">manager</option>
+              <option value="DEVELOPER">developer</option>
+            </select>
+            <p className="text-[11px] text-subtle">
+              Roles are per project — the same person can be a manager on one and a
+              developer on another.
+            </p>
+          </div>
+
+          {submitError && (
+            <p role="alert" className="text-[11px] text-danger">
+              {submitError}
+            </p>
+          )}
+
+          <div className="mt-1 flex justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={isSubmitting}
+              onClick={closeForm}
+            >
+              Close
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              Send Invite
+            </Button>
+          </div>
+        </form>
+      )}
+
+      <div className="rounded-panel border border-dashed border-border p-8 text-center">
+        <h2 className="text-sm font-semibold text-ink">No members to list</h2>
+        <p className="mx-auto mt-1.5 max-w-md text-xs text-muted">
+          There is no endpoint that lists every user in a company. Members are
+          listed per project — open a project from Projects to see and manage its
+          members.
+        </p>
       </div>
     </div>
   );

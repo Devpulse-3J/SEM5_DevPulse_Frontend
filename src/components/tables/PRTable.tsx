@@ -1,32 +1,32 @@
 // OWNER: Person B — reusable High-Risk PR table.
-// NOTE: `PrRiskRow` is a temporary local shape. Migrate to Person C's
-// `PullRequest` type (types/pullRequest.ts) once it exists.
 
-export type PrRisk = "HIGH" | "MED" | "LOW";
+import type { PRRiskLevel, PullRequest } from "@/types/pullRequest";
+import { daysOpen } from "@/utils/calculateDuration";
 
-export interface PrRiskRow {
-  id: string; // "#4128"
-  title: string;
-  author: string;
-  risk: PrRisk;
-  score: number; // 0–1
-  openDays: number;
-  diff: string; // "+890"
-}
+/**
+ * `riskAnalysis` is nullable on the gateway DTO (a PR that the ML scorer has
+ * not picked up yet), so the styling maps carry an extra "UNSCORED" key rather
+ * than the four `PRRiskLevel` values alone.
+ */
+type RiskKey = PRRiskLevel | "UNSCORED";
 
-const riskStyle: Record<PrRisk, string> = {
+const riskStyle: Record<RiskKey, string> = {
+  CRITICAL: "bg-danger/70 text-ink",
   HIGH: "bg-danger/40 text-danger",
-  MED: "bg-warning/40 text-warning",
+  MEDIUM: "bg-warning/40 text-warning",
   LOW: "bg-success/40 text-success",
+  UNSCORED: "bg-white/5 text-subtle",
 };
-const openStyle: Record<PrRisk, string> = {
+const openStyle: Record<RiskKey, string> = {
+  CRITICAL: "text-danger",
   HIGH: "text-danger",
-  MED: "text-warning",
+  MEDIUM: "text-warning",
   LOW: "text-muted",
+  UNSCORED: "text-muted",
 };
 
 export interface PRTableProps {
-  rows: PrRiskRow[];
+  rows: PullRequest[];
 }
 
 export function PRTable({ rows }: PRTableProps) {
@@ -39,31 +39,37 @@ export function PRTable({ rows }: PRTableProps) {
         <div>OPEN</div>
         <div className="text-right">SIZE</div>
       </div>
-      {rows.map((pr) => (
-        <div
-          key={pr.id}
-          className="grid grid-cols-[1.2fr_3fr_1.2fr_1fr_1fr] items-center border-b border-border-subtle px-4.5 py-2.75 text-xs last:border-b-0 hover:bg-white/[0.02]"
-        >
-          <div>
-            <span
-              className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${riskStyle[pr.risk]}`}
-            >
-              {pr.risk} · {pr.score.toFixed(2)}
-            </span>
+      {rows.map((pr) => {
+        const risk: RiskKey = pr.riskAnalysis?.riskLevel ?? "UNSCORED";
+        return (
+          <div
+            key={pr.id}
+            className="grid grid-cols-[1.2fr_3fr_1.2fr_1fr_1fr] items-center border-b border-border-subtle px-4.5 py-2.75 text-xs last:border-b-0 hover:bg-white/[0.02]"
+          >
+            <div>
+              <span
+                className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${riskStyle[risk]}`}
+              >
+                {pr.riskAnalysis
+                  ? `${pr.riskAnalysis.riskLevel} · ${Math.round(pr.riskAnalysis.riskScore)}`
+                  : "UNSCORED"}
+              </span>
+            </div>
+            <div className="truncate pr-2 text-ink">
+              <span className="mr-1.5 font-mono text-muted">#{pr.number}</span>
+              {pr.title}
+            </div>
+            <div className="truncate text-muted">{pr.author}</div>
+            <div className={`text-[11px] font-semibold ${openStyle[risk]}`}>
+              {daysOpen(pr.createdAt)}d
+            </div>
+            <div className="text-right font-mono text-[11px]">
+              <span className="text-success">+{pr.additions}</span>{" "}
+              <span className="text-danger">−{pr.deletions}</span>
+            </div>
           </div>
-          <div className="truncate pr-2 text-ink">
-            <span className="mr-1.5 font-mono text-muted">{pr.id}</span>
-            {pr.title}
-          </div>
-          <div className="truncate text-muted">{pr.author}</div>
-          <div className={`text-[11px] font-semibold ${openStyle[pr.risk]}`}>
-            {pr.openDays}d
-          </div>
-          <div className="text-right font-mono text-[11px] text-muted">
-            {pr.diff}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -1,33 +1,23 @@
-"use client";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 
-import React, { use } from "react";
-import { SharedDashboard } from "../../dashboard/SharedDashboard";
-import { RepositoryDetailView } from "@/features/repositories/RepositoryDetailView";
-import { useRepositoryDetail, useSyncRepository } from "@/hooks/useRepositories";
-
-interface RepositoryDetailPageProps {
+export default async function RepositoryDetailPage({
+  params,
+}: {
   params: Promise<{ id: string }>;
-}
-
-export default function RepositoryDetailPage({ params }: RepositoryDetailPageProps) {
-  const resolvedParams = use(params);
-  const { data: repository, isLoading } = useRepositoryDetail(resolvedParams.id);
-  const syncMutation = useSyncRepository();
-
-  const handleSync = (id: string) => {
-    syncMutation.mutate(id);
-  };
+}) {
+  const { id } = await params;
 
   return (
-    <SharedDashboard
-      title={repository ? repository.fullName : "Repository Detail"}
-      subtitle="Deep metric analysis, branch health, and recent repository commits"
-    >
-      {isLoading || !repository ? (
-        <div className="p-8 text-center text-xs text-subtle">Loading repository details...</div>
-      ) : (
-        <RepositoryDetailView repository={repository} onSync={handleSync} />
-      )}
-    </SharedDashboard>
+    <div className="flex flex-col gap-5 p-6 md:p-7">
+      <div>
+        <h1 className="text-[22px] font-bold tracking-tight text-ink">Repository {id}</h1>
+        <p className="mt-1 font-mono text-xs text-subtle">Branch health and recent commits</p>
+      </div>
+
+      <FeatureUnavailable
+        title="Repository detail is not available yet"
+        message="Repository data requires integration-service to ingest GitHub, which is not yet implemented."
+      />
+    </div>
   );
 }
