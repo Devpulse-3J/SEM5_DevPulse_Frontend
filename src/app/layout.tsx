@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import { Providers } from "./providers";
+//import "@/app/globals.css";
+import { Providers } from "./providers"; // adjust path if your providers file is elsewhere
 
 export const metadata: Metadata = {
-  title: "Odin Eye - Developer Productivity & Quality Dashboard",
-  description: "Odin Eye frontend workspace",
+  title: "DevPulse",
+  description: "Engineering Productivity & Developer Analytics Platform",
 };
 
-type RootLayoutProps = {
-  children: ReactNode;
-};
-
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
   );
-}
+}

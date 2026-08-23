@@ -42,8 +42,15 @@ export interface LinkedRepoApiResponse {
   name?: string;
   repositoryName?: string;
   webhookSecret?: string;
-  status?: "CONNECTED" | "DISCONNECTED" | "SYNCING";
+  status?: "CONNECTED" | "DISCONNECTED" | "SYNCING" | "ERROR";
   lastSyncedAt?: string;
+}
+
+export interface GithubSyncTriggerResponse {
+  status?: "CONNECTED" | "DISCONNECTED" | "SYNCING" | "ERROR";
+  lastSyncedAt?: string;
+  /** Id of the async job, if the backend returns one. */
+  jobId?: string;
 }
 
 /**
@@ -130,6 +137,15 @@ export const projectService = {
     );
   },
 
+  /** GET /api/integrations/projects/{id}/github/connect-url → 200 */
+  async getConnectUrl(
+    projectId: string | number
+  ): Promise<{ connectUrl: string }> {
+    return apiClient.get<{ connectUrl: string }>(
+      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/connect-url`
+    );
+  },
+
   /** POST /api/integrations/projects/{id}/github/link → 200/201 */
   async linkGithub(
     projectId: string | number,
@@ -140,4 +156,68 @@ export const projectService = {
       data
     );
   },
+
+  /**
+   * POST /api/integrations/projects/{id}/github/sync → 202/200.
+   *
+   * Kicks off an async GitHub sync. The call resolves before the data is
+   * fetched, so poll `githubStatus` until `status` leaves SYNCING.
+   */
+  async syncGithub(
+    projectId: string | number
+  ): Promise<GithubSyncTriggerResponse> {
+    return apiClient.post<GithubSyncTriggerResponse>(
+      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/sync`
+    );
+  },
+
+  /** GET /api/integrations/projects/{id}/github/status → 200 */
+  async githubStatus(
+    projectId: string | number
+  ): Promise<LinkedRepoApiResponse> {
+    return apiClient.get<LinkedRepoApiResponse>(
+      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/status`
+    );
+  },
+
+  /** PUT /api/projects/{id} → 200 */
+  async update(
+    projectId: string | number,
+    data: { projectName: string; description?: string; jiraProjectKey?: string }
+  ): Promise<ProjectApiResponse> {
+    return apiClient.put<ProjectApiResponse>(
+      `/api/projects/${encodeURIComponent(String(projectId))}`,
+      data
+    );
+  },
+
+  /** DELETE /api/projects/{id} → 200/204 */
+  async remove(projectId: string | number): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/projects/${encodeURIComponent(String(projectId))}`
+    );
+  },
+
+  /** PUT /api/projects/{id}/members/{memberId} → 200 */
+  async updateMemberRole(
+    projectId: string | number,
+    memberId: string | number,
+    role: "MANAGER" | "DEVELOPER"
+  ): Promise<ProjectMemberApiResponse> {
+    return apiClient.put<ProjectMemberApiResponse>(
+      `/api/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`,
+      { role }
+    );
+  },
+
+  /** DELETE /api/projects/{id}/members/{memberId} → 200/204 */
+  async removeMember(
+    projectId: string | number,
+    memberId: string | number
+  ): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`
+    );
+  },
 };
+

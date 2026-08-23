@@ -11,11 +11,9 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
-  generateWebhookSecret,
   normaliseGithubRepoUrl,
   validateGithubRepoUrl,
   validateProjectName,
-  validateWebhookSecret,
 } from "@/lib/projectValidation";
 import type { CreateProjectRequest } from "@/types/adminProject";
 
@@ -34,22 +32,18 @@ export function CreateProjectModal({
   const [description, setDescription] = useState("");
   const [jiraProjectKey, setJiraProjectKey] = useState("");
   const [githubRepoUrl, setGithubRepoUrl] = useState("");
-  const [webhookSecret, setWebhookSecret] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const [nameError, setNameError] = useState<string | undefined>();
   const [urlError, setUrlError] = useState<string | undefined>();
-  const [webhookSecretError, setWebhookSecretError] = useState<string | undefined>();
 
   const reset = () => {
     setName("");
     setDescription("");
     setJiraProjectKey("");
     setGithubRepoUrl("");
-    setWebhookSecret("");
     setNameError(undefined);
     setUrlError(undefined);
-    setWebhookSecretError(undefined);
   };
 
   const handleClose = () => {
@@ -61,12 +55,12 @@ export function CreateProjectModal({
     e.preventDefault();
 
     const nextNameError = validateProjectName(name);
-    const nextUrlError = validateGithubRepoUrl(githubRepoUrl);
-    const nextWebhookSecretError = validateWebhookSecret(webhookSecret);
+    const nextUrlError = githubRepoUrl.trim()
+      ? validateGithubRepoUrl(githubRepoUrl)
+      : undefined;
     setNameError(nextNameError);
     setUrlError(nextUrlError);
-    setWebhookSecretError(nextWebhookSecretError);
-    if (nextNameError || nextUrlError || nextWebhookSecretError) return;
+    if (nextNameError || nextUrlError) return;
 
     setIsCreating(true);
     try {
@@ -74,8 +68,9 @@ export function CreateProjectModal({
         name: name.trim(),
         description: description.trim() || undefined,
         jiraProjectKey: jiraProjectKey.trim() || undefined,
-        githubRepoUrl: normaliseGithubRepoUrl(githubRepoUrl),
-        webhookSecret: webhookSecret.trim() || undefined,
+        githubRepoUrl: githubRepoUrl.trim()
+          ? normaliseGithubRepoUrl(githubRepoUrl)
+          : undefined,
       });
       reset();
     } catch {
@@ -90,7 +85,7 @@ export function CreateProjectModal({
     <Modal open={open} onClose={handleClose} width={520}>
       <ModalHeader
         title="Create Project"
-        description="Create a project and connect its GitHub repository."
+        description="Create a new project workspace."
         onClose={handleClose}
       />
       <form onSubmit={handleSubmit}>
@@ -128,7 +123,7 @@ export function CreateProjectModal({
           <div className="h-px bg-border" />
 
           <Input
-            label="GitHub repository URL"
+            label="GitHub repository URL (optional)"
             type="text"
             placeholder="https://github.com/owner/repo"
             value={githubRepoUrl}
@@ -138,36 +133,6 @@ export function CreateProjectModal({
               if (urlError) setUrlError(undefined);
             }}
           />
-
-          <ModalField label="GitHub webhook secret (optional)">
-            <div className="flex items-start gap-2">
-              <input
-                type="text"
-                value={webhookSecret}
-                onChange={(e) => {
-                  setWebhookSecret(e.target.value);
-                  if (webhookSecretError) setWebhookSecretError(undefined);
-                }}
-                placeholder="Leave blank to use the server default"
-                className="h-9 w-full rounded-lg border border-border bg-surface px-3 font-mono text-xs text-ink outline-none transition-colors placeholder:font-sans placeholder:text-sm placeholder:text-subtle focus:border-accent focus:ring-1 focus:ring-accent/40"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                onClick={() => setWebhookSecret(generateWebhookSecret())}
-              >
-                Generate
-              </Button>
-            </div>
-            {webhookSecretError && (
-              <p className="text-xs text-danger">{webhookSecretError}</p>
-            )}
-            <p className="text-[11px] text-subtle">
-              Signs inbound GitHub deliveries. 32 characters, generated in the
-              browser — copy it into the repo&apos;s webhook settings.
-            </p>
-          </ModalField>
         </ModalBody>
 
         <ModalFooter>
