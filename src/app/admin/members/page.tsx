@@ -26,11 +26,10 @@ export default function MembersPage() {
   const [openRoleMenuId, setOpenRoleMenuId] = useState<string | null>(null);
 
   const fetchMembers = useCallback(async () => {
-    setLoadingMembers(true);
-    setFetchError(null);
     try {
       const data = await adminApiService.getCompanyMembers();
       setMembers(data);
+      setFetchError(null);
     } catch (err: unknown) {
       console.warn("Failed to fetch company members from API, using fallback data if any.", err);
       const errMsg = err instanceof ApiError || err instanceof Error ? err.message : "Could not load company members.";
@@ -53,7 +52,10 @@ export default function MembersPage() {
   }, []);
 
   useEffect(() => {
-    fetchMembers();
+    const timeoutId = setTimeout(() => {
+      void fetchMembers();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [fetchMembers]);
 
   // Parse raw text input into array of cleaned emails

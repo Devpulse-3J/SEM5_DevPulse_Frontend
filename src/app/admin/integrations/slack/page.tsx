@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { FaSlack, FaCheckCircle, FaExclamationTriangle, FaPaperPlane } from "react-icons/fa";
+import { FaSlack, FaPaperPlane } from "react-icons/fa";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Toast } from "@/components/notifications/Toast";
@@ -12,15 +12,16 @@ import { ApiError } from "@/services/api-client";
 
 export default function SlackIntegrationPage() {
   const searchParams = useSearchParams();
-
-  // Connection State
-  const [isConnected, setIsConnected] = useState(false);
+  const oauthConnected =
+    Boolean(searchParams?.get("code")) ||
+    searchParams?.get("status") === "connected" ||
+    searchParams?.get("connected") === "true";
 
   // Channels state
   const [channels, setChannels] = useState<SlackChannel[]>([]);
   const [selectedChannelId, setSelectedChannelId] = useState<string>("");
-  const [loadingChannels, setLoadingChannels] = useState(false);
-  const [channelsError, setChannelsError] = useState<string | null>(null);
+  const [loadingChannels, setLoadingChannels] = useState(true);
+  const isConnected = oauthConnected || channels.length > 0;
 
   // Test Notification state
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -45,26 +46,11 @@ export default function SlackIntegrationPage() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // OAuth Callback Query Parameter Check
-  useEffect(() => {
-    const code = searchParams?.get("code");
-    const statusParam = searchParams?.get("status");
-    const connectedParam = searchParams?.get("connected");
-
-    if (code || statusParam === "connected" || connectedParam === "true") {
-      setIsConnected(true);
-      addToast("success", "Slack Connected", "OAuth flow completed successfully.");
-    }
-  }, [searchParams]);
-
   // Fetch Channels on mount
   const fetchChannels = useCallback(async () => {
-    setLoadingChannels(true);
-    setChannelsError(null);
     try {
       const list = await integrationsApiService.getSlackChannels();
       setChannels(list);
-      setIsConnected(true);
       if (list.length > 0) {
         setSelectedChannelId(list[0].id);
       }
@@ -84,7 +70,10 @@ export default function SlackIntegrationPage() {
   }, []);
 
   useEffect(() => {
-    fetchChannels();
+    const timeoutId = setTimeout(() => {
+      void fetchChannels();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [fetchChannels]);
 
   // OAuth Flow: Redirect to /api/slack/oauth/install

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { FaGithub, FaCheckCircle, FaExclamationTriangle, FaSync } from "react-icons/fa";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -32,25 +32,7 @@ export default function GithubIntegrationPage() {
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Load Projects on mount
-  useEffect(() => {
-    async function loadProjects() {
-      try {
-        const list = await projectService.getAll();
-        setProjects(list);
-        if (list.length > 0) {
-          setSelectedProjectId(String(list[0].projectId));
-        }
-      } catch (err) {
-        console.warn("Could not load projects for GitHub integration", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    }
-    loadProjects();
-  }, []);
-
-  // Fetch status when selectedProjectId changes
-  const fetchStatus = useCallback(async (projectId: string) => {
+  async function fetchStatus(projectId: string) {
     if (!projectId) return;
     setLoadingStatus(true);
     setSyncError(null);
@@ -69,32 +51,40 @@ export default function GithubIntegrationPage() {
     } finally {
       setLoadingStatus(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
-    if (selectedProjectId) {
-      fetchStatus(selectedProjectId);
+    async function loadProjects() {
+      try {
+        const list = await projectService.getAll();
+        setProjects(list);
+        if (list.length > 0) {
+          const initialProjectId = String(list[0].projectId);
+          setSelectedProjectId(initialProjectId);
+          fetchStatus(initialProjectId);
+        }
+      } catch (err) {
+        console.warn("Could not load projects for GitHub integration", err);
+      } finally {
+        setLoadingProjects(false);
+      }
     }
-  }, [selectedProjectId, fetchStatus]);
+    loadProjects();
+  }, []);
 
   // Flow 1: 1-Click GitHub App Authorization
   const handleConnectGitHubApp = async () => {
     if (!selectedProjectId) return;
     setLoadingAppUrl(true);
     setAppUrlError(null);
+    const fallbackUrl = `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(selectedProjectId)}`;
     try {
-      const res = await integrationsApiService.getGithubConnectUrl(selectedProjectId);
-      if (res?.connectUrl) {
-        window.location.href = res.connectUrl;
-      } else {
-        throw new Error("No connect URL returned by API.");
-      }
+      await integrationsApiService.getGithubConnectUrl(selectedProjectId);
+      window.location.assign(fallbackUrl);
     } catch (err: unknown) {
       const msg = err instanceof ApiError || err instanceof Error ? err.message : "Failed to obtain GitHub App URL.";
       setAppUrlError(msg);
-      // Fallback redirection format as specified in spec if API backend endpoint fails
-      const fallbackUrl = `https://github.com/apps/devpulse-app/installations/new?state=${selectedProjectId}`;
-      window.location.href = fallbackUrl;
+      window.location.assign(fallbackUrl);
     } finally {
       setLoadingAppUrl(false);
     }
@@ -186,7 +176,11 @@ export default function GithubIntegrationPage() {
           <select
             id="project-select"
             value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
+            onChange={(e) => {
+              const projectId = e.target.value;
+              setSelectedProjectId(projectId);
+              fetchStatus(projectId);
+            }}
             className="h-9 w-full max-w-xs cursor-pointer rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink outline-none transition focus:border-accent"
           >
             {projects.map((p) => (

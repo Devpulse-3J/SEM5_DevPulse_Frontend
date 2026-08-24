@@ -8,7 +8,7 @@ import { integrationsApiService, JiraIngestionStatusResponse } from "@/services/
 import { ApiError } from "@/services/api-client";
 
 export default function JiraIntegrationPage() {
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const webhookUrl = typeof window !== "undefined" ? `${window.location.origin}/api/webhooks/jira` : "";
   const [copied, setCopied] = useState(false);
 
   // Webhook secret state
@@ -22,20 +22,15 @@ export default function JiraIntegrationPage() {
   const [loadingIngestion, setLoadingIngestion] = useState(true);
   const [ingestionError, setIngestionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setWebhookUrl(`${window.location.origin}/api/webhooks/jira`);
-    }
-  }, []);
-
   const fetchIngestionStatus = useCallback(async () => {
-    setLoadingIngestion(true);
-    setIngestionError(null);
     try {
       const data = await integrationsApiService.getJiraIngestionStatus();
       setIngestionStatus(data);
+      setIngestionError(null);
     } catch (err: unknown) {
       console.warn("Failed to fetch Jira ingestion status from API", err);
+      const msg = err instanceof ApiError || err instanceof Error ? err.message : "Failed to load ingestion status.";
+      setIngestionError(msg);
       // Fallback display metrics for initial state
       setIngestionStatus({
         status: "ACTIVE",
@@ -49,7 +44,10 @@ export default function JiraIntegrationPage() {
   }, []);
 
   useEffect(() => {
-    fetchIngestionStatus();
+    const timeoutId = setTimeout(() => {
+      void fetchIngestionStatus();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [fetchIngestionStatus]);
 
   const handleCopyWebhookUrl = () => {
@@ -70,18 +68,9 @@ export default function JiraIntegrationPage() {
     try {
       const res = await integrationsApiService.saveJiraSecret(secret.trim());
       setSecretSaveMessage(res.message || "Webhook secret saved successfully. Outgoing webhooks will be validated.");
-      // Save in localStorage for UI persistence fallback
-      if (typeof window !== "undefined") {
-        localStorage.setItem("jira_webhook_secret", secret.trim());
-      }
     } catch (err: unknown) {
       const msg = err instanceof ApiError || err instanceof Error ? err.message : "Failed to save webhook secret.";
       setSecretSaveError(msg);
-      // Fallback local save if endpoint is mock/stub
-      if (typeof window !== "undefined") {
-        localStorage.setItem("jira_webhook_secret", secret.trim());
-        setSecretSaveMessage("Secret saved locally so outgoing webhooks are validated.");
-      }
     } finally {
       setIsSavingSecret(false);
     }
