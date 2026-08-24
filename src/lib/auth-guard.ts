@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { hasValidSession } from "./auth";
 import { isCompanyAdmin } from "./permissions";
+import { useHasMounted } from "@/hooks/useHasMounted";
 
 /**
  * Client-side route guards.
@@ -23,19 +24,25 @@ export function useRequireAuth(): { isChecking: boolean; isAuthed: boolean } {
   const router = useRouter();
   const pathname = usePathname();
   const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
+  const hasMounted = useHasMounted();
 
   // Trust the store first; fall back to storage so a reload doesn't bounce the
-  // user out before the session has rehydrated.
-  const isAuthed = isAuthenticated || hasValidSession();
+  // user out before the session has rehydrated. The storage read is deferred
+  // until mount — on the server it always answers "no session", and branching
+  // the tree on it there breaks hydration.
+  const isAuthed = isAuthenticated || (hasMounted && hasValidSession());
 
   useEffect(() => {
+    // Never redirect on the pre-mount pass: `hasValidSession()` has not been
+    // consulted yet, so a signed-in user would be bounced to /login.
+    if (!hasMounted) return;
     if (!isAuthed) {
       const target = pathname ? `?callbackUrl=${encodeURIComponent(pathname)}` : "";
       router.replace(`/login${target}`);
     }
-  }, [isAuthed, pathname, router]);
+  }, [hasMounted, isAuthed, pathname, router]);
 
-  return { isChecking: !isAuthed, isAuthed };
+  return { isChecking: !hasMounted || !isAuthed, isAuthed };
 }
 
 /**
