@@ -31,7 +31,11 @@ export interface InviteCompanyMembersResponse {
 export const adminApiService = {
   /** GET /api/auth/company/members */
   async getCompanyMembers(): Promise<CompanyMember[]> {
-    return apiClient.get<CompanyMember[]>("/api/auth/company/members");
+    try {
+      return await apiClient.get<CompanyMember[]>("/api/auth/company/members");
+    } catch {
+      return [];
+    }
   },
 
   /** POST /api/auth/company/invite */

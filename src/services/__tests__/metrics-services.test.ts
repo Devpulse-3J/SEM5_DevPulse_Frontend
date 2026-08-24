@@ -60,7 +60,7 @@ describe("metrics API services", () => {
 
     await expect(
       doraService.getSummary({ projectId: 7, windowDays: 30, historyDays: 14 }),
-    ).resolves.toBe(summary);
+    ).resolves.toEqual(summary);
     expect(getMock).toHaveBeenCalledWith("/api/metrics/dora", {
       params: { projectId: 7, windowDays: 30, historyDays: 14 },
     });

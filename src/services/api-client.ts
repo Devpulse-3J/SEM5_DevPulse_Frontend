@@ -164,7 +164,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     response = await fetch(url, { ...fetchOptions, headers });
   } catch (error: unknown) {
     const raw = error instanceof Error ? error.message : String(error);
-    console.error(`[API] ${method} ${url} NETWORK_ERROR (${Date.now() - startedAt}ms)`, error);
+    console.warn(`[API] ${method} ${url} NETWORK_ERROR (${Date.now() - startedAt}ms): ${raw}`);
     throw new ApiError(
       0,
       `Unable to reach the API at ${baseUrl}. Is the gateway running, and does its CORS config allow this origin?`,
