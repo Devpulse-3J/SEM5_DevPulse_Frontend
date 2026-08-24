@@ -50,13 +50,37 @@ function normalizeRating(rating?: string, value?: number | null): DoraRating {
   return "NOT_AVAILABLE";
 }
 
-function normalizeMetric(raw: any): DoraMetric {
+interface RawHistoryPoint {
+  date?: string;
+  timestamp?: string;
+  value?: number | null;
+  val?: number | null;
+}
+
+interface RawMetric {
+  key?: string;
+  metricKey?: string;
+  name?: string;
+  value?: number | null;
+  metricValue?: number | null;
+  currentValue?: number | null;
+  val?: number | null;
+  history?: RawHistoryPoint[];
+  rating?: string;
+  sampleSize?: number;
+  samples?: number;
+  previousValue?: number | null;
+  prevValue?: number | null;
+  unit?: string;
+}
+
+function normalizeMetric(raw: RawMetric): DoraMetric {
   const key = normalizeKey(raw.key || raw.metricKey || raw.name || "");
   
   let val: number | null = raw.value ?? raw.metricValue ?? raw.currentValue ?? raw.val ?? null;
   
   const history = Array.isArray(raw.history)
-    ? raw.history.map((pt: any) => ({
+    ? raw.history.map((pt: RawHistoryPoint) => ({
         date: pt.date || pt.timestamp || "",
         value: pt.value ?? pt.val ?? null,
       }))
@@ -64,8 +88,8 @@ function normalizeMetric(raw: any): DoraMetric {
 
   // Fallback: If summary value is null/undefined or 0, but history contains positive data points
   if ((val === null || val === 0) && history.length > 0) {
-    const validPoints = history.filter((pt: any) => pt.value !== null && !isNaN(Number(pt.value)));
-    const total = validPoints.reduce((acc: number, pt: any) => acc + Number(pt.value), 0);
+    const validPoints = history.filter((pt) => pt.value !== null && !isNaN(Number(pt.value)));
+    const total = validPoints.reduce((acc: number, pt) => acc + Number(pt.value), 0);
     if (total > 0) {
       if (key === "deploymentFrequency") {
         val = total / Math.max(1, history.length);
@@ -95,10 +119,10 @@ function normalizeMetric(raw: any): DoraMetric {
   };
 }
 
-export function normalizeDoraSummary(data: any): DoraSummary {
+export function normalizeDoraSummary(data: DoraSummary): DoraSummary {
   if (!data) return data;
-  const rawMetrics = Array.isArray(data.metrics) ? data.metrics : [];
-  const metrics = rawMetrics.map(normalizeMetric);
+  const rawMetrics = Array.isArray(data.metrics) ? data.metrics : ([] as DoraMetric[]);
+  const metrics = rawMetrics.map((metric) => normalizeMetric(metric as RawMetric));
   return {
     ...data,
     metrics,
