@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { setActiveProject, type WorkspaceRole } from "@/store/dashboardSlice";
 import { useAuth } from "@/hooks/useAuth";
+import { useHasMounted } from "@/hooks/useHasMounted";
 import { useMyMemberships } from "@/hooks/useProjects";
 import { projectLabel } from "@/types/project";
 import type { ProjectMembership } from "@/types/project";
@@ -33,7 +34,13 @@ export default function SelectProjectPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const hasMounted = useHasMounted();
   const { data: memberships, isLoading, isError, error } = useMyMemberships();
+
+  // Before mount the query is still disabled, so `isLoading` is false while the
+  // memberships are genuinely not known yet. Show the spinner for both, so the
+  // prerendered HTML and the hydration render agree.
+  const isResolving = !hasMounted || isLoading;
 
   function choose(m: ProjectMembership) {
     const role = toWorkspaceRole(m.role);
@@ -63,7 +70,7 @@ export default function SelectProjectPage() {
           </p>
         </div>
 
-        {isLoading && (
+        {isResolving && (
           <div className="flex justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           </div>
@@ -81,14 +88,14 @@ export default function SelectProjectPage() {
           </div>
         )}
 
-        {!isLoading && !isError && memberships?.length === 0 && (
+        {!isResolving && !isError && memberships?.length === 0 && (
           <FeatureUnavailable
             title="You are not a member of any project"
             message="Ask a company admin to add you to a project. Project membership is assigned in the backend; there is no self-service project creation yet."
           />
         )}
 
-        {!isLoading && !isError && memberships && memberships.length > 0 && (
+        {!isResolving && !isError && memberships && memberships.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {memberships.map((m) => {
               const role = toWorkspaceRole(m.role);

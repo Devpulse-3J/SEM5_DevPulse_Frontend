@@ -1,26 +1,16 @@
-import { NotImplementedError } from "@/lib/errors";
+import { apiClient } from "./api-client";
 import type { Repository } from "@/types/repository";
 
-/**
- * Repositories — NO BACKEND.
- *
- * There is no /api/repositories route. Repository data would come from
- * integration-service once it ingests GitHub.
- */
-const BLOCKED_ON = "integration-service";
+const REPOSITORIES_ENDPOINT = "/api/integrations/repositories";
 
 export const repositoryService = {
-  async getRepositories(): Promise<Repository[]> {
-    throw new NotImplementedError("Repositories", BLOCKED_ON);
+  getRepositories(): Promise<Repository[]> {
+    return apiClient.get<Repository[]>(REPOSITORIES_ENDPOINT);
   },
 
-  async getRepositoryById(_id: string): Promise<Repository> {
-    void _id;
-    throw new NotImplementedError("Repository detail", BLOCKED_ON);
-  },
-
-  async syncRepository(_id: string): Promise<void> {
-    void _id;
-    throw new NotImplementedError("Repository sync", BLOCKED_ON);
+  getRepositoryById(id: number): Promise<Repository> {
+    return apiClient.get<Repository>(
+      `${REPOSITORIES_ENDPOINT}/${encodeURIComponent(String(id))}`
+    );
   },
 };
