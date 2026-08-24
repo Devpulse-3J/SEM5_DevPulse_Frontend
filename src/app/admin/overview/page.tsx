@@ -97,7 +97,11 @@ export default function AdminOverviewPage() {
   }, [user?.email, user?.fullName]);
 
   useEffect(() => {
-    fetchOverviewData();
+    const timer = setTimeout(() => {
+      void fetchOverviewData();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [fetchOverviewData]);
 
   const activeMembersCount = members.filter(
