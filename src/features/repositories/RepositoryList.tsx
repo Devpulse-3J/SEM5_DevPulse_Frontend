@@ -8,7 +8,7 @@ import { exportToCSV } from "@/utils/exportCSV";
 
 interface RepositoryListProps {
   repositories: Repository[];
-  onSyncRepo?: (id: string) => void;
+  onSyncRepo?: (id: number) => void;
 }
 
 export function RepositoryList({ repositories, onSyncRepo }: RepositoryListProps) {

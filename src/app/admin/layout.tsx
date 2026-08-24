@@ -13,7 +13,7 @@ import { initials } from "@/utils/helpers";
 const NAV_ITEMS = [
   { label: "Overview", href: "/admin/overview", icon: "▣" },
   { label: "Projects", href: "/admin/projects", icon: "◧" },
-  { label: "Users", href: "/admin/users", icon: "◫" },
+  { label: "Members", href: "/admin/members", icon: "◫" },
   { label: "Integrations", href: "/admin/integrations", icon: "◎" },
   { label: "Settings", href: "/admin/settings", icon: "⚙" },
 ];
