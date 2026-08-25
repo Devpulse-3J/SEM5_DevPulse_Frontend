@@ -367,32 +367,46 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
         const status = await projectService.githubStatus(projectId);
         const urlRaw = status.url ?? status.repoUrl;
         if (urlRaw || status.owner) {
-          const url = urlRaw ? normaliseGithubRepoUrl(urlRaw) : (reposByProject[projectId]?.url ?? "");
-          const parsed = parseGithubRepoUrl(url);
-          const repo: LinkedRepo = {
-            id: String(status.repositoryId ?? status.id ?? `repo-${projectId}`),
-            projectId,
-            url,
-            owner: status.owner ?? parsed?.owner ?? reposByProject[projectId]?.owner ?? "unknown",
-            name: status.repositoryName ?? status.name ?? parsed?.name ?? reposByProject[projectId]?.name ?? "unknown",
-            status: status.status ?? "CONNECTED",
-            lastSyncedAt: status.lastSyncedAt ?? reposByProject[projectId]?.lastSyncedAt,
-          };
-          saveCachedRepo(projectId, repo);
-          setReposByProject((prev) => ({ ...prev, [projectId]: repo }));
-          setProjects((prev) =>
-            prev.map((project) =>
-              project.id === projectId
-                ? { ...project, githubRepoUrl: url || project.githubRepoUrl }
-                : project
-            )
-          );
+          setReposByProject((prev) => {
+            const current = prev[projectId];
+            const url = urlRaw
+              ? normaliseGithubRepoUrl(urlRaw)
+              : (current?.url ?? "");
+            const parsed = parseGithubRepoUrl(url);
+            const repo: LinkedRepo = {
+              id: String(status.repositoryId ?? status.id ?? `repo-${projectId}`),
+              projectId,
+              url,
+              owner: status.owner ?? parsed?.owner ?? current?.owner ?? "unknown",
+              name:
+                status.repositoryName ??
+                status.name ??
+                parsed?.name ??
+                current?.name ??
+                "unknown",
+              status: status.status ?? "CONNECTED",
+              lastSyncedAt: status.lastSyncedAt ?? current?.lastSyncedAt,
+            };
+            saveCachedRepo(projectId, repo);
+            return { ...prev, [projectId]: repo };
+          });
+
+          if (urlRaw) {
+            const url = normaliseGithubRepoUrl(urlRaw);
+            setProjects((prev) =>
+              prev.map((project) =>
+                project.id === projectId
+                  ? { ...project, githubRepoUrl: url }
+                  : project
+              )
+            );
+          }
         }
       } catch {
         // status endpoint might return error/404 if project has no repo linked yet
       }
     },
-    [reposByProject]
+    []
   );
 
   /** PUT /api/projects/{id} */
