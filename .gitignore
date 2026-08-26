@@ -13,6 +13,7 @@ build/
 
 # local-only (never push)
 CLAUDE.md
+secret.md
 
 # misc
 *.tsbuildinfo

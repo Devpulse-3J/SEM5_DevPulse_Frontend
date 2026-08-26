@@ -1,37 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
-import { IntegrationCard } from "./IntegrationCard";
-import { githubService } from "@/services/github.service";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 
+/**
+ * GitHub integration — no backend.
+ *
+ * There is no /api/integrations/** route, and no connect URL to link to either:
+ * the GitHub App identity lives server-side, so the client cannot build an
+ * install link without hardcoding an app slug that may not be correct.
+ */
 export function GitHubIntegration() {
-  const [status, setStatus] = useState({
-    connected: true,
-    accountName: "OdinEyeOrg",
-    connectedReposCount: 12,
-    lastSyncedAt: new Date().toISOString(),
-  });
-
-  const handleSync = async () => {
-    await githubService.triggerSync();
-    setStatus((prev) => ({ ...prev, lastSyncedAt: new Date().toISOString() }));
-  };
-
-  const handleConfigure = () => {
-    window.open(githubService.getConnectUrl(), "_blank");
-  };
-
   return (
-    <IntegrationCard
-      name="GitHub Integration"
-      icon="🐙"
-      description="Connect GitHub repositories to track PR risks, reviewer velocity, and automated CI check status."
-      connected={status.connected}
-      accountOrDomain={status.accountName}
-      connectedCountText={`${status.connectedReposCount} Repositories`}
-      lastSyncedAt={status.lastSyncedAt}
-      onSync={handleSync}
-      onConfigure={handleConfigure}
+    <FeatureUnavailable
+      title="GitHub integration is not available yet"
+      message="Connecting GitHub requires integration-service, which is not yet implemented."
     />
   );
 }

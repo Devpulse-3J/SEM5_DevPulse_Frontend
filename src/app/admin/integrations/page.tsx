@@ -1,125 +1,129 @@
-export const metadata = { title: "Integrations — Odin Eye Admin" };
+"use client";
 
-interface Integration {
-  tag: string;
-  name: string;
-  status: "CONNECTED" | "ATTENTION" | "DISCONNECTED";
-  stats: { label: string; value: string; valueColor?: string }[];
-}
+import { useState } from "react";
+import Link from "next/link";
+import { FaGithub, FaJira, FaSlack, FaArrowRight } from "react-icons/fa";
+import { Button } from "@/components/ui/Button";
+import { webhookService } from "@/services/webhook.service";
+import { ApiError } from "@/services/api-client";
 
-const INTEGRATIONS: Integration[] = [
-  {
-    tag: "GH",
-    name: "GitHub",
-    status: "CONNECTED",
-    stats: [
-      { label: "Last Sync",     value: "2 min ago",  valueColor: "#7a7a7a" },
-      { label: "Repositories",  value: "34" },
-      { label: "Webhook",       value: "● Healthy",  valueColor: "#7a7a7a" },
-    ],
-  },
-  {
-    tag: "JR",
-    name: "Jira",
-    status: "ATTENTION",
-    stats: [
-      { label: "Last Sync",  value: "18 min ago",              valueColor: "#b5b5b5" },
-      { label: "Projects",   value: "6" },
-      { label: "Webhook",    value: "● Token expiring in 3 days", valueColor: "#b5b5b5" },
-    ],
-  },
-  {
-    tag: "SL",
-    name: "Slack",
-    status: "CONNECTED",
-    stats: [
-      { label: "Last Sync", value: "Just now",    valueColor: "#7a7a7a" },
-      { label: "Channel",   value: "#eng-alerts" },
-      { label: "Webhook",   value: "● Healthy",   valueColor: "#7a7a7a" },
-    ],
-  },
-];
-
-const STATUS_STYLES = {
-  CONNECTED:    { label: "✓ CONNECTED",    color: "#7a7a7a" },
-  ATTENTION:    { label: "⚠ ATTENTION",    color: "#b5b5b5" },
-  DISCONNECTED: { label: "✕ NOT CONNECTED", color: "#ffffff" },
-} as const;
+type DemoState = "idle" | "sending" | "sent" | "failed";
 
 export default function IntegrationsPage() {
+  const [demoState, setDemoState] = useState<DemoState>("idle");
+  const [demoError, setDemoError] = useState<string | null>(null);
+
+  const handleTriggerDemo = async () => {
+    setDemoState("sending");
+    setDemoError(null);
+    try {
+      await webhookService.triggerHighRiskAlertDemo();
+      setDemoState("sent");
+    } catch (err: unknown) {
+      setDemoState("failed");
+      setDemoError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not reach the webhook endpoint."
+      );
+    }
+  };
+
+  const INTEGRATION_CARDS = [
+    {
+      id: "github",
+      title: "GitHub Integration",
+      description: "1-Click GitHub App authorization, manual repo linking, and historical data sync.",
+      href: "/admin/integrations/github",
+      icon: <FaGithub className="h-6 w-6 text-purple-400" />,
+      badge: "GitHub App / Repos",
+    },
+    {
+      id: "jira",
+      title: "Jira Integration",
+      description: "Webhook URL configuration, X-Jira-Signature validation secret, and issue ingestion metrics.",
+      href: "/admin/integrations/jira",
+      icon: <FaJira className="h-6 w-6 text-blue-400" />,
+      badge: "Webhooks / Secret",
+    },
+    {
+      id: "slack",
+      title: "Slack Integration",
+      description: "OAuth v2 workspace authorization, channel dropdown routing, and test notification dispatch.",
+      href: "/admin/integrations/slack",
+      icon: <FaSlack className="h-6 w-6 text-emerald-400" />,
+      badge: "OAuth v2 / Alert Rules",
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      {/* Header */}
+    <div className="flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold mb-0.5">Integrations</h1>
-        <p className="text-xs text-subtle">Connect and manage external services for your organisation</p>
+        <h1 className="mb-0.5 text-xl font-bold text-ink">Integrations Overview</h1>
+        <p className="text-xs text-subtle">
+          Manage connected data sources, authentication credentials, and notification webhooks.
+        </p>
       </div>
 
-      {/* Integration cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {INTEGRATIONS.map((integration) => {
-          const statusStyle = STATUS_STYLES[integration.status];
-          return (
-            <div key={integration.tag} className="bg-surface border border-border rounded-card p-5 flex flex-col gap-3">
-              {/* Logo + status */}
+      {/* Integration Module Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {INTEGRATION_CARDS.map((card) => (
+          <Link
+            key={card.id}
+            href={card.href}
+            className="flex flex-col justify-between gap-4 rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40 hover:bg-surface-raised/40 no-underline text-ink"
+          >
+            <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <div className="w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-[11px] font-bold text-ink">
-                  {integration.tag}
+                <div className="rounded-lg border border-border/80 bg-surface-raised p-2">
+                  {card.icon}
                 </div>
-                <span
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised"
-                  style={{ color: statusStyle.color }}
-                >
-                  {statusStyle.label}
+                <span className="rounded-full bg-surface-raised border border-border px-2.5 py-0.5 text-[10px] font-medium text-subtle">
+                  {card.badge}
                 </span>
               </div>
-
-              {/* Name */}
-              <div className="text-sm font-semibold text-ink">{integration.name}</div>
-
-              {/* Stats */}
-              <div className="flex flex-col gap-2 pt-3 border-t border-border-subtle">
-                {integration.stats.map((stat) => (
-                  <div key={stat.label} className="flex items-baseline justify-between">
-                    <span className="text-[11px] text-subtle">{stat.label}</span>
-                    <span
-                      className="text-xs font-mono font-semibold"
-                      style={{ color: stat.valueColor ?? "#ffffff" }}
-                    >
-                      {stat.value}
-                    </span>
-                  </div>
-                ))}
+              <div>
+                <h2 className="text-sm font-bold text-ink">{card.title}</h2>
+                <p className="mt-1 text-xs text-subtle leading-relaxed">{card.description}</p>
               </div>
-
-              {/* Configure link */}
-              <button
-                type="button"
-                className="text-left text-xs text-accent font-medium hover:underline cursor-pointer bg-transparent border-none p-0 mt-1"
-              >
-                Configure →
-              </button>
             </div>
-          );
-        })}
+
+            <div className="flex items-center text-xs font-semibold text-accent gap-1.5 pt-2">
+              Configure Module <FaArrowRight className="h-3 w-3" />
+            </div>
+          </Link>
+        ))}
       </div>
 
-      {/* Webhook health summary */}
-      <div className="bg-surface border border-border rounded-card p-5">
-        <h2 className="text-[13px] font-semibold mb-4">Webhook Health</h2>
-        <div className="flex flex-col gap-2">
-          {[
-            { label: "GitHub Webhook",  status: "Healthy",                   color: "#7a7a7a" },
-            { label: "Jira Webhook",    status: "Token expiring in 3 days",  color: "#b5b5b5" },
-            { label: "Slack Webhook",   status: "Healthy",                   color: "#7a7a7a" },
-          ].map(({ label, status, color }) => (
-            <div key={label} className="flex items-center justify-between py-1.5 border-b border-border-subtle last:border-0">
-              <span className="text-xs text-muted">{label}</span>
-              <span className="text-xs font-semibold font-mono" style={{ color }}>
-                ● {status}
-              </span>
-            </div>
-          ))}
+      {/* Event Pipeline Demo Section */}
+      <div className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-5">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Synthetic Event Pipeline Demo</h2>
+          <p className="mt-1 text-xs text-muted">
+            Publishes a synthetic high-risk pull request event through RabbitMQ into
+            notification-service. Alert rules matching <code>HIGH_RISK_PR</code> will
+            fire against their configured Slack channel.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleTriggerDemo}
+            disabled={demoState === "sending"}
+          >
+            {demoState === "sending" ? "Sending…" : "Trigger demo alert"}
+          </Button>
+
+          {demoState === "sent" && (
+            <span className="text-xs text-success">
+              Event published — check your Slack channel.
+            </span>
+          )}
+          {demoState === "failed" && (
+            <span className="text-xs text-danger">{demoError}</span>
+          )}
         </div>
       </div>
     </div>

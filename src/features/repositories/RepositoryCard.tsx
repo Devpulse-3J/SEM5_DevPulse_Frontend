@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 
 interface RepositoryCardProps {
   repository: Repository;
-  onSync?: (id: string) => void;
+  onSync?: (id: number) => void;
 }
 
 export function RepositoryCard({ repository, onSync }: RepositoryCardProps) {

@@ -1,57 +1,57 @@
+import { NotImplementedError } from "@/lib/errors";
+import { apiClient } from "@/services/api-client";
 import type { UserNotification } from "@/types/notification";
 
-const MOCK_NOTIFICATIONS: UserNotification[] = [
-  {
-    id: "notif-1",
-    title: "New Review Requested",
-    message: "Sarah requested your review on PR #145: 'feat: add rate limiting'",
-    type: "PR_REVIEW_REQUESTED",
-    read: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    link: "/my-prs",
-  },
-  {
-    id: "notif-2",
-    title: "PR Approved",
-    message: "Michael approved your PR #142: 'refactor JWT token parsing'",
-    type: "PR_ASSIGNED",
-    read: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    link: "/my-prs",
-  },
-  {
-    id: "notif-3",
-    title: "CI Pipeline Alert",
-    message: "Build #891 failed on metrics-pipeline branch feature/dora-calc",
-    type: "BUILD_FAILED",
-    read: true,
-    timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    link: "/repositories/repo-2",
-  },
-];
+export interface TeamMessageRecipient {
+  userId: string;
+  email: string;
+  name: string;
+}
+
+export interface SendTeamMessageRequest {
+  projectId: string;
+  channel: "EMAIL" | "SLACK";
+  recipients: TeamMessageRecipient[];
+  subject?: string;
+  message: string;
+  slackChannel?: string;
+}
+
+export interface SendTeamMessageResponse {
+  attempted: number;
+  delivered: number;
+  failed: number;
+}
+
+/**
+ * User notifications — NO BACKEND.
+ *
+ * notification-service implements alert RULES only (see alert.service.ts). It
+ * does not expose delivered notifications, read receipts, or history, so there
+ * is nothing to list or mark read.
+ */
+const BLOCKED_ON = "a notification history endpoint";
 
 export const notificationService = {
+  async sendTeamMessage(
+    data: SendTeamMessageRequest
+  ): Promise<SendTeamMessageResponse> {
+    return apiClient.post<SendTeamMessageResponse>(
+      "/api/notifications/team-message",
+      data
+    );
+  },
+
   async getNotifications(): Promise<UserNotification[]> {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!baseUrl) return MOCK_NOTIFICATIONS;
-
-      const res = await fetch(`${baseUrl}/api/notifications`);
-      if (!res.ok) throw new Error("Failed to fetch notifications");
-      return await res.json();
-    } catch {
-      return MOCK_NOTIFICATIONS;
-    }
+    throw new NotImplementedError("Notifications", BLOCKED_ON);
   },
 
-  async markAsRead(id: string): Promise<boolean> {
-    const item = MOCK_NOTIFICATIONS.find((n) => n.id === id);
-    if (item) item.read = true;
-    return true;
+  async markAsRead(_id: string): Promise<void> {
+    void _id;
+    throw new NotImplementedError("Marking notifications read", BLOCKED_ON);
   },
 
-  async markAllAsRead(): Promise<boolean> {
-    MOCK_NOTIFICATIONS.forEach((n) => (n.read = true));
-    return true;
+  async markAllAsRead(): Promise<void> {
+    throw new NotImplementedError("Marking notifications read", BLOCKED_ON);
   },
 };

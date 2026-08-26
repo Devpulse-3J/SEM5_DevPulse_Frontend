@@ -1,8 +1,6 @@
-// OWNER: Person B — DORA / Overview metric types (mirror gateway /api/metrics/dora).
+// Mirrors the implemented metrics-service responses exactly.
 
-export type DoraRating = "ELITE" | "HIGH" | "MEDIUM" | "LOW";
-export type MetricSeverity = "good" | "warn" | "bad";
-export type TrendDirection = "up" | "down";
+export type DoraRating = "ELITE" | "HIGH" | "MEDIUM" | "LOW" | "NOT_AVAILABLE";
 
 export type DoraMetricKey =
   | "deploymentFrequency"
@@ -10,46 +8,50 @@ export type DoraMetricKey =
   | "mttr"
   | "changeFailureRate";
 
-export interface DoraTrend {
-  direction: TrendDirection;
-  /** e.g. "Elite · +0.8 vs prior period" */
-  text: string;
+export interface DoraHistoryPoint {
+  date: string;
+  value: number | null;
 }
 
-/** One DORA metric card on the Overview dashboard. */
-export interface DoraMetricCard {
+export interface DoraMetric {
   key: DoraMetricKey;
-  label: string;
-  value: number;
-  unit: string; // "/day" | "hrs" | "%"
+  value: number | null;
+  unit: string;
   rating: DoraRating;
-  ratingLabel: string; // "Elite" | "High" | "Needs Attention"
-  severity: MetricSeverity; // drives left-border + trend color
-  trend: DoraTrend;
-  /** 7 recent points, 0–100, for the mini sparkline bars. */
-  sparkline: number[];
+  previousValue: number | null;
+  sampleSize: number;
+  history: DoraHistoryPoint[];
 }
 
 export interface DoraSummary {
-  project: string;
+  projectId: string;
+  projectName: string;
   repoCount: number;
-  updatedAgo: string;
-  metrics: DoraMetricCard[];
+  calculatedAt: string;
+  windowDays: number;
+  metrics: DoraMetric[];
 }
 
-/** "Lead Time Trend — 12 Weeks" line chart. */
-export interface LeadTimePoint {
-  week: string; // "W1"
-  hours: number;
-}
-export interface LeadTimeTrend {
-  unit: string; // "median, hrs"
-  points: LeadTimePoint[];
+export type DeploymentEnvironment = "development" | "staging" | "production";
+export type DeploymentStatus = "pending" | "success" | "failed" | "rolled_back";
+
+export interface Deployment {
+  id: string;
+  externalId: string | null;
+  commitSha: string | null;
+  environment: DeploymentEnvironment;
+  status: DeploymentStatus;
+  deployedAt: string;
+  failureRecoveredAt: string | null;
+  triggeredByUserId: string | null;
+  triggeredByName: string | null;
+  leadTimeHours: number | null;
 }
 
-/** "Deploys by Repo (7d)" bar list. */
-export interface RepoDeploy {
-  repo: string;
-  deploys: number;
-  pct: number; // 0–100 bar fill
+export interface WorkloadEntry {
+  userId: string;
+  name: string;
+  activePrs: number;
+  loadPct: number;
+  cycleTimeHours: number | null;
 }

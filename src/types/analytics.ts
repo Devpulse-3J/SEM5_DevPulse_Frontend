@@ -2,17 +2,6 @@
 
 export type LoadSeverity = "good" | "warn" | "bad";
 
-/** One row of the "Developer Capacity" roster. */
-export interface WorkloadEntry {
-  id: string;
-  name: string;
-  initials: string;
-  activePrs: number;
-  loadPct: number; // 190 = 190% of team avg
-  loadSeverity: LoadSeverity;
-  cycleTimeDays: number;
-}
-
 /** A slice of the "Effort Distribution" donut. */
 export interface EffortSlice {
   label: string; // "Feature work"

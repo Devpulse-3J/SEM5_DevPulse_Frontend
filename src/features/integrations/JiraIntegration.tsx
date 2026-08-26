@@ -1,32 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { IntegrationCard } from "./IntegrationCard";
-import { jiraService } from "@/services/jira.service";
+import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 
+/** Jira integration — no /api/integrations/** route exists. */
 export function JiraIntegration() {
-  const [status, setStatus] = useState({
-    connected: true,
-    domain: "odineye.atlassian.net",
-    linkedIssuesCount: 48,
-    lastSyncedAt: new Date().toISOString(),
-  });
-
-  const handleSync = async () => {
-    await jiraService.triggerSync();
-    setStatus((prev) => ({ ...prev, lastSyncedAt: new Date().toISOString() }));
-  };
-
   return (
-    <IntegrationCard
-      name="Jira Software"
-      icon="🔹"
-      description="Link Jira ticket IDs with pull requests to track cycle time, ticket scope creep, and bug resolution velocity."
-      connected={status.connected}
-      accountOrDomain={status.domain}
-      connectedCountText={`${status.linkedIssuesCount} Tickets Synced`}
-      lastSyncedAt={status.lastSyncedAt}
-      onSync={handleSync}
+    <FeatureUnavailable
+      title="Jira integration is not available yet"
+      message="Connecting Jira requires integration-service, which is not yet implemented."
     />
   );
 }

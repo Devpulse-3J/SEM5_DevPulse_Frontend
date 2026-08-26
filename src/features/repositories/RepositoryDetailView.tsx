@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 
 interface RepositoryDetailViewProps {
   repository: Repository;
-  onSync?: (id: string) => void;
+  onSync?: (id: number) => void;
 }
 
 export function RepositoryDetailView({ repository, onSync }: RepositoryDetailViewProps) {

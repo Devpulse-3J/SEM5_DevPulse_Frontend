@@ -16,7 +16,7 @@ export interface ButtonProps
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    "bg-accent text-white hover:bg-accent-hover focus-visible:ring-accent/40",
+    "bg-accent text-black font-semibold hover:bg-accent-hover focus-visible:ring-accent/40",
   secondary:
     "bg-surface-raised text-ink border border-border hover:bg-surface-raised/80 focus-visible:ring-border",
   ghost:

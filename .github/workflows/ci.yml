@@ -34,7 +34,5 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      # NOTE: this fails until src/app/layout.tsx and src/app/page.tsx are implemented.
-      # Until then, either leave it red or comment out this step.
       - name: Build
         run: npm run build
