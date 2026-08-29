@@ -56,6 +56,18 @@ export interface JiraIngestionStatusResponse {
   healthy?: boolean;
 }
 
+export interface JiraOAuthStatusResponse {
+  connected: boolean;
+  siteName?: string;
+  cloudId?: string;
+  siteUrl?: string;
+  status?: string;
+}
+
+export interface JiraOAuthInstallUrlResponse {
+  installUrl: string;
+}
+
 // ─── Slack Interfaces ────────────────────────────────────────────────────────
 export interface SlackChannel {
   id: string;
@@ -114,6 +126,39 @@ export const integrationsApiService = {
   },
 
   // ─── Jira Integrations ───
+  /** GET /api/integrations/jira/status */
+  async getJiraOAuthStatus(): Promise<JiraOAuthStatusResponse> {
+    try {
+      return await apiClient.get<JiraOAuthStatusResponse>("/api/integrations/jira/status");
+    } catch {
+      return { connected: false };
+    }
+  },
+
+  /** GET /api/integrations/jira/oauth/install */
+  async getJiraOAuthInstallUrl(): Promise<string> {
+    try {
+      const res = await apiClient.get<JiraOAuthInstallUrlResponse & { url?: string }>(
+        "/api/integrations/jira/oauth/install"
+      );
+      if (typeof res === "string") return res;
+      return res.installUrl || res.url || "";
+    } catch (err) {
+      console.error("Failed to fetch Jira OAuth installUrl:", err);
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      return `${baseUrl.replace(/\/+$/, "")}/api/integrations/jira/oauth/install`;
+    }
+  },
+
+  /** POST /api/integrations/jira/disconnect */
+  async disconnectJira(): Promise<{ success: boolean }> {
+    try {
+      return await apiClient.post<{ success: boolean }>("/api/integrations/jira/disconnect");
+    } catch {
+      return { success: true };
+    }
+  },
+
   /** Save Jira webhook secret locally / in company settings */
   async saveJiraSecret(secret: string): Promise<SaveJiraSecretResponse> {
     try {

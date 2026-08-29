@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 export type DateRange = "7d" | "14d" | "30d" | "90d";
 
@@ -16,7 +17,7 @@ export interface DashboardState {
   selectedProjectId: string | null;
 }
 
-const ACTIVE_PROJECT_KEY = "devpulse_active_project";
+const ACTIVE_PROJECT_KEY = STORAGE_KEYS.activeProject;
 
 function loadActiveProject(): ActiveProject | null {
   if (typeof window === "undefined") return null;
