@@ -11,11 +11,26 @@ export interface CompanyMember {
   role: CompanyRole;
   status: MemberStatus;
   joinedAt?: string;
+  assignedProjects?: string[];
+}
+
+export interface JoinRequest {
+  id: string | number;
+  requestId: string | number;
+  email: string;
+  githubUsername?: string;
+  targetProjectId?: number | string;
+  targetProjectName?: string;
+  message?: string;
+  createdAt: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
 export interface InviteCompanyMembersRequest {
   emails: string[];
   role: CompanyRole;
+  projectId?: number | string;
+  projectRole?: "DEVELOPER" | "MANAGER";
 }
 
 export interface UpdateCompanyMemberRoleRequest {
@@ -65,6 +80,35 @@ export const adminApiService = {
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.delete<{ success: boolean; message?: string }>(
       `/api/auth/company/members/${userId}`
+    );
+  },
+
+  /** GET /api/workspaces/{companyId}/join-requests */
+  async getJoinRequests(companyId: number | string): Promise<JoinRequest[]> {
+    try {
+      return await apiClient.get<JoinRequest[]>(`/api/workspaces/${companyId}/join-requests`);
+    } catch {
+      return [];
+    }
+  },
+
+  /** POST /api/workspaces/{companyId}/join-requests/{requestId}/approve */
+  async approveJoinRequest(
+    companyId: number | string,
+    requestId: number | string
+  ): Promise<{ success: boolean; message?: string }> {
+    return apiClient.post<{ success: boolean; message?: string }>(
+      `/api/workspaces/${companyId}/join-requests/${requestId}/approve`
+    );
+  },
+
+  /** POST /api/workspaces/{companyId}/join-requests/{requestId}/reject */
+  async rejectJoinRequest(
+    companyId: number | string,
+    requestId: number | string
+  ): Promise<{ success: boolean; message?: string }> {
+    return apiClient.post<{ success: boolean; message?: string }>(
+      `/api/workspaces/${companyId}/join-requests/${requestId}/reject`
     );
   },
 };
