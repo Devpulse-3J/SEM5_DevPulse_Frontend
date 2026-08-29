@@ -180,6 +180,20 @@ export const integrationsApiService = {
   },
 
   // ─── Slack Integrations ───
+  /** GET /api/slack/oauth/install */
+  async getSlackOAuthInstallUrl(): Promise<string> {
+    try {
+      const res = await apiClient.get<{ installUrl?: string; url?: string }>(
+        "/api/slack/oauth/install"
+      );
+      if (typeof res === "string") return res;
+      return res.installUrl || res.url || "";
+    } catch {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      return `${baseUrl.replace(/\/+$/, "")}/api/slack/oauth/install`;
+    }
+  },
+
   /** GET /api/slack/channels */
   async getSlackChannels(): Promise<SlackChannel[]> {
     try {

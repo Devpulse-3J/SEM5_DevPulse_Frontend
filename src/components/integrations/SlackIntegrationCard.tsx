@@ -73,10 +73,17 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
     void fetchChannels();
   }, [fetchChannels]);
 
-  const handleAddToSlack = () => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-    const targetUrl = apiBase ? `${apiBase}/api/slack/oauth/install` : "/api/slack/oauth/install";
-    window.location.href = targetUrl;
+  const handleAddToSlack = async () => {
+    try {
+      const targetUrl = await integrationsApiService.getSlackOAuthInstallUrl();
+      if (targetUrl) {
+        window.location.href = targetUrl;
+      }
+    } catch (err) {
+      console.error("Failed to initiate Slack OAuth:", err);
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      window.location.href = apiBase ? `${apiBase}/api/slack/oauth/install` : "/api/slack/oauth/install";
+    }
   };
 
   const handleSaveWebhook = (e: React.FormEvent) => {
