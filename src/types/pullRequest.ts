@@ -33,6 +33,10 @@ export interface PRRiskAnalysis {
   riskScore: number; // 0 to 100
   riskLevel: PRRiskLevel;
   summary: string;
+  /** Which model produced the score, and when. */
+  algorithm?: string;
+  modelVersion?: string;
+  predictedAt?: string;
   factors: PRRiskFactor[];
 }
 
