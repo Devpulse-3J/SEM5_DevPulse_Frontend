@@ -5,6 +5,8 @@ import type { PullRequest, PRStatus } from "@/types/pullRequest";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { RiskBadge } from "@/components/ui/RiskBadge";
+import { riskPresentation } from "@/lib/risk";
 import { exportToCSV } from "@/utils/exportCSV";
 
 interface MyPRListProps {
@@ -28,6 +30,7 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
     const rows = filteredPrs.map((pr) => ({
       Number: pr.number,
       Title: pr.title,
+      Risk: riskPresentation(pr.riskAnalysis).label,
       Repository: pr.repositoryName,
       Status: pr.status,
       Additions: pr.additions,
@@ -76,6 +79,7 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
         <table className="w-full text-left text-xs text-ink border-collapse">
           <thead className="bg-surface-raised/60 text-subtle font-semibold border-b border-border">
             <tr>
+              <th className="py-3 px-4">Risk</th>
               <th className="py-3 px-4">PR # / Title</th>
               <th className="py-3 px-4">Repository</th>
               <th className="py-3 px-4">Status</th>
@@ -87,13 +91,16 @@ export function MyPRList({ pullRequests }: MyPRListProps) {
           <tbody className="divide-y divide-border/40">
             {filteredPrs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-muted">
+                <td colSpan={7} className="py-8 text-center text-muted">
                   No pull requests found matching criteria.
                 </td>
               </tr>
             ) : (
               filteredPrs.map((pr) => (
                 <tr key={pr.id} className="hover:bg-surface-raised/30 transition-colors">
+                  <td className="py-3 px-4">
+                    <RiskBadge risk={pr.riskAnalysis} />
+                  </td>
                   <td className="py-3 px-4">
                     <div className="flex flex-col">
                       {pr.url ? (
