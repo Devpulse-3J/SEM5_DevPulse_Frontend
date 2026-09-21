@@ -77,7 +77,7 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/register" className="inline-flex items-center gap-2 bg-white text-black font-bold text-sm px-6 py-3 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
-              Get Started Free <IconArrowRight />
+              Get Started <IconArrowRight />
             </Link>
             <Link href="/login" className="inline-flex items-center gap-2 bg-surface-raised text-muted font-semibold text-sm px-6 py-3 rounded-lg border border-border hover:text-ink hover:border-white/40 transition-all no-underline hover:no-underline">
               Sign in to Dashboard
