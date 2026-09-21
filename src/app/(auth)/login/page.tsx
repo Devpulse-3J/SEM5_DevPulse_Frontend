@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { IconGitHub, IconEye, IconEyeOff } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
+import { authService } from "@/services/auth.service";
+import { inviteHref, readInviteParams } from "@/lib/invite";
 import { validateLoginForm, type LoginFormErrors } from "@/lib/validators";
 import type { SystemRole } from "@/types/user";
 
@@ -22,6 +24,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
+  // Arriving from a project invitation email as someone who already has an
+  // account: /login?invite=<token>&email=<address>. Signing in accepts it.
+  const invite = readInviteParams(searchParams);
+
   const {
     login,
     isLoading,
@@ -30,11 +36,13 @@ function LoginForm() {
     clearErrors,
   } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(invite.email);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [clientErrors, setClientErrors] = useState<LoginFormErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  // Set when sign-in worked but the invitation could not be accepted.
+  const [continueTo, setContinueTo] = useState<string | null>(null);
 
   /** Company admins land in the console; everyone else picks a project first. */
   const getRedirectPath = (role: SystemRole): string => {
@@ -42,9 +50,25 @@ function LoginForm() {
     return role === "admin" ? "/admin/overview" : "/select-project";
   };
 
+  /** Accepts the emailed invitation for the account that just signed in. */
+  const acceptInvitation = async (token: string, role: SystemRole) => {
+    try {
+      await authService.acceptProjectInvitation(token);
+      // Accepting can attach the account to a company, and the token from the
+      // first sign-in predates that. Sign in again so the token carries it.
+      const refreshed = await login({ email: email.trim(), password });
+      router.push(getRedirectPath(refreshed.systemRole));
+    } catch (err: unknown) {
+      const reason = err instanceof Error ? err.message : "Unknown error";
+      setGeneralError(`You are signed in, but the invitation could not be accepted: ${reason}`);
+      setContinueTo(getRedirectPath(role));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
+    setContinueTo(null);
     clearErrors();
 
     const errors = validateLoginForm({ email, password });
@@ -56,6 +80,10 @@ function LoginForm() {
 
     try {
       const authResponse = await login({ email: email.trim(), password });
+      if (invite.token) {
+        await acceptInvitation(invite.token, authResponse.systemRole);
+        return;
+      }
       router.push(getRedirectPath(authResponse.systemRole));
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -77,9 +105,13 @@ function LoginForm() {
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-xl font-bold mb-1 tracking-tight text-ink">
-          Sign in to your workspace
+          {invite.token ? "Accept your invitation" : "Sign in to your workspace"}
         </h1>
-        <p className="text-xs text-muted">Enter your credentials to continue</p>
+        <p className="text-xs text-muted">
+          {invite.token
+            ? "Sign in to join the project you were invited to"
+            : "Enter your credentials to continue"}
+        </p>
       </div>
 
       <div className="bg-surface border border-border rounded-panel p-7 flex flex-col gap-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)]">
@@ -99,6 +131,16 @@ function LoginForm() {
           <span>OR</span>
           <div className="flex-1 h-px bg-border-subtle" />
         </div>
+
+        {invite.token && (
+          <div className="p-3 rounded-lg bg-accent/10 border border-accent/25 text-xs text-ink flex items-start gap-2.5">
+            <span className="text-base text-accent leading-none select-none">ℹ</span>
+            <div className="flex-1 text-[11px] text-muted">
+              You were invited to a project. Sign in with the account for the invited email address and the invitation
+              is accepted automatically.
+            </div>
+          </div>
+        )}
 
         {activeError && (
           <div
@@ -202,8 +244,15 @@ function LoginForm() {
       </div>
 
       <div className="text-center text-xs text-subtle">
+        {continueTo && (
+          <p className="mb-2">
+            <Link href={continueTo} className="text-accent font-medium hover:underline">
+              Continue to your workspace
+            </Link>
+          </p>
+        )}
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-accent font-medium hover:underline">
+        <Link href={inviteHref("/register", invite)} className="text-accent font-medium hover:underline">
           Create one
         </Link>
       </div>
