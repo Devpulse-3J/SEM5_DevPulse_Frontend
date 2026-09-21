@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  AcceptProjectInvitationResponse,
   UserProfileResponse,
 } from "@/types/user";
 
@@ -37,6 +38,20 @@ export const authService = {
     return apiClient.post<AuthResponse>("/api/auth/register", data, {
       requiresAuth: false,
     });
+  },
+
+  /**
+   * POST /api/auth/invitations/project/accept?token= → 200
+   * A signed-in user accepts the project invitation emailed to them. The
+   * account's email must match the invited address (403 otherwise); 400 if the
+   * invitation expired or was already used; 409 if it belongs to another company.
+   * The account's company may change, so sign in again afterwards: the existing
+   * JWT still carries the old companyId.
+   */
+  async acceptProjectInvitation(token: string): Promise<AcceptProjectInvitationResponse> {
+    return apiClient.post<AcceptProjectInvitationResponse>(
+      `/api/auth/invitations/project/accept?token=${encodeURIComponent(token)}`,
+    );
   },
 
   /** GET /api/auth/me — the only source of companyId and projectRoles. */

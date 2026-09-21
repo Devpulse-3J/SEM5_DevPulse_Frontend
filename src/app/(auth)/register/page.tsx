@@ -1,25 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IconGitHub, IconEye, IconEyeOff } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
+import { inviteHref, readInviteParams } from "@/lib/invite";
 import { validateRegisterForm, type RegisterFormErrors } from "@/lib/validators";
 
 type RegisterMode = "INDIVIDUAL" | "COMPANY";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const { register: registerUser, isLoading, error: authError, fieldErrors: serverFieldErrors, clearErrors } =
     useAuth();
+
+  // Arriving from a project invitation email: /register?invite=<token>&email=<address>.
+  // The token joins the inviting company and project, so the company options are
+  // hidden and the address is fixed to the one that was invited.
+  const invite = readInviteParams(useSearchParams());
+  const isInvited = invite.token !== undefined;
+  const emailLocked = isInvited && invite.email !== "";
 
   const [mode, setMode] = useState<RegisterMode>("INDIVIDUAL");
 
   // Individual / Admin fields
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(invite.email);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -61,6 +69,7 @@ export default function RegisterPage() {
         password,
         companyName: isCompany ? companyName.trim() : undefined,
         isCompany,
+        inviteToken: invite.token,
       });
 
       // systemRole is lowercase: "admin" for a company creator, else "member".
@@ -90,17 +99,24 @@ export default function RegisterPage() {
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-xl font-bold mb-1 tracking-tight text-ink">
-          {mode === "COMPANY" ? "Register your Company" : "Get started with Odin Eye"}
+          {isInvited
+            ? "Join your team on Odin Eye"
+            : mode === "COMPANY"
+              ? "Register your Company"
+              : "Get started with Odin Eye"}
         </h1>
         <p className="text-xs text-muted">
-          {mode === "COMPANY"
-            ? "Create an organization workspace and provision an Admin account"
-            : "Create your personal account to collaborate across Developer & Manager workspaces"}
+          {isInvited
+            ? "Create your account to join the project you were invited to"
+            : mode === "COMPANY"
+              ? "Create an organization workspace and provision an Admin account"
+              : "Create your personal account to collaborate across Developer & Manager workspaces"}
         </p>
       </div>
 
       <div className="bg-surface border border-border rounded-panel p-7 flex flex-col gap-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)]">
-        {/* Account Mode Switcher Tabs */}
+        {/* Account Mode Switcher Tabs (not for an invitation: it always joins the inviting company) */}
+        {!isInvited && (
         <div className="grid grid-cols-2 p-1 bg-canvas border border-border rounded-lg gap-1">
           <button
             type="button"
@@ -133,9 +149,21 @@ export default function RegisterPage() {
             <span>Register as a Company</span>
           </button>
         </div>
+        )}
 
-        {/* GitHub OAuth Button (Individual only) */}
-        {mode === "INDIVIDUAL" && (
+        {/* Invitation Info Banner */}
+        {isInvited && (
+          <div className="p-3 rounded-lg bg-accent/10 border border-accent/25 text-xs text-ink flex items-start gap-2.5">
+            <span className="text-base text-accent leading-none select-none">ℹ</span>
+            <div className="flex-1 text-[11px] text-muted">
+              You were invited by your company admin. Register with the email address the invitation was sent to and you
+              will be added to the project automatically.
+            </div>
+          </div>
+        )}
+
+        {/* GitHub OAuth Button (Individual only, and not for an invitation: it would drop the token) */}
+        {mode === "INDIVIDUAL" && !isInvited && (
           <>
             <button
               type="button"
@@ -289,12 +317,13 @@ export default function RegisterPage() {
                   }
                 }}
                 disabled={isLoading}
+                readOnly={emailLocked}
                 required
                 className={`h-10 px-3 rounded-lg bg-canvas border text-ink text-xs transition-colors placeholder:text-subtle focus:outline-none ${
                   emailError
                     ? "border-danger focus:border-danger focus:ring-1 focus:ring-danger/30"
                     : "border-border focus:border-accent focus:ring-1 focus:ring-accent/40"
-                } disabled:opacity-50`}
+                } disabled:opacity-50 read-only:opacity-70 read-only:cursor-not-allowed`}
               />
               {emailError && (
                 <p className="text-[11px] text-danger font-medium mt-0.5">{emailError}</p>
@@ -382,10 +411,19 @@ export default function RegisterPage() {
 
       <div className="text-center text-xs text-subtle">
         Already have an account?{" "}
-        <Link href="/login" className="text-accent font-medium hover:underline">
-          Sign in
+        <Link href={inviteHref("/login", invite)} className="text-accent font-medium hover:underline">
+          {isInvited ? "Sign in to accept your invitation" : "Sign in"}
         </Link>
       </div>
     </div>
+  );
+}
+
+// useSearchParams needs a Suspense boundary or `next build` fails to prerender the page.
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }
