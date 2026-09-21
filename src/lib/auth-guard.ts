@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { hasValidSession } from "./auth";
 import { isCompanyAdmin } from "./permissions";
+import { loginPathFor } from "./redirect";
 import { useHasMounted } from "@/hooks/useHasMounted";
 
 /**
@@ -37,8 +38,11 @@ export function useRequireAuth(): { isChecking: boolean; isAuthed: boolean } {
     // consulted yet, so a signed-in user would be bounced to /login.
     if (!hasMounted) return;
     if (!isAuthed) {
+      // Send the visitor to the login that matches the area they were in, so a
+      // session lost in the admin console returns to the admin login and not to
+      // the workspace login.
       const target = pathname ? `?callbackUrl=${encodeURIComponent(pathname)}` : "";
-      router.replace(`/login${target}`);
+      router.replace(`${loginPathFor(pathname)}${target}`);
     }
   }, [hasMounted, isAuthed, pathname, router]);
 

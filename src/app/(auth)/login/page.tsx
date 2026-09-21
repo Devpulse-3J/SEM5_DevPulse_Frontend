@@ -8,8 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
 import { authService } from "@/services/auth.service";
 import { inviteHref, readInviteParams } from "@/lib/invite";
+import { memberLandingPath } from "@/lib/redirect";
 import { validateLoginForm, type LoginFormErrors } from "@/lib/validators";
-import type { SystemRole } from "@/types/user";
 
 // NOTE: this page previously shipped a DEMO_ROLES array with real-looking
 // prefilled credentials (emails + "password123"). That was a credential leak in
@@ -44,24 +44,25 @@ function LoginForm() {
   // Set when sign-in worked but the invitation could not be accepted.
   const [continueTo, setContinueTo] = useState<string | null>(null);
 
-  /** Company admins land in the console; everyone else picks a project first. */
-  const getRedirectPath = (role: SystemRole): string => {
-    if (callbackUrl) return callbackUrl;
-    return role === "admin" ? "/admin/overview" : "/select-project";
-  };
+  // This is the workspace door: everyone, company admins included, lands in the
+  // workspace (project picker, then their per-project role). The admin console
+  // has its own login at /adminlogin. A leftover ?callbackUrl= into /admin is
+  // ignored, otherwise signing out of the console and using this page would
+  // put an admin straight back in it.
+  const landingPath = memberLandingPath(callbackUrl);
 
   /** Accepts the emailed invitation for the account that just signed in. */
-  const acceptInvitation = async (token: string, role: SystemRole) => {
+  const acceptInvitation = async (token: string) => {
     try {
       await authService.acceptProjectInvitation(token);
       // Accepting can attach the account to a company, and the token from the
       // first sign-in predates that. Sign in again so the token carries it.
-      const refreshed = await login({ email: email.trim(), password });
-      router.push(getRedirectPath(refreshed.systemRole));
+      await login({ email: email.trim(), password });
+      router.push(landingPath);
     } catch (err: unknown) {
       const reason = err instanceof Error ? err.message : "Unknown error";
       setGeneralError(`You are signed in, but the invitation could not be accepted: ${reason}`);
-      setContinueTo(getRedirectPath(role));
+      setContinueTo(landingPath);
     }
   };
 
@@ -79,12 +80,12 @@ function LoginForm() {
     setClientErrors({});
 
     try {
-      const authResponse = await login({ email: email.trim(), password });
+      await login({ email: email.trim(), password });
       if (invite.token) {
-        await acceptInvitation(invite.token, authResponse.systemRole);
+        await acceptInvitation(invite.token);
         return;
       }
-      router.push(getRedirectPath(authResponse.systemRole));
+      router.push(landingPath);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setGeneralError(err.message);
