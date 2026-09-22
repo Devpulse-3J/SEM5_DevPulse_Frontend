@@ -152,7 +152,20 @@ export const doraService = {
     return apiClient.get<WorkloadEntry[]>("/metrics/workload", { params: { ...query } });
   },
 
+  getReviewVelocity(query: { projectId: number; windowDays?: number }) {
+    return apiClient.get<import("@/types/metrics").ReviewVelocitySummary>("/metrics/review-velocity", {
+      params: { ...query },
+    });
+  },
+
+  getDevExSummary(query: { projectId: number; windowDays?: number }) {
+    return apiClient.get<import("@/types/metrics").DevExSummary>("/metrics/devex", {
+      params: { ...query },
+    });
+  },
+
   getDeployments(query: DeploymentQuery): Promise<Deployment[]> {
     return apiClient.get<Deployment[]>("/metrics/deployments", { params: { ...query } });
   },
 };
+

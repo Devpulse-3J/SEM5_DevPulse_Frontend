@@ -131,4 +131,53 @@ describe("metrics API services", () => {
     expect(postMock).toHaveBeenCalledWith("/metrics/authors/relink");
     expect(result.linkedPullRequests).toBe(5);
   });
+
+  it("calls the review velocity endpoint with query params", async () => {
+    const mockSummary = {
+      projectId: "7",
+      windowDays: 30,
+      calculatedAt: "2026-09-22T00:00:00Z",
+      totalPullRequests: 12,
+      reviewedPullRequests: 10,
+      reviewCoveragePct: 83.3,
+      averageTtfrHours: 3.5,
+      medianTtfrHours: 2.1,
+      averageReviewIterations: 2,
+      averageTurnaroundHours: 14.2,
+      pullRequests: [],
+    };
+    getMock.mockResolvedValue(mockSummary);
+
+    const result = await doraService.getReviewVelocity({ projectId: 7, windowDays: 30 });
+
+    expect(getMock).toHaveBeenCalledWith("/metrics/review-velocity", {
+      params: { projectId: 7, windowDays: 30 },
+    });
+    expect(result).toEqual(mockSummary);
+  });
+
+  it("calls the devex endpoint with query params", async () => {
+    const mockDevEx = {
+      projectId: "7",
+      windowDays: 30,
+      calculatedAt: "2026-09-22T00:00:00Z",
+      overallDevExScore: 82,
+      overallTeamHealth: "HEALTHY",
+      averageContextSwitchingIndex: 2.4,
+      teamReviewBurdenRatio: 1.1,
+      optimalCount: 4,
+      overloadedCount: 1,
+      underutilizedCount: 0,
+      members: [],
+    };
+    getMock.mockResolvedValue(mockDevEx);
+
+    const result = await doraService.getDevExSummary({ projectId: 7, windowDays: 30 });
+
+    expect(getMock).toHaveBeenCalledWith("/metrics/devex", {
+      params: { projectId: 7, windowDays: 30 },
+    });
+    expect(result).toEqual(mockDevEx);
+  });
 });
+
