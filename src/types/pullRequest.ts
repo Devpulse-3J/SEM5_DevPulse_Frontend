@@ -63,6 +63,10 @@ export interface PullRequest {
   reviews: PRReview[];
   checks: PRCheck[];
   riskAnalysis: PRRiskAnalysis | null;
+  // Review velocity fields
+  timeToFirstReviewHours?: number | null;
+  reviewIterations?: number;
+  reviewTurnaroundHours?: number | null;
 }
 
 export interface PRFilterState {
