@@ -80,7 +80,7 @@ export const integrationsApiService = {
   /** GET /api/integrations/projects/{projectId}/github/connect-url */
   async getGithubConnectUrl(projectId: string): Promise<GithubConnectUrlResponse> {
     return apiClient.get<GithubConnectUrlResponse>(
-      `/api/integrations/projects/${projectId}/github/connect-url`
+      `/integrations/projects/${projectId}/github/connect-url`
     );
   },
 
@@ -90,7 +90,7 @@ export const integrationsApiService = {
     data: LinkGithubRepoRequest
   ): Promise<LinkGithubRepoResponse> {
     return apiClient.post<LinkGithubRepoResponse>(
-      `/api/integrations/projects/${projectId}/github/link`,
+      `/integrations/projects/${projectId}/github/link`,
       data
     );
   },
@@ -99,7 +99,7 @@ export const integrationsApiService = {
   async getGithubStatus(projectId: string): Promise<GithubStatusResponse> {
     try {
       return await apiClient.get<GithubStatusResponse>(
-        `/api/integrations/projects/${projectId}/github/status`
+        `/integrations/projects/${projectId}/github/status`
       );
     } catch {
       return { status: "DISCONNECTED" };
@@ -109,7 +109,7 @@ export const integrationsApiService = {
   /** POST /api/integrations/projects/{projectId}/github/sync */
   async syncGithubData(projectId: string): Promise<GithubSyncResponse> {
     return apiClient.post<GithubSyncResponse>(
-      `/api/integrations/projects/${projectId}/github/sync`
+      `/integrations/projects/${projectId}/github/sync`
     );
   },
 
@@ -117,7 +117,7 @@ export const integrationsApiService = {
   /** Save Jira webhook secret locally / in company settings */
   async saveJiraSecret(secret: string): Promise<SaveJiraSecretResponse> {
     try {
-      return await apiClient.post<SaveJiraSecretResponse>("/api/integrations/jira/secret", {
+      return await apiClient.post<SaveJiraSecretResponse>("/integrations/jira/secret", {
         secret,
       });
     } catch {
@@ -128,7 +128,7 @@ export const integrationsApiService = {
   /** GET /api/webhooks/jira */
   async getJiraIngestionStatus(): Promise<JiraIngestionStatusResponse> {
     try {
-      return await apiClient.get<JiraIngestionStatusResponse>("/api/webhooks/jira");
+      return await apiClient.get<JiraIngestionStatusResponse>("/webhooks/jira");
     } catch {
       return { status: "CONFIGURED", processedIssuesCount: 0, healthy: true };
     }
@@ -138,7 +138,7 @@ export const integrationsApiService = {
   /** GET /api/slack/channels */
   async getSlackChannels(): Promise<SlackChannel[]> {
     try {
-      return await apiClient.get<SlackChannel[]>("/api/slack/channels");
+      return await apiClient.get<SlackChannel[]>("/slack/channels");
     } catch {
       return [
         { id: "C1001", name: "dev-alerts" },
@@ -151,7 +151,7 @@ export const integrationsApiService = {
   async sendTestNotification(
     data: TestNotificationRequest
   ): Promise<TestNotificationResponse> {
-    return apiClient.post<TestNotificationResponse>("/api/notifications/test", data);
+    return apiClient.post<TestNotificationResponse>("/notifications/test", data);
   },
 };
 

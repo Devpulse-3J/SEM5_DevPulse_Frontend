@@ -10,7 +10,7 @@ export interface PullRequestQuery {
 
 export const pullRequestService = {
   getPullRequests(query: PullRequestQuery): Promise<PullRequest[]> {
-    return apiClient.get<PullRequest[]>("/api/metrics/prs", { params: { ...query } });
+    return apiClient.get<PullRequest[]>("/metrics/prs", { params: { ...query } });
   },
 
   async getMyPullRequests(

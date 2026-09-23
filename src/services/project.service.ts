@@ -102,13 +102,13 @@ export const projectService = {
 
   /** GET /api/projects → projects visible to the authenticated user. */
   async getAll(): Promise<ProjectApiResponse[]> {
-    const response = await apiClient.get<ProjectListApiResponse>("/api/projects");
+    const response = await apiClient.get<ProjectListApiResponse>("/projects");
     return unwrapProjects(response);
   },
 
   /** POST /api/projects → 201 */
   async create(data: CreateProjectPayload): Promise<ProjectApiResponse> {
-    return apiClient.post<ProjectApiResponse>("/api/projects", data);
+    return apiClient.post<ProjectApiResponse>("/projects", data);
   },
 
   /** GET /api/projects/{id}/members → 200, array */
@@ -117,7 +117,7 @@ export const projectService = {
   ): Promise<ProjectMemberApiResponse[]> {
     const response = await apiClient.get<
       ProjectMemberApiResponse[] | { members: ProjectMemberApiResponse[] }
-    >(`/api/projects/${encodeURIComponent(String(projectId))}/members`);
+    >(`/projects/${encodeURIComponent(String(projectId))}/members`);
     return Array.isArray(response) ? response : (response.members ?? []);
   },
 
@@ -132,7 +132,7 @@ export const projectService = {
     data: InviteMemberPayload
   ): Promise<ProjectMemberApiResponse> {
     return apiClient.post<ProjectMemberApiResponse>(
-      `/api/projects/${encodeURIComponent(String(projectId))}/invite`,
+      `/projects/${encodeURIComponent(String(projectId))}/invite`,
       data
     );
   },
@@ -142,7 +142,7 @@ export const projectService = {
     projectId: string | number
   ): Promise<{ connectUrl: string }> {
     return apiClient.get<{ connectUrl: string }>(
-      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/connect-url`
+      `/integrations/projects/${encodeURIComponent(String(projectId))}/github/connect-url`
     );
   },
 
@@ -152,7 +152,7 @@ export const projectService = {
     data: LinkGithubPayload
   ): Promise<LinkedRepoApiResponse> {
     return apiClient.post<LinkedRepoApiResponse>(
-      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/link`,
+      `/integrations/projects/${encodeURIComponent(String(projectId))}/github/link`,
       data
     );
   },
@@ -167,7 +167,7 @@ export const projectService = {
     projectId: string | number
   ): Promise<GithubSyncTriggerResponse> {
     return apiClient.post<GithubSyncTriggerResponse>(
-      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/sync`
+      `/integrations/projects/${encodeURIComponent(String(projectId))}/github/sync`
     );
   },
 
@@ -176,7 +176,7 @@ export const projectService = {
     projectId: string | number
   ): Promise<LinkedRepoApiResponse> {
     return apiClient.get<LinkedRepoApiResponse>(
-      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/status`
+      `/integrations/projects/${encodeURIComponent(String(projectId))}/github/status`
     );
   },
 
@@ -186,7 +186,7 @@ export const projectService = {
     data: { projectName: string; description?: string; jiraProjectKey?: string }
   ): Promise<ProjectApiResponse> {
     return apiClient.put<ProjectApiResponse>(
-      `/api/projects/${encodeURIComponent(String(projectId))}`,
+      `/projects/${encodeURIComponent(String(projectId))}`,
       data
     );
   },
@@ -194,7 +194,7 @@ export const projectService = {
   /** DELETE /api/projects/{id} → 200/204 */
   async remove(projectId: string | number): Promise<void> {
     return apiClient.delete<void>(
-      `/api/projects/${encodeURIComponent(String(projectId))}`
+      `/projects/${encodeURIComponent(String(projectId))}`
     );
   },
 
@@ -205,7 +205,7 @@ export const projectService = {
     role: "MANAGER" | "DEVELOPER"
   ): Promise<ProjectMemberApiResponse> {
     return apiClient.put<ProjectMemberApiResponse>(
-      `/api/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`,
+      `/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`,
       { role }
     );
   },
@@ -216,7 +216,7 @@ export const projectService = {
     memberId: string | number
   ): Promise<void> {
     return apiClient.delete<void>(
-      `/api/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`
+      `/projects/${encodeURIComponent(String(projectId))}/members/${encodeURIComponent(String(memberId))}`
     );
   },
 };

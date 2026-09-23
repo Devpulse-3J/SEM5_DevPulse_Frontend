@@ -76,10 +76,10 @@ export default function SlackIntegrationPage() {
     return () => clearTimeout(timeoutId);
   }, [fetchChannels]);
 
-  // OAuth Flow: Redirect to /api/slack/oauth/install
+  // OAuth Flow: Redirect to /slack/oauth/install
   const handleAddToSlack = () => {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-    const targetUrl = apiBase ? `${apiBase}/api/slack/oauth/install` : "/api/slack/oauth/install";
+    const targetUrl = apiBase ? `${apiBase}/slack/oauth/install` : "/slack/oauth/install";
     window.location.href = targetUrl;
   };
 

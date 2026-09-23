@@ -8,7 +8,7 @@ import { integrationsApiService, JiraIngestionStatusResponse } from "@/services/
 import { ApiError } from "@/services/api-client";
 
 export default function JiraIntegrationPage() {
-  const webhookUrl = typeof window !== "undefined" ? `${window.location.origin}/api/webhooks/jira` : "";
+  const webhookUrl = typeof window !== "undefined" ? `${window.location.origin}/webhooks/jira` : "";
   const [copied, setCopied] = useState(false);
 
   // Webhook secret state
@@ -100,7 +100,7 @@ export default function JiraIntegrationPage() {
           <input
             type="text"
             readOnly
-            value={webhookUrl || "https://your-domain.com/api/webhooks/jira"}
+            value={webhookUrl || "https://your-domain.com/webhooks/jira"}
             className="flex-1 rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs font-mono text-ink outline-none"
           />
           <Button variant="secondary" size="md" onClick={handleCopyWebhookUrl}>

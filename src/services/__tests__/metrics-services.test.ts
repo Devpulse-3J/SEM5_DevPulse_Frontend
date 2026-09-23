@@ -61,7 +61,7 @@ describe("metrics API services", () => {
     await expect(
       doraService.getSummary({ projectId: 7, windowDays: 30, historyDays: 14 }),
     ).resolves.toEqual(summary);
-    expect(getMock).toHaveBeenCalledWith("/api/metrics/dora", {
+    expect(getMock).toHaveBeenCalledWith("/metrics/dora", {
       params: { projectId: 7, windowDays: 30, historyDays: 14 },
     });
   });
@@ -77,7 +77,7 @@ describe("metrics API services", () => {
       offset: 0,
     });
 
-    expect(getMock).toHaveBeenCalledWith("/api/metrics/deployments", {
+    expect(getMock).toHaveBeenCalledWith("/metrics/deployments", {
       params: {
         projectId: 7,
         environment: "production",
@@ -100,7 +100,7 @@ describe("metrics API services", () => {
     );
 
     expect(result.map((item) => item.id)).toEqual(["1"]);
-    expect(getMock).toHaveBeenCalledWith("/api/metrics/prs", {
+    expect(getMock).toHaveBeenCalledWith("/metrics/prs", {
       params: { projectId: 7, limit: 100, offset: 0 },
     });
   });
