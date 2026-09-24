@@ -33,6 +33,20 @@ export interface RegisterRequest {
   /** With isCompany, creates a new company and makes this user its admin. */
   companyName?: string;
   isCompany?: boolean;
+  /**
+   * One-time token from a project invitation email. The server checks it
+   * against `email`, joins the inviting company as a member and attaches the
+   * invited project role. Overrides companyId / companyName / isCompany.
+   */
+  inviteToken?: string;
+}
+
+/** Body of POST /api/auth/invitations/project/accept. */
+export interface AcceptProjectInvitationResponse {
+  status: string;
+  projectId: number;
+  /** Lowercase project role: "manager" | "developer". */
+  role: string;
 }
 
 /** Identical body from POST /api/auth/login and POST /api/auth/register. */

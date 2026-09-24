@@ -23,7 +23,7 @@ describe("apiClient metrics error handling", () => {
       ),
     );
 
-    const error = await apiClient.get("/api/metrics/dora", {
+    const error = await apiClient.get("/metrics/dora", {
       params: { projectId: 7 },
     }).catch((caught: unknown) => caught);
 
@@ -48,7 +48,7 @@ describe("apiClient metrics error handling", () => {
       ),
     );
 
-    await apiClient.get("/api/metrics/dora", {
+    await apiClient.get("/metrics/dora", {
       params: { projectId: 7 },
       token: "secret-token",
     });

@@ -5,6 +5,9 @@ import { Providers } from "./providers"; // adjust path if your providers file i
 export const metadata: Metadata = {
   title: "DevPulse",
   description: "Engineering Productivity & Developer Analytics Platform",
+  icons: {
+    icon: "/icons/icon.png",
+  },
 };
 
 export default function RootLayout({

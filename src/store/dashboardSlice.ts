@@ -1,5 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { logout } from "./authSlice";
+
+// OWNER: Person B — client-only UI state for the Manager/DORA/Team screens
+// (filters + selections). Server data never lives here — that's React Query.
 
 export type DateRange = "7d" | "14d" | "30d" | "90d";
 
@@ -77,6 +81,12 @@ export const dashboardSlice = createSlice({
         activeProject: null,
       };
     },
+  },
+  // Signing out forgets the chosen project and its role. They are per-user, and
+  // the store survives client-side navigation, so without this the next person
+  // to sign in on the same tab inherits the last one's project and role.
+  extraReducers: (builder) => {
+    builder.addCase(logout, () => initialState);
   },
 });
 

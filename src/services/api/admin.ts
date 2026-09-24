@@ -47,7 +47,7 @@ export const adminApiService = {
   /** GET /api/auth/company/members */
   async getCompanyMembers(): Promise<CompanyMember[]> {
     try {
-      return await apiClient.get<CompanyMember[]>("/api/auth/company/members");
+      return await apiClient.get<CompanyMember[]>("/auth/company/members");
     } catch {
       return [];
     }
@@ -58,7 +58,7 @@ export const adminApiService = {
     data: InviteCompanyMembersRequest
   ): Promise<InviteCompanyMembersResponse> {
     return apiClient.post<InviteCompanyMembersResponse>(
-      "/api/auth/company/invite",
+      "/auth/company/invite",
       data
     );
   },
@@ -69,7 +69,7 @@ export const adminApiService = {
     role: CompanyRole
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.put<{ success: boolean; message?: string }>(
-      `/api/auth/company/members/${userId}/role`,
+      `/auth/company/members/${userId}/role`,
       { role }
     );
   },
@@ -79,7 +79,7 @@ export const adminApiService = {
     userId: string
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.delete<{ success: boolean; message?: string }>(
-      `/api/auth/company/members/${userId}`
+      `/auth/company/members/${userId}`
     );
   },
 

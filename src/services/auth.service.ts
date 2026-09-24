@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  AcceptProjectInvitationResponse,
   UserProfileResponse,
 } from "@/types/user";
 
@@ -21,7 +22,7 @@ import type {
 export const authService = {
   /** POST /api/auth/login → 200 */
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>("/api/auth/login", credentials, {
+    return apiClient.post<AuthResponse>("/auth/login", credentials, {
       requiresAuth: false,
     });
   },
@@ -34,14 +35,28 @@ export const authService = {
    *   neither                 → personal workspace, member
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>("/api/auth/register", data, {
+    return apiClient.post<AuthResponse>("/auth/register", data, {
       requiresAuth: false,
     });
   },
 
+  /**
+   * POST /api/auth/invitations/project/accept?token= → 200
+   * A signed-in user accepts the project invitation emailed to them. The
+   * account's email must match the invited address (403 otherwise); 400 if the
+   * invitation expired or was already used; 409 if it belongs to another company.
+   * The account's company may change, so sign in again afterwards: the existing
+   * JWT still carries the old companyId.
+   */
+  async acceptProjectInvitation(token: string): Promise<AcceptProjectInvitationResponse> {
+    return apiClient.post<AcceptProjectInvitationResponse>(
+      `/auth/invitations/project/accept?token=${encodeURIComponent(token)}`,
+    );
+  },
+
   /** GET /api/auth/me — the only source of companyId and projectRoles. */
   async getMe(token?: string): Promise<UserProfileResponse> {
-    return apiClient.get<UserProfileResponse>("/api/auth/me", { token });
+    return apiClient.get<UserProfileResponse>("/auth/me", { token });
   },
 
   // ─── session helpers (delegate to lib/auth so storage lives in one place) ───

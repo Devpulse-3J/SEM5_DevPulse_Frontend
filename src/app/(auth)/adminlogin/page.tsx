@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { IconEye, IconEyeOff, IconShield } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
+import { adminLandingPath } from "@/lib/redirect";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -53,14 +54,14 @@ function AdminLoginForm() {
     }
 
     try {
-      const authResponse = await login({
+      await login({
         email: email.trim(),
         password,
       });
 
-      // Redirect admin to admin overview or specified callback URL
-      const targetPath = callbackUrl || "/admin/overview";
-      router.push(targetPath);
+      // Back to the admin page you were on, else the console home. A callback
+      // into the workspace is ignored: this door leads to the admin console.
+      router.push(adminLandingPath(callbackUrl));
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setGeneralError(err.message);

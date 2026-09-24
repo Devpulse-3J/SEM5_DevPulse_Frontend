@@ -131,15 +131,15 @@ export function normalizeDoraSummary(data: DoraSummary): DoraSummary {
 
 export const doraService = {
   async getSummary(query: DoraQuery): Promise<DoraSummary> {
-    const res = await apiClient.get<DoraSummary>("/api/metrics/dora", { params: { ...query } });
+    const res = await apiClient.get<DoraSummary>("/metrics/dora", { params: { ...query } });
     return normalizeDoraSummary(res);
   },
 
   getWorkload(query: WorkloadQuery): Promise<WorkloadEntry[]> {
-    return apiClient.get<WorkloadEntry[]>("/api/metrics/workload", { params: { ...query } });
+    return apiClient.get<WorkloadEntry[]>("/metrics/workload", { params: { ...query } });
   },
 
   getDeployments(query: DeploymentQuery): Promise<Deployment[]> {
-    return apiClient.get<Deployment[]>("/api/metrics/deployments", { params: { ...query } });
+    return apiClient.get<Deployment[]>("/metrics/deployments", { params: { ...query } });
   },
 };

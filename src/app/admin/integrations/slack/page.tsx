@@ -12,3 +12,4 @@ export default function SlackIntegrationPage() {
 
   return <SlackIntegrationCard initialConnected={oauthConnected} />;
 }
+

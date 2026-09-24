@@ -5,3 +5,4 @@ import { JiraIntegrationCard } from "@/components/integrations/JiraIntegrationCa
 export default function JiraIntegrationPage() {
   return <JiraIntegrationCard />;
 }
+
