@@ -60,6 +60,20 @@ describe("project API service", () => {
     expect(getMock).toHaveBeenCalledWith("/api/integrations/projects/12/github/connect-url");
   });
 
+  it("fetches available GitHub repos via GET /api/integrations/projects/:id/github/available-repos", async () => {
+    const response = {
+      installed: true,
+      connectUrl: "https://github.com/apps/devpulse/installations/new?state=12",
+      repositories: [
+        { id: 123, name: "repo-name", fullName: "owner/repo-name", repoUrl: "https://github.com/owner/repo-name" },
+      ],
+    };
+    getMock.mockResolvedValue(response);
+
+    await expect(projectService.getGithubAvailableRepos(12)).resolves.toEqual(response);
+    expect(getMock).toHaveBeenCalledWith("/api/integrations/projects/12/github/available-repos");
+  });
+
   it("links GitHub using the integration endpoint", async () => {
     postMock.mockResolvedValue({ repositoryId: 34 });
 

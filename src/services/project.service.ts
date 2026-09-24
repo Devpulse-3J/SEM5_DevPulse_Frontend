@@ -146,6 +146,19 @@ export const projectService = {
     );
   },
 
+  /** GET /api/integrations/projects/{id}/github/available-repos → 200 */
+  async getGithubAvailableRepos(
+    projectId: string | number
+  ): Promise<{
+    installed: boolean;
+    connectUrl: string;
+    repositories: Array<{ id: number | string; name: string; fullName: string; repoUrl: string }>;
+  }> {
+    return apiClient.get(
+      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/available-repos`
+    );
+  },
+
   /** POST /api/integrations/projects/{id}/github/link → 200/201 */
   async linkGithub(
     projectId: string | number,

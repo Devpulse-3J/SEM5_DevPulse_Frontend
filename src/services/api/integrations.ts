@@ -38,6 +38,19 @@ export interface GithubSyncResponse {
   message?: string;
 }
 
+export interface GithubRepository {
+  id: number | string;
+  name: string;
+  fullName: string;
+  repoUrl: string;
+}
+
+export interface GithubAvailableReposResponse {
+  installed: boolean;
+  connectUrl: string;
+  repositories: GithubRepository[];
+}
+
 // ─── Jira Interfaces ─────────────────────────────────────────────────────────
 export interface SaveJiraSecretRequest {
   secret: string;
@@ -93,6 +106,15 @@ export const integrationsApiService = {
   async getGithubConnectUrl(projectId: string): Promise<GithubConnectUrlResponse> {
     return apiClient.get<GithubConnectUrlResponse>(
       `/api/integrations/projects/${projectId}/github/connect-url`
+    );
+  },
+
+  /** GET /api/integrations/projects/{projectId}/github/available-repos */
+  async getGithubAvailableRepos(
+    projectId: string
+  ): Promise<GithubAvailableReposResponse> {
+    return apiClient.get<GithubAvailableReposResponse>(
+      `/api/integrations/projects/${projectId}/github/available-repos`
     );
   },
 
