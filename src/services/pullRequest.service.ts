@@ -33,36 +33,44 @@ export const pullRequestService = {
     if (!pullRequests || !Array.isArray(pullRequests)) return [];
 
     let fullName = "";
+    let email = "";
     let emailPrefix = "";
 
     if (typeof authorIdentifier === "string") {
       fullName = authorIdentifier;
       if (authorIdentifier.includes("@")) {
-        emailPrefix = authorIdentifier.split("@")[0];
+        email = authorIdentifier.trim().toLowerCase();
+        emailPrefix = authorIdentifier.split("@")[0].trim().toLowerCase();
       }
     } else if (authorIdentifier && typeof authorIdentifier === "object") {
       fullName = authorIdentifier.fullName || "";
       if (authorIdentifier.email) {
-        emailPrefix = authorIdentifier.email.split("@")[0];
+        email = authorIdentifier.email.trim().toLowerCase();
+        emailPrefix = authorIdentifier.email.split("@")[0].trim().toLowerCase();
       }
     }
 
     fullName = fullName.trim().toLowerCase();
-    emailPrefix = emailPrefix.trim().toLowerCase();
 
-    if (!fullName && !emailPrefix) {
+    if (!fullName && !email && !emailPrefix) {
       return pullRequests;
     }
 
     const filtered = pullRequests.filter((pr) => {
+      // 1. Direct authorEmail match from GitHub payload
+      if (email && pr.authorEmail && pr.authorEmail.trim().toLowerCase() === email) {
+        return true;
+      }
+
       if (!pr.author) return false;
       const author = pr.author.trim().toLowerCase();
 
-      // Case-insensitive exact matches
+      // 2. Case-insensitive exact matches (email, full name, or username prefix)
+      if (email && author === email) return true;
       if (fullName && author === fullName) return true;
       if (emailPrefix && author === emailPrefix) return true;
 
-      // Substring / partial matches (e.g. "Umaya" in "Umaya Jayasuriya")
+      // 3. Substring / partial matches (e.g. "Umaya" in "Umaya Jayasuriya")
       if (fullName && (author.includes(fullName) || fullName.includes(author))) return true;
       if (emailPrefix && (author.includes(emailPrefix) || emailPrefix.includes(author))) return true;
 
