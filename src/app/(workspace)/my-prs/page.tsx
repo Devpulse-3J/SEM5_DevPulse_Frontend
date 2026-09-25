@@ -13,7 +13,7 @@ export default function MyPRsPage() {
   const { user } = useAuth();
   const query = useMyPullRequests(
     activeProject ? Number(activeProject.id) : undefined,
-    user?.fullName,
+    user ? { fullName: user.fullName, email: user.email } : undefined,
   );
 
   if (query.isPending) {

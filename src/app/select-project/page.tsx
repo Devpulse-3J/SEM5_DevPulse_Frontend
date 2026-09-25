@@ -20,9 +20,12 @@ import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
  * than inventing one.
  */
 
-/** API roles are lowercase; the workspace UI uses uppercase. Map once, here. */
-function toWorkspaceRole(role: ProjectMembership["role"]): WorkspaceRole {
-  return role === "manager" ? "MANAGER" : "DEVELOPER";
+function toWorkspaceRole(role: ProjectMembership["role"], systemRole?: string): WorkspaceRole {
+  const norm = String(role || "").toUpperCase().trim();
+  if (norm === "MANAGER" || norm === "ADMIN" || systemRole === "admin") {
+    return "MANAGER";
+  }
+  return "DEVELOPER";
 }
 
 const roleBadge: Record<WorkspaceRole, string> = {
@@ -43,7 +46,7 @@ export default function SelectProjectPage() {
   const isResolving = !hasMounted || isLoading;
 
   function choose(m: ProjectMembership) {
-    const role = toWorkspaceRole(m.role);
+    const role = toWorkspaceRole(m.role, user?.systemRole);
     dispatch(
       setActiveProject({
         id: String(m.projectId),
@@ -98,7 +101,7 @@ export default function SelectProjectPage() {
         {!isResolving && !isError && memberships && memberships.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {memberships.map((m) => {
-              const role = toWorkspaceRole(m.role);
+              const role = toWorkspaceRole(m.role, user?.systemRole);
               return (
                 <button
                   key={m.projectId}

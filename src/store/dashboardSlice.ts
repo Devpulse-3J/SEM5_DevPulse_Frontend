@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { STORAGE_KEYS } from "@/lib/constants";
 import { logout } from "./authSlice";
 
 // OWNER: Person B — client-only UI state for the Manager/DORA/Team screens
@@ -6,7 +7,6 @@ import { logout } from "./authSlice";
 
 export type DateRange = "7d" | "14d" | "30d" | "90d";
 
-/** A user's role is per-project, so the active project carries its own role. */
 export type WorkspaceRole = "MANAGER" | "DEVELOPER";
 export interface ActiveProject {
   id: string;
@@ -15,18 +15,39 @@ export interface ActiveProject {
 }
 
 export interface DashboardState {
-  /** The project the user picked after login + their role on it. null = not chosen. */
   activeProject: ActiveProject | null;
-  /** Selected team filter, or "ALL" for the whole org. */
   team: string;
-  /** Active date-range window for metrics. */
   dateRange: DateRange;
-  /** Currently focused project (repo group) within the dashboard, or null for all. */
   selectedProjectId: string | null;
 }
 
+const ACTIVE_PROJECT_KEY = STORAGE_KEYS.activeProject;
+
+function loadActiveProject(): ActiveProject | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(ACTIVE_PROJECT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveProject(project: ActiveProject | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (project) {
+      localStorage.setItem(ACTIVE_PROJECT_KEY, JSON.stringify(project));
+    } else {
+      localStorage.removeItem(ACTIVE_PROJECT_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 const initialState: DashboardState = {
-  activeProject: null,
+  activeProject: loadActiveProject(),
   team: "ALL",
   dateRange: "30d",
   selectedProjectId: null,
@@ -38,9 +59,11 @@ export const dashboardSlice = createSlice({
   reducers: {
     setActiveProject: (state, action: PayloadAction<ActiveProject>) => {
       state.activeProject = action.payload;
+      saveActiveProject(action.payload);
     },
     clearActiveProject: (state) => {
       state.activeProject = null;
+      saveActiveProject(null);
     },
     setTeam: (state, action: PayloadAction<string>) => {
       state.team = action.payload;
@@ -51,7 +74,13 @@ export const dashboardSlice = createSlice({
     setSelectedProjectId: (state, action: PayloadAction<string | null>) => {
       state.selectedProjectId = action.payload;
     },
-    resetDashboardFilters: () => initialState,
+    resetDashboardFilters: () => {
+      saveActiveProject(null);
+      return {
+        ...initialState,
+        activeProject: null,
+      };
+    },
   },
   // Signing out forgets the chosen project and its role. They are per-user, and
   // the store survives client-side navigation, so without this the next person

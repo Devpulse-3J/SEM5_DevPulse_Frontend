@@ -1,34 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/constants";
-import { pullRequestService } from "@/services/pullRequest.service";
+import { pullRequestService, type AuthorIdentifier } from "@/services/pullRequest.service";
 
-function validProject(projectId: number | undefined): projectId is number {
-  return typeof projectId === "number" && Number.isInteger(projectId) && projectId > 0;
+function isValidProjectId(projectId: number | undefined): boolean {
+  if (projectId === undefined) return true;
+  return typeof projectId === "number" && !isNaN(projectId) && projectId > 0;
 }
 
 export function usePullRequests(projectId: number | undefined, limit = 100, offset = 0) {
   return useQuery({
     queryKey: QUERY_KEYS.pullRequests(projectId, limit, offset),
     queryFn: () =>
-      pullRequestService.getPullRequests({ projectId: projectId as number, limit, offset }),
-    enabled: validProject(projectId),
+      pullRequestService.getPullRequests({ projectId, limit, offset }),
+    enabled: isValidProjectId(projectId),
     staleTime: 60_000,
   });
 }
 
 export function useMyPullRequests(
   projectId: number | undefined,
-  authorName: string | undefined,
+  authorIdentifier?: AuthorIdentifier,
   limit = 100,
 ) {
+  const keyIdentifier =
+    typeof authorIdentifier === "string"
+      ? authorIdentifier
+      : authorIdentifier?.fullName || authorIdentifier?.email;
+
   return useQuery({
-    queryKey: QUERY_KEYS.myPullRequests(projectId, authorName, limit),
+    queryKey: QUERY_KEYS.myPullRequests(projectId, keyIdentifier, limit),
     queryFn: () =>
       pullRequestService.getMyPullRequests(
-        { projectId: projectId as number, limit, offset: 0 },
-        authorName as string,
+        { projectId, limit, offset: 0 },
+        authorIdentifier,
       ),
-    enabled: validProject(projectId) && Boolean(authorName),
+    enabled: isValidProjectId(projectId),
     staleTime: 60_000,
   });
 }
@@ -38,6 +44,6 @@ export function usePullRequest(projectId: number | undefined, id: string | undef
     queryKey: QUERY_KEYS.pullRequest(projectId, id),
     queryFn: () =>
       pullRequestService.getPullRequestById({ projectId: projectId as number }, id as string),
-    enabled: validProject(projectId) && Boolean(id),
+    enabled: Boolean(id),
   });
 }
