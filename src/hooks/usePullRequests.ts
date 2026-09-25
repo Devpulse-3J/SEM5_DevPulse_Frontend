@@ -17,6 +17,11 @@ export function usePullRequests(projectId: number | undefined, limit = 100, offs
   });
 }
 
+/**
+ * `authorIdentifier` no longer affects the request (the server filters by the
+ * caller's id); it stays in the cache key so two users on one tab never share
+ * a cached list.
+ */
 export function useMyPullRequests(
   projectId: number | undefined,
   authorIdentifier?: AuthorIdentifier,
@@ -30,10 +35,7 @@ export function useMyPullRequests(
   return useQuery({
     queryKey: QUERY_KEYS.myPullRequests(projectId, keyIdentifier, limit),
     queryFn: () =>
-      pullRequestService.getMyPullRequests(
-        { projectId, limit, offset: 0 },
-        authorIdentifier,
-      ),
+      pullRequestService.getMyPullRequests({ projectId, limit, offset: 0 }),
     enabled: isValidProjectId(projectId),
     staleTime: 60_000,
   });

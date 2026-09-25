@@ -25,60 +25,27 @@ export const pullRequestService = {
     return apiClient.get<PullRequest[]>("/metrics/prs", { params });
   },
 
-  async getMyPullRequests(
-    query: PullRequestQuery,
-    authorIdentifier?: AuthorIdentifier,
-  ): Promise<PullRequest[]> {
-    const pullRequests = await this.getPullRequests(query);
-    if (!pullRequests || !Array.isArray(pullRequests)) return [];
-
-    let fullName = "";
-    let email = "";
-    let emailPrefix = "";
-
-    if (typeof authorIdentifier === "string") {
-      fullName = authorIdentifier;
-      if (authorIdentifier.includes("@")) {
-        email = authorIdentifier.trim().toLowerCase();
-        emailPrefix = authorIdentifier.split("@")[0].trim().toLowerCase();
-      }
-    } else if (authorIdentifier && typeof authorIdentifier === "object") {
-      fullName = authorIdentifier.fullName || "";
-      if (authorIdentifier.email) {
-        email = authorIdentifier.email.trim().toLowerCase();
-        emailPrefix = authorIdentifier.email.split("@")[0].trim().toLowerCase();
-      }
+  /**
+   * The signed-in user's own PRs, filtered by the server (`myPrs=true` matches
+   * pr.author_id to the caller's user id).
+   *
+   * This used to match on name/email in the browser and fall back to returning
+   * every PR in the project when nothing matched, so anyone whose PRs were not
+   * linked to their account saw the whole team's. Now an empty result means
+   * exactly that: none of the PRs are attributed to you.
+   */
+  async getMyPullRequests(query: PullRequestQuery): Promise<PullRequest[]> {
+    const params: Record<string, string | number | boolean | undefined> = {
+      myPrs: true,
+    };
+    if (query.projectId !== undefined && query.projectId > 0) {
+      params.projectId = query.projectId;
     }
+    if (query.limit !== undefined) params.limit = query.limit;
+    if (query.offset !== undefined) params.offset = query.offset;
 
-    fullName = fullName.trim().toLowerCase();
-
-    if (!fullName && !email && !emailPrefix) {
-      return pullRequests;
-    }
-
-    const filtered = pullRequests.filter((pr) => {
-      // 1. Direct authorEmail match from GitHub payload
-      if (email && pr.authorEmail && pr.authorEmail.trim().toLowerCase() === email) {
-        return true;
-      }
-
-      if (!pr.author) return false;
-      const author = pr.author.trim().toLowerCase();
-
-      // 2. Case-insensitive exact matches (email, full name, or username prefix)
-      if (email && author === email) return true;
-      if (fullName && author === fullName) return true;
-      if (emailPrefix && author === emailPrefix) return true;
-
-      // 3. Substring / partial matches (e.g. "Umaya" in "Umaya Jayasuriya")
-      if (fullName && (author.includes(fullName) || fullName.includes(author))) return true;
-      if (emailPrefix && (author.includes(emailPrefix) || emailPrefix.includes(author))) return true;
-
-      return false;
-    });
-
-    // Fall back to returning all project PRs if author matching finds nothing
-    return filtered.length > 0 ? filtered : pullRequests;
+    const pullRequests = await apiClient.get<PullRequest[]>("/metrics/prs", { params });
+    return Array.isArray(pullRequests) ? pullRequests : [];
   },
 
   async getPullRequestById(query: PullRequestQuery, id: string): Promise<PullRequest> {

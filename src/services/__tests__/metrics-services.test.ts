@@ -88,20 +88,26 @@ describe("metrics API services", () => {
     });
   });
 
-  it("filters My PRs locally because the backend has no author filter", async () => {
-    getMock.mockResolvedValue([
-      pullRequest("1", "Kalhara Jayathissa"),
-      pullRequest("2", "Another Developer"),
-    ]);
+  it("asks the server for My PRs instead of guessing by name", async () => {
+    getMock.mockResolvedValue([pullRequest("1", "Kalhara Jayathissa")]);
 
-    const result = await pullRequestService.getMyPullRequests(
-      { projectId: 7, limit: 100, offset: 0 },
-      "Kalhara Jayathissa",
-    );
+    const result = await pullRequestService.getMyPullRequests({
+      projectId: 7,
+      limit: 100,
+      offset: 0,
+    });
 
     expect(result.map((item) => item.id)).toEqual(["1"]);
     expect(getMock).toHaveBeenCalledWith("/metrics/prs", {
-      params: { projectId: 7, limit: 100, offset: 0 },
+      params: { myPrs: true, projectId: 7, limit: 100, offset: 0 },
     });
+  });
+
+  it("returns nothing, not the whole team's PRs, when none are attributed to the user", async () => {
+    getMock.mockResolvedValue([]);
+
+    const result = await pullRequestService.getMyPullRequests({ projectId: 7 });
+
+    expect(result).toEqual([]);
   });
 });
