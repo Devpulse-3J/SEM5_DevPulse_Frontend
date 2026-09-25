@@ -19,6 +19,7 @@ vi.mock("@/lib/auth", () => ({
 
 const postMock = vi.mocked(apiClient.post);
 const putMock = vi.mocked(apiClient.put);
+const getMock = vi.mocked(apiClient.get);
 
 describe("authService.register", () => {
   beforeEach(() => {
@@ -107,5 +108,27 @@ describe("authService.linkGithub", () => {
     // Endpoint has no /api prefix: the base URL already ends in /api.
     expect(putMock).toHaveBeenCalledWith("/auth/me/github", { githubUsername: "UmayaJayasuriya" });
     expect(result.githubId).toBe(194699006);
+  });
+});
+
+describe("authService.lookupGithub", () => {
+  beforeEach(() => {
+    getMock.mockReset();
+    getMock.mockResolvedValue({
+      githubId: 149255216,
+      githubLogin: "ChanulPathirana",
+      name: "Pathirana D.P.C.N.",
+      linkedToAnotherUser: false,
+    });
+  });
+
+  it("looks the username up without saving it, and no /api prefix", async () => {
+    const result = await authService.lookupGithub("ChanulPathirana");
+
+    expect(getMock).toHaveBeenCalledWith("/auth/me/github/lookup", {
+      params: { username: "ChanulPathirana" },
+    });
+    expect(putMock).not.toHaveBeenCalled();
+    expect(result.githubLogin).toBe("ChanulPathirana");
   });
 });

@@ -7,6 +7,7 @@ import type {
   AcceptProjectInvitationResponse,
   UserProfileResponse,
   LinkGithubResponse,
+  GithubPreview,
 } from "@/types/user";
 
 /**
@@ -66,6 +67,15 @@ export const authService = {
     return apiClient.post<AuthResponse>(
       `/auth/companies/${encodeURIComponent(String(companyId))}/switch`,
     );
+  },
+
+  /**
+   * GET /api/auth/me/github/lookup?username= → 200. Who the username resolves to
+   * on GitHub (id, name, avatar, profile URL), so the user can confirm it is
+   * theirs. Saves nothing. 404 if GitHub has no such user.
+   */
+  async lookupGithub(username: string): Promise<GithubPreview> {
+    return apiClient.get<GithubPreview>("/auth/me/github/lookup", { params: { username } });
   },
 
   /**
