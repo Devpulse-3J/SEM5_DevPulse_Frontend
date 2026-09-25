@@ -13,11 +13,12 @@ vi.mock("../api-client", async () => {
   }
   return {
     ApiError,
-    apiClient: { get: vi.fn() },
+    apiClient: { get: vi.fn(), post: vi.fn() },
   };
 });
 
 const getMock = vi.mocked(apiClient.get);
+const postMock = vi.mocked(apiClient.post);
 
 const summary: DoraSummary = {
   projectId: "7",
@@ -109,5 +110,14 @@ describe("metrics API services", () => {
     const result = await pullRequestService.getMyPullRequests({ projectId: 7 });
 
     expect(result).toEqual([]);
+  });
+
+  it("asks the server to attribute the caller's earlier PRs", async () => {
+    postMock.mockResolvedValue({ linkedPullRequests: 5 });
+
+    const result = await pullRequestService.relinkMyAuthored();
+
+    expect(postMock).toHaveBeenCalledWith("/metrics/authors/relink");
+    expect(result.linkedPullRequests).toBe(5);
   });
 });

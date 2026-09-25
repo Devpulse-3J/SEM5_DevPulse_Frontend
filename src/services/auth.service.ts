@@ -6,6 +6,7 @@ import type {
   AuthResponse,
   AcceptProjectInvitationResponse,
   UserProfileResponse,
+  LinkGithubResponse,
 } from "@/types/user";
 
 /**
@@ -65,6 +66,16 @@ export const authService = {
     return apiClient.post<AuthResponse>(
       `/auth/companies/${encodeURIComponent(String(companyId))}/switch`,
     );
+  },
+
+  /**
+   * PUT /api/auth/me/github → 200. Links the caller's GitHub account by
+   * username; the server saves the account's numeric id, which is what PR and
+   * commit authors are matched against. 404 if GitHub has no such user, 409 if
+   * that account is already linked to someone else, 502 if GitHub is unreachable.
+   */
+  async linkGithub(githubUsername: string): Promise<LinkGithubResponse> {
+    return apiClient.put<LinkGithubResponse>("/auth/me/github", { githubUsername });
   },
 
   /** GET /api/auth/me — the only source of companyId and projectRoles. */

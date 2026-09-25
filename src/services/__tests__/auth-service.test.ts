@@ -3,7 +3,7 @@ import { apiClient } from "../api-client";
 import { authService } from "../auth.service";
 
 vi.mock("../api-client", () => ({
-  apiClient: { get: vi.fn(), post: vi.fn() },
+  apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +18,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 const postMock = vi.mocked(apiClient.post);
+const putMock = vi.mocked(apiClient.put);
 
 describe("authService.register", () => {
   beforeEach(() => {
@@ -91,5 +92,20 @@ describe("authService.switchCompany", () => {
     // No `requiresAuth: false`: the caller must present their current token.
     expect(postMock).toHaveBeenCalledWith("/auth/companies/15/switch");
     expect(result.accessToken).toBe("switched");
+  });
+});
+
+describe("authService.linkGithub", () => {
+  beforeEach(() => {
+    putMock.mockReset();
+    putMock.mockResolvedValue({ githubId: 194699006, githubLogin: "UmayaJayasuriya" });
+  });
+
+  it("puts the username to the gateway, authenticated", async () => {
+    const result = await authService.linkGithub("UmayaJayasuriya");
+
+    // Endpoint has no /api prefix: the base URL already ends in /api.
+    expect(putMock).toHaveBeenCalledWith("/auth/me/github", { githubUsername: "UmayaJayasuriya" });
+    expect(result.githubId).toBe(194699006);
   });
 });

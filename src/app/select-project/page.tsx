@@ -11,6 +11,8 @@ import { useMyMemberships } from "@/hooks/useProjects";
 import { projectLabel } from "@/types/project";
 import type { ProjectMembership } from "@/types/project";
 import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+import { GithubLinkCard } from "@/components/auth/GithubLinkCard";
+import { pullRequestService } from "@/services/pullRequest.service";
 
 /**
  * Post-login project picker — the page that establishes the user's role.
@@ -60,7 +62,8 @@ const roleBadge: Record<WorkspaceRole, string> = {
 export default function SelectProjectPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { user, logout, companyId: activeCompanyId, switchCompany } = useAuth();
+  const { user, logout, companyId: activeCompanyId, switchCompany, fetchProfile } = useAuth();
+  const githubId = user && "githubId" in user ? user.githubId : undefined;
   const hasMounted = useHasMounted();
   const { data: memberships, isLoading, isError, error } = useMyMemberships();
   const [openingId, setOpeningId] = useState<number | null>(null);
@@ -101,6 +104,13 @@ export default function SelectProjectPage() {
     }
 
     const role = toWorkspaceRole(m.role, systemRole);
+
+    // Catch up PRs that arrived before this user was linked or before they joined
+    // this company. Best-effort and idempotent; must run after the company switch
+    // so it acts in the right company.
+    if (typeof githubId === "number") {
+      await pullRequestService.relinkMyAuthored().catch(() => undefined);
+    }
     dispatch(
       setActiveProject({
         id: String(m.projectId),
@@ -195,6 +205,8 @@ export default function SelectProjectPage() {
             })}
           </div>
         )}
+
+        <GithubLinkCard githubId={githubId} onLinked={fetchProfile} />
 
         <div className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-subtle">
           {user?.email && (
