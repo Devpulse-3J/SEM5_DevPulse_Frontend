@@ -5,7 +5,7 @@ import type { RootState } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
 import { useDoraSummary, useRebuildDoraHistory } from "@/hooks/useDora";
 import { DoraMetricGrid } from "@/features/dora/DoraMetricGrid";
-import { LeadTimeChart } from "@/components/charts/LeadTimeChart";
+import { DoraChart } from "@/components/charts/DoraChart";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 import { Spinner } from "@/components/ui/Spinner";
@@ -35,11 +35,6 @@ export default function DoraPage() {
     );
   }
 
-  const leadTime = summary.data.metrics.find((metric) => metric.key === "leadTime");
-  const leadHistory = leadTime?.history.filter(
-    (point): point is { date: string; value: number } => point.value !== null,
-  ) ?? [];
-
   return (
     <div className="flex flex-col gap-5 p-6 md:p-7">
       <div>
@@ -55,9 +50,14 @@ export default function DoraPage() {
 
       <DoraMetricGrid summary={summary.data} />
 
-      <Card className="min-h-[340px]">
+      <Card className="min-h-[420px]">
         <CardHeader>
-          <CardTitle>Lead time history</CardTitle>
+          <div>
+            <CardTitle>Historical Trend Snapshots</CardTitle>
+            <p className="mt-1 text-[11px] text-subtle">
+              Continuous trend history persisted by the automated daily scheduler
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             {canRebuild && (
               <button
@@ -70,7 +70,6 @@ export default function DoraPage() {
                 {rebuild.isPending ? "Rebuilding…" : "Rebuild history"}
               </button>
             )}
-            <span className="text-[11px] text-subtle">hours</span>
           </div>
         </CardHeader>
         {rebuild.isSuccess && (
@@ -83,19 +82,11 @@ export default function DoraPage() {
             {rebuild.error instanceof Error ? rebuild.error.message : "Could not rebuild the history."}
           </p>
         )}
-        <div className="mt-5 h-[260px]">
-          {leadHistory.length > 0 ? (
-            <LeadTimeChart
-              labels={leadHistory.map((point) => point.date.slice(5))}
-              data={leadHistory.map((point) => point.value)}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-xs text-muted">
-              Historical snapshots appear as each day is calculated. An admin can use “Rebuild history” to recalculate past days now.
-            </div>
-          )}
+        <div className="mt-5">
+          <DoraChart summary={summary.data} defaultMetric="leadTime" />
         </div>
       </Card>
     </div>
   );
 }
+

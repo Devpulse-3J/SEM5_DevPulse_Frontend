@@ -131,7 +131,10 @@ function parseErrorBody(
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const baseUrl = getApiBaseUrl();
-  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  let cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  if (baseUrl.endsWith("/api") && cleanEndpoint.startsWith("/api/")) {
+    cleanEndpoint = cleanEndpoint.slice(4);
+  }
 
   let url = `${baseUrl}${cleanEndpoint}`;
   if (options.params) {
@@ -222,4 +225,31 @@ export const apiClient = {
     request<T>(endpoint, { ...options, method: "DELETE" }),
 };
 
+/**
+ * Convenience wrapper for API calls that may accept full route paths.
+ */
+export const api = {
+  get: <T>(endpoint: string, options?: RequestOptions) => {
+    const clean = endpoint.startsWith("/api/") ? endpoint.slice(4) : endpoint;
+    return apiClient.get<T>(clean, options);
+  },
+  post: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => {
+    const clean = endpoint.startsWith("/api/") ? endpoint.slice(4) : endpoint;
+    return apiClient.post<T>(clean, data, options);
+  },
+  put: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => {
+    const clean = endpoint.startsWith("/api/") ? endpoint.slice(4) : endpoint;
+    return apiClient.put<T>(clean, data, options);
+  },
+  patch: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => {
+    const clean = endpoint.startsWith("/api/") ? endpoint.slice(4) : endpoint;
+    return apiClient.patch<T>(clean, data, options);
+  },
+  delete: <T>(endpoint: string, options?: RequestOptions) => {
+    const clean = endpoint.startsWith("/api/") ? endpoint.slice(4) : endpoint;
+    return apiClient.delete<T>(clean, options);
+  },
+};
+
 export default apiClient;
+

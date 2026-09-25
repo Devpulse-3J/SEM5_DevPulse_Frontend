@@ -5,4 +5,5 @@ export * from "./analytics";
 export * from "./repository";
 export * from "./pullRequest";
 export * from "./notification";
+export * from "./metrics";
 

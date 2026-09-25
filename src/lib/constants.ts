@@ -42,6 +42,10 @@ export const QUERY_KEYS = {
     ["metrics", "my-prs", projectId ?? null, authorName ?? null, limit] as const,
   pullRequest: (projectId?: number, id?: string) =>
     ["metrics", "prs", projectId ?? null, id ?? null] as const,
+  reviewVelocity: (projectId?: number, windowDays = 30) =>
+    ["review-velocity", projectId ?? null, windowDays] as const,
+  devexSummary: (projectId?: number, windowDays = 30) =>
+    ["devex-summary", projectId ?? null, windowDays] as const,
 } as const;
 
 export const PAGE_SIZES = {
