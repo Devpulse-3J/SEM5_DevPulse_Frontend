@@ -89,7 +89,7 @@ describe("authService.switchCompany", () => {
     const result = await authService.switchCompany(15);
 
     // No `requiresAuth: false`: the caller must present their current token.
-    expect(postMock).toHaveBeenCalledWith("/api/auth/companies/15/switch");
+    expect(postMock).toHaveBeenCalledWith("/auth/companies/15/switch");
     expect(result.accessToken).toBe("switched");
   });
 });

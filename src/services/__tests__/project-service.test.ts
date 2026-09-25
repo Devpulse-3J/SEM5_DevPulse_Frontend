@@ -71,7 +71,7 @@ describe("project API service", () => {
     getMock.mockResolvedValue(response);
 
     await expect(projectService.getGithubAvailableRepos(12)).resolves.toEqual(response);
-    expect(getMock).toHaveBeenCalledWith("/api/integrations/projects/12/github/available-repos");
+    expect(getMock).toHaveBeenCalledWith("/integrations/projects/12/github/available-repos");
   });
 
   it("links GitHub using the integration endpoint", async () => {

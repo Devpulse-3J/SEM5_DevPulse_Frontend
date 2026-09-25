@@ -114,7 +114,7 @@ export const integrationsApiService = {
     projectId: string
   ): Promise<GithubAvailableReposResponse> {
     return apiClient.get<GithubAvailableReposResponse>(
-      `/api/integrations/projects/${projectId}/github/available-repos`
+      `/integrations/projects/${projectId}/github/available-repos`
     );
   },
 
@@ -151,7 +151,7 @@ export const integrationsApiService = {
   /** GET /api/integrations/jira/status */
   async getJiraOAuthStatus(): Promise<JiraOAuthStatusResponse> {
     try {
-      return await apiClient.get<JiraOAuthStatusResponse>("/api/integrations/jira/status");
+      return await apiClient.get<JiraOAuthStatusResponse>("/integrations/jira/status");
     } catch {
       return { connected: false };
     }
@@ -161,7 +161,7 @@ export const integrationsApiService = {
   async getJiraOAuthInstallUrl(): Promise<string> {
     try {
       const res = await apiClient.get<JiraOAuthInstallUrlResponse & { url?: string }>(
-        "/api/integrations/jira/oauth/install"
+        "/integrations/jira/oauth/install"
       );
       if (typeof res === "string") return res;
       return res.installUrl || res.url || "";
@@ -175,7 +175,7 @@ export const integrationsApiService = {
   /** POST /api/integrations/jira/disconnect */
   async disconnectJira(): Promise<{ success: boolean }> {
     try {
-      return await apiClient.post<{ success: boolean }>("/api/integrations/jira/disconnect");
+      return await apiClient.post<{ success: boolean }>("/integrations/jira/disconnect");
     } catch {
       return { success: true };
     }
@@ -206,7 +206,7 @@ export const integrationsApiService = {
   async getSlackOAuthInstallUrl(): Promise<string> {
     try {
       const res = await apiClient.get<{ installUrl?: string; url?: string }>(
-        "/api/slack/oauth/install"
+        "/slack/oauth/install"
       );
       if (typeof res === "string") return res;
       return res.installUrl || res.url || "";

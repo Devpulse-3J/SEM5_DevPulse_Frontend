@@ -155,7 +155,7 @@ export const projectService = {
     repositories: Array<{ id: number | string; name: string; fullName: string; repoUrl: string }>;
   }> {
     return apiClient.get(
-      `/api/integrations/projects/${encodeURIComponent(String(projectId))}/github/available-repos`
+      `/integrations/projects/${encodeURIComponent(String(projectId))}/github/available-repos`
     );
   },
 
