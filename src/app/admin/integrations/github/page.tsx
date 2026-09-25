@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { FaGithub, FaCheckCircle, FaExclamationTriangle, FaSync } from "react-icons/fa";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { integrationsApiService, GithubStatusResponse } from "@/services/api/integrations";
+import {
+  integrationsApiService,
+  GithubStatusResponse,
+  GithubAvailableReposResponse,
+} from "@/services/api/integrations";
 import { projectService, ProjectApiResponse } from "@/services/project.service";
 import { ApiError } from "@/services/api-client";
 
@@ -12,6 +16,18 @@ export default function GithubIntegrationPage() {
   const [projects, setProjects] = useState<ProjectApiResponse[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [loadingProjects, setLoadingProjects] = useState(true);
+
+  // Available Repos & App Installation State
+  const [loadingAvailableRepos, setLoadingAvailableRepos] = useState(false);
+  const [availableReposData, setAvailableReposData] = useState<GithubAvailableReposResponse | null>(null);
+  const [selectedRepoDropdownUrl, setSelectedRepoDropdownUrl] = useState<string>("");
+  const [returnedFromGithub, setReturnedFromGithub] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(
+      params.get("installation_id") || params.get("setup_action") === "install" || params.get("code")
+    );
+  });
 
   // Flow 1 State
   const [loadingAppUrl, setLoadingAppUrl] = useState(false);
@@ -31,7 +47,6 @@ export default function GithubIntegrationPage() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Load Projects on mount
   async function fetchStatus(projectId: string) {
     if (!projectId) return;
     setLoadingStatus(true);
@@ -44,12 +59,33 @@ export default function GithubIntegrationPage() {
       }
     } catch (err: unknown) {
       console.warn("Failed to fetch GitHub status", err);
-      // Fallback status object for UI rendering
       setStatus({
         status: "DISCONNECTED",
       });
     } finally {
       setLoadingStatus(false);
+    }
+  }
+
+  async function fetchAvailableRepos(projectId: string) {
+    if (!projectId) return;
+    setLoadingAvailableRepos(true);
+    try {
+      const res = await integrationsApiService.getGithubAvailableRepos(projectId);
+      setAvailableReposData(res);
+      if (res.repositories && res.repositories.length > 0) {
+        setSelectedRepoDropdownUrl(res.repositories[0].repoUrl);
+        setRepoUrlInput(res.repositories[0].repoUrl);
+      }
+    } catch (err) {
+      console.warn("Could not fetch available repos", err);
+      setAvailableReposData({
+        installed: false,
+        connectUrl: `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(projectId)}`,
+        repositories: [],
+      });
+    } finally {
+      setLoadingAvailableRepos(false);
     }
   }
 
@@ -62,6 +98,7 @@ export default function GithubIntegrationPage() {
           const initialProjectId = String(list[0].projectId);
           setSelectedProjectId(initialProjectId);
           fetchStatus(initialProjectId);
+          fetchAvailableRepos(initialProjectId);
         }
       } catch (err) {
         console.warn("Could not load projects for GitHub integration", err);
@@ -72,28 +109,38 @@ export default function GithubIntegrationPage() {
     loadProjects();
   }, []);
 
-  // Flow 1: 1-Click GitHub App Authorization
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    fetchStatus(projectId);
+    fetchAvailableRepos(projectId);
+  };
+
+  // Flow 1: Install / Connect GitHub App
   const handleConnectGitHubApp = async () => {
     if (!selectedProjectId) return;
     setLoadingAppUrl(true);
     setAppUrlError(null);
-    const fallbackUrl = `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(selectedProjectId)}`;
+    const targetUrl =
+      availableReposData?.connectUrl ||
+      `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(selectedProjectId)}`;
     try {
-      await integrationsApiService.getGithubConnectUrl(selectedProjectId);
-      window.location.assign(fallbackUrl);
+      const res = await integrationsApiService.getGithubConnectUrl(selectedProjectId);
+      window.location.assign(res.connectUrl || targetUrl);
     } catch (err: unknown) {
-      const msg = err instanceof ApiError || err instanceof Error ? err.message : "Failed to obtain GitHub App URL.";
+      const msg =
+        err instanceof ApiError || err instanceof Error ? err.message : "Failed to obtain GitHub App URL.";
       setAppUrlError(msg);
-      window.location.assign(fallbackUrl);
+      window.location.assign(targetUrl);
     } finally {
       setLoadingAppUrl(false);
     }
   };
 
-  // Flow 2: Manual Repository Link (Fallback Form)
-  const handleManualLinkSubmit = async (e: React.FormEvent) => {
+  // Link Repository from Dropdown or Form
+  const handleLinkRepoSubmit = async (e: React.FormEvent, urlToLink?: string) => {
     e.preventDefault();
-    if (!selectedProjectId || !repoUrlInput.trim()) return;
+    const finalUrl = urlToLink || selectedRepoDropdownUrl || repoUrlInput;
+    if (!selectedProjectId || !finalUrl.trim()) return;
 
     setIsLinking(true);
     setLinkError(null);
@@ -101,12 +148,12 @@ export default function GithubIntegrationPage() {
 
     try {
       const res = await integrationsApiService.linkGithubRepo(selectedProjectId, {
-        repoUrl: repoUrlInput.trim(),
+        repoUrl: finalUrl.trim(),
         webhookSecret: webhookSecretInput.trim() || undefined,
       });
 
       setStatus({
-        linkedRepo: res.linkedRepo || repoUrlInput.trim(),
+        linkedRepo: res.linkedRepo || finalUrl.trim(),
         defaultBranch: res.defaultBranch || "main",
         status: res.status || "CONNECTED",
         webhookRegistered: res.webhookRegistered,
@@ -116,12 +163,13 @@ export default function GithubIntegrationPage() {
         res.notes ||
           res.message ||
           (res.webhookRegistered
-            ? "Webhook was automatically registered with GitHub."
-            : "Repository linked. If automatic webhook registration fails, ensure webhook Secret is set.")
+            ? "Repository connected successfully! Webhook was registered."
+            : "Repository connected successfully!")
       );
 
       setRepoUrlInput("");
       setWebhookSecretInput("");
+      setReturnedFromGithub(false);
     } catch (err: unknown) {
       const msg = err instanceof ApiError || err instanceof Error ? err.message : "Could not link repository.";
       setLinkError(msg);
@@ -142,7 +190,6 @@ export default function GithubIntegrationPage() {
       setSyncMessage(res.message || "Historical sync initiated successfully.");
       setStatus((prev) => (prev ? { ...prev, status: "SYNCING" } : null));
 
-      // Re-poll status after 3 seconds
       setTimeout(() => {
         setIsSyncing(false);
         fetchStatus(selectedProjectId);
@@ -154,6 +201,12 @@ export default function GithubIntegrationPage() {
     }
   };
 
+  const isAppInstalled = Boolean(
+    returnedFromGithub ||
+      availableReposData?.installed ||
+      (availableReposData?.repositories && availableReposData.repositories.length > 0)
+  );
+
   return (
     <div className="flex max-w-4xl flex-col gap-6">
       <div>
@@ -161,7 +214,7 @@ export default function GithubIntegrationPage() {
           <FaGithub className="h-5 w-5 text-purple-400" /> GitHub Connection &amp; Sync Module
         </h1>
         <p className="text-xs text-subtle">
-          Authorize GitHub App or link repositories manually to sync commits, pull requests, and PR metrics.
+          Smart GitHub App installation detection and 1-click repository connection for your projects.
         </p>
       </div>
 
@@ -176,15 +229,11 @@ export default function GithubIntegrationPage() {
           <select
             id="project-select"
             value={selectedProjectId}
-            onChange={(e) => {
-              const projectId = e.target.value;
-              setSelectedProjectId(projectId);
-              fetchStatus(projectId);
-            }}
+            onChange={(e) => handleProjectChange(e.target.value)}
             className="h-9 w-full max-w-xs cursor-pointer rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink outline-none transition focus:border-accent"
           >
             {projects.map((p) => (
-              <option key={p.projectId} value={p.projectId}>
+              <option key={p.projectId} value={String(p.projectId)}>
                 {p.projectName} (ID: {p.projectId})
               </option>
             ))}
@@ -192,7 +241,7 @@ export default function GithubIntegrationPage() {
         )}
       </div>
 
-      {/* Flow 3: Current Status Display Card */}
+      {/* Status Display Card */}
       <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface p-5">
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
@@ -241,46 +290,117 @@ export default function GithubIntegrationPage() {
             {isSyncing ? "Syncing Historical Data…" : "Sync Historical Data"}
           </Button>
 
-          {syncMessage && <span className="text-xs text-success flex items-center gap-1"><FaCheckCircle /> {syncMessage}</span>}
-          {syncError && <span className="text-xs text-danger flex items-center gap-1"><FaExclamationTriangle /> {syncError}</span>}
+          {syncMessage && (
+            <span className="text-xs text-success flex items-center gap-1">
+              <FaCheckCircle /> {syncMessage}
+            </span>
+          )}
+          {syncError && (
+            <span className="text-xs text-danger flex items-center gap-1">
+              <FaExclamationTriangle /> {syncError}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Flow 1: 1-Click GitHub App Authorization (Recommended) */}
-      <div className="flex flex-col gap-3 rounded-panel border border-purple-500/30 bg-purple-950/10 p-5">
-        <div>
-          <span className="text-[10px] font-bold tracking-widest text-purple-400 uppercase">Flow 1 (Recommended)</span>
-          <h2 className="text-sm font-semibold text-ink mt-0.5">1-Click GitHub App Authorization</h2>
-          <p className="mt-1 text-xs text-muted">
-            Clicking this button requests authorization from GitHub and redirects to install the official DevPulse App.
-          </p>
+      {/* GitHub App Installation & Repository Selection Card */}
+      <div className="flex flex-col gap-4 rounded-panel border border-purple-500/30 bg-purple-950/10 p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold tracking-widest text-purple-400 uppercase">
+              Smart GitHub App Detection
+            </span>
+            <h2 className="text-sm font-semibold text-ink mt-0.5">GitHub App &amp; Available Repositories</h2>
+          </div>
+          {loadingAvailableRepos && (
+            <span className="text-xs text-purple-400 animate-pulse flex items-center gap-1">
+              <FaGithub className="animate-spin" /> Checking installation…
+            </span>
+          )}
         </div>
 
         {appUrlError && <p className="text-xs text-danger">{appUrlError}</p>}
 
-        <div>
-          <button
-            type="button"
-            onClick={handleConnectGitHubApp}
-            disabled={loadingAppUrl || !selectedProjectId}
-            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer"
-          >
-            <FaGithub className="h-4 w-4" />
-            {loadingAppUrl ? "Fetching Redirect URL..." : "Connect GitHub App"}
-          </button>
-        </div>
+        {returnedFromGithub && (
+          <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success font-medium">
+            <FaCheckCircle className="h-4 w-4 flex-shrink-0 text-success" />
+            <span>
+              GitHub App authorized successfully! Select or enter your repository below and click <strong>Link Repository</strong> to finish setup.
+            </span>
+          </div>
+        )}
+
+        {!isAppInstalled ? (
+          /* Conditional Rendering: App Not Installed */
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-muted">
+              GitHub App is not installed for this organization. Install the DevPulse GitHub App to grant access to repositories.
+            </p>
+            <div>
+              <button
+                type="button"
+                onClick={handleConnectGitHubApp}
+                disabled={loadingAppUrl || !selectedProjectId}
+                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer"
+              >
+                <FaGithub className="h-4 w-4" />
+                {loadingAppUrl ? "Redirecting to GitHub..." : "Install GitHub App"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Conditional Rendering: App Installed -> 1-Click Dropdown & Link */
+          <form onSubmit={(e) => handleLinkRepoSubmit(e, selectedRepoDropdownUrl)} className="flex flex-col gap-3">
+            <p className="text-xs text-muted">
+              GitHub App is installed. Select an available repository from the dropdown to link to this project.
+            </p>
+
+            {availableReposData?.repositories && availableReposData.repositories.length > 0 ? (
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <select
+                  value={selectedRepoDropdownUrl}
+                  onChange={(e) => {
+                    setSelectedRepoDropdownUrl(e.target.value);
+                    setRepoUrlInput(e.target.value);
+                  }}
+                  className="flex-1 h-9 rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink outline-none transition focus:border-accent cursor-pointer"
+                >
+                  {availableReposData.repositories.map((r) => (
+                    <option key={r.id || r.repoUrl} value={r.repoUrl}>
+                      {r.fullName || r.name} ({r.repoUrl})
+                    </option>
+                  ))}
+                </select>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  loading={isLinking}
+                  disabled={isLinking || !selectedRepoDropdownUrl}
+                >
+                  Link Repository
+                </Button>
+              </div>
+            ) : (
+              <div className="text-xs text-subtle">
+                Enter your repository URL below and click Link Repository to complete connection:
+              </div>
+            )}
+          </form>
+        )}
       </div>
 
-      {/* Flow 2: Manual Repository Link (Fallback Form) */}
+      {/* Manual Repository Link (Fallback Form) */}
       <form
-        onSubmit={handleManualLinkSubmit}
+        onSubmit={(e) => handleLinkRepoSubmit(e, repoUrlInput)}
         className="flex flex-col gap-4 rounded-panel border border-border bg-surface-raised p-5"
       >
         <div>
-          <span className="text-[10px] font-bold tracking-widest text-subtle uppercase">Flow 2 (Fallback)</span>
-          <h2 className="text-sm font-semibold text-ink mt-0.5">Manual Repository Link</h2>
+          <span className="text-[10px] font-bold tracking-widest text-subtle uppercase">Manual Fallback</span>
+          <h2 className="text-sm font-semibold text-ink mt-0.5">Link Repository by URL</h2>
           <p className="mt-1 text-xs text-subtle">
-            If 1-click install is not available, enter the repository URL and optional webhook secret manually.
+            Or manually enter a repository URL and optional webhook secret to link directly.
           </p>
         </div>
 

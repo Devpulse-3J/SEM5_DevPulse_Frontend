@@ -74,6 +74,7 @@ export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEYS.token);
   localStorage.removeItem(STORAGE_KEYS.tokenExpiresAt);
   localStorage.removeItem(STORAGE_KEYS.user);
+  localStorage.removeItem(STORAGE_KEYS.activeProject);
 }
 
 /**

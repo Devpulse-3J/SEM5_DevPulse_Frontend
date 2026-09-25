@@ -37,7 +37,7 @@ export const notificationService = {
     data: SendTeamMessageRequest
   ): Promise<SendTeamMessageResponse> {
     return apiClient.post<SendTeamMessageResponse>(
-      "/api/notifications/team-message",
+      "/notifications/team-message",
       data
     );
   },

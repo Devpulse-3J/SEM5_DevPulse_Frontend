@@ -11,11 +11,26 @@ export interface CompanyMember {
   role: CompanyRole;
   status: MemberStatus;
   joinedAt?: string;
+  assignedProjects?: string[];
+}
+
+export interface JoinRequest {
+  id: string | number;
+  requestId: string | number;
+  email: string;
+  githubUsername?: string;
+  targetProjectId?: number | string;
+  targetProjectName?: string;
+  message?: string;
+  createdAt: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
 export interface InviteCompanyMembersRequest {
   emails: string[];
   role: CompanyRole;
+  projectId?: number | string;
+  projectRole?: "DEVELOPER" | "MANAGER";
 }
 
 export interface UpdateCompanyMemberRoleRequest {
@@ -32,7 +47,7 @@ export const adminApiService = {
   /** GET /api/auth/company/members */
   async getCompanyMembers(): Promise<CompanyMember[]> {
     try {
-      return await apiClient.get<CompanyMember[]>("/api/auth/company/members");
+      return await apiClient.get<CompanyMember[]>("/auth/company/members");
     } catch {
       return [];
     }
@@ -43,7 +58,7 @@ export const adminApiService = {
     data: InviteCompanyMembersRequest
   ): Promise<InviteCompanyMembersResponse> {
     return apiClient.post<InviteCompanyMembersResponse>(
-      "/api/auth/company/invite",
+      "/auth/company/invite",
       data
     );
   },
@@ -54,7 +69,7 @@ export const adminApiService = {
     role: CompanyRole
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.put<{ success: boolean; message?: string }>(
-      `/api/auth/company/members/${userId}/role`,
+      `/auth/company/members/${userId}/role`,
       { role }
     );
   },
@@ -64,7 +79,36 @@ export const adminApiService = {
     userId: string
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.delete<{ success: boolean; message?: string }>(
-      `/api/auth/company/members/${userId}`
+      `/auth/company/members/${userId}`
+    );
+  },
+
+  /** GET /api/workspaces/{companyId}/join-requests */
+  async getJoinRequests(companyId: number | string): Promise<JoinRequest[]> {
+    try {
+      return await apiClient.get<JoinRequest[]>(`/api/workspaces/${companyId}/join-requests`);
+    } catch {
+      return [];
+    }
+  },
+
+  /** POST /api/workspaces/{companyId}/join-requests/{requestId}/approve */
+  async approveJoinRequest(
+    companyId: number | string,
+    requestId: number | string
+  ): Promise<{ success: boolean; message?: string }> {
+    return apiClient.post<{ success: boolean; message?: string }>(
+      `/api/workspaces/${companyId}/join-requests/${requestId}/approve`
+    );
+  },
+
+  /** POST /api/workspaces/{companyId}/join-requests/{requestId}/reject */
+  async rejectJoinRequest(
+    companyId: number | string,
+    requestId: number | string
+  ): Promise<{ success: boolean; message?: string }> {
+    return apiClient.post<{ success: boolean; message?: string }>(
+      `/api/workspaces/${companyId}/join-requests/${requestId}/reject`
     );
   },
 };

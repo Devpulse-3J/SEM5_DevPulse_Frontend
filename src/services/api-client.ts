@@ -46,7 +46,7 @@ export function getApiBaseUrl(): string {
   if (envUrl && envUrl.trim().length > 0) {
     return envUrl.trim().replace(/\/+$/, "");
   }
-  return "http://localhost:8080";
+  return "http://localhost:8080/api";
 }
 
 /**

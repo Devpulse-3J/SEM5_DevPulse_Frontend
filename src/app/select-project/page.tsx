@@ -27,9 +27,29 @@ import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
  * company and gets a 404.
  */
 
-/** API roles are lowercase; the workspace UI uses uppercase. Map once, here. */
-function toWorkspaceRole(role: ProjectMembership["role"]): WorkspaceRole {
-  return role === "manager" ? "MANAGER" : "DEVELOPER";
+function toWorkspaceRole(role: ProjectMembership["role"], systemRole?: string): WorkspaceRole {
+  const norm = String(role || "").toUpperCase().trim();
+  if (norm === "MANAGER" || norm === "ADMIN" || systemRole === "admin") {
+    return "MANAGER";
+  }
+  return "DEVELOPER";
+}
+
+/**
+ * The company-level role that applies to a project's company.
+ *
+ * `user.systemRole` is the role in the company the token names, so it says
+ * nothing about a project in a different company - an admin of one company is
+ * only a member of another. Without this, an admin would get the manager view on
+ * every project they belong to, in any company.
+ */
+function systemRoleFor(
+  m: ProjectMembership,
+  activeCompanyId: number | undefined,
+  systemRole: string | undefined
+): string | undefined {
+  const inActiveCompany = typeof m.companyId !== "number" || m.companyId === activeCompanyId;
+  return inActiveCompany ? systemRole : undefined;
 }
 
 const roleBadge: Record<WorkspaceRole, string> = {
@@ -54,7 +74,10 @@ export default function SelectProjectPage() {
   async function choose(m: ProjectMembership) {
     if (openingId !== null) return;
     setOpenError(null);
-    const role = toWorkspaceRole(m.role);
+
+    // Company-level role that applies to this project's company. Admin status
+    // only elevates within the company it belongs to.
+    let systemRole = systemRoleFor(m, activeCompanyId, user?.systemRole);
 
     // The project lives in another company than the token names: get a token for
     // that company before opening it. Skipped when the backend did not say which
@@ -62,7 +85,10 @@ export default function SelectProjectPage() {
     if (typeof m.companyId === "number" && m.companyId !== activeCompanyId) {
       setOpeningId(m.projectId);
       try {
-        await switchCompany(m.companyId);
+        const profile = await switchCompany(m.companyId);
+        // The role in the company just switched into, not the home one; unknown
+        // (profile reload failed) means no elevation.
+        systemRole = profile?.systemRole;
       } catch (err: unknown) {
         setOpenError(
           err instanceof Error && err.message
@@ -74,6 +100,7 @@ export default function SelectProjectPage() {
       }
     }
 
+    const role = toWorkspaceRole(m.role, systemRole);
     dispatch(
       setActiveProject({
         id: String(m.projectId),
@@ -138,7 +165,10 @@ export default function SelectProjectPage() {
         {!isResolving && !isError && memberships && memberships.length > 0 && (
           <div className="flex flex-col gap-2.5">
             {memberships.map((m) => {
-              const role = toWorkspaceRole(m.role);
+              const role = toWorkspaceRole(
+                m.role,
+                systemRoleFor(m, activeCompanyId, user?.systemRole)
+              );
               return (
                 <button
                   key={m.projectId}

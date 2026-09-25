@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   /** Unix ms at which the access token expires (derived from expiresIn). */
   tokenExpiresAt: "odineye_token_expires_at",
   user: "odineye_user",
+  activeProject: "devpulse_active_project",
 } as const;
 
 /** Company-wide roles, as sent by the backend (lowercase). */

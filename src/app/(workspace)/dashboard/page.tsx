@@ -13,12 +13,12 @@ export default function DashboardPage() {
 
   // The workspace layout guarantees an active project before rendering, and the
   // role comes from that project — never from systemRole, which is company-wide.
-  const role = activeProject?.role ?? "DEVELOPER";
+  const rawRole = String(activeProject?.role || "").toUpperCase();
+  const isManager = rawRole === "MANAGER" || rawRole === "ADMIN" || user?.systemRole === "admin";
   const firstName = user?.fullName ? user.fullName.split(" ")[0] : "there";
   const projectName = activeProject?.name ?? "";
 
-  // Repo counts and "updated just now" were invented — nothing reports them.
-  if (role === "MANAGER") {
+  if (isManager) {
     return (
       <SharedDashboard title="Overview" subtitle={projectName}>
         <ManagerDashboard />

@@ -34,7 +34,7 @@ describe("authService.register", () => {
     });
 
     expect(postMock).toHaveBeenCalledWith(
-      "/api/auth/register",
+      "/auth/register",
       expect.objectContaining({ email: "new@x.com", inviteToken: "abc-123" }),
       { requiresAuth: false },
     );
@@ -66,7 +66,7 @@ describe("authService.acceptProjectInvitation", () => {
     });
 
     expect(postMock).toHaveBeenCalledWith(
-      "/api/auth/invitations/project/accept?token=abc-123",
+      "/auth/invitations/project/accept?token=abc-123",
     );
   });
 
@@ -74,7 +74,7 @@ describe("authService.acceptProjectInvitation", () => {
     await authService.acceptProjectInvitation("a&b=c");
 
     expect(postMock).toHaveBeenCalledWith(
-      "/api/auth/invitations/project/accept?token=a%26b%3Dc",
+      "/auth/invitations/project/accept?token=a%26b%3Dc",
     );
   });
 });

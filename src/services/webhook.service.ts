@@ -9,7 +9,7 @@ import { apiClient } from "./api-client";
  */
 export const webhookService = {
   async triggerHighRiskAlertDemo(): Promise<void> {
-    await apiClient.post<void>("/api/webhooks/test-high-risk-alert", undefined, {
+    await apiClient.post<void>("/webhooks/test-high-risk-alert", undefined, {
       requiresAuth: false,
     });
   },

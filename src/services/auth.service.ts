@@ -22,7 +22,7 @@ import type {
 export const authService = {
   /** POST /api/auth/login → 200 */
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>("/api/auth/login", credentials, {
+    return apiClient.post<AuthResponse>("/auth/login", credentials, {
       requiresAuth: false,
     });
   },
@@ -35,7 +35,7 @@ export const authService = {
    *   neither                 → personal workspace, member
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>("/api/auth/register", data, {
+    return apiClient.post<AuthResponse>("/auth/register", data, {
       requiresAuth: false,
     });
   },
@@ -50,7 +50,7 @@ export const authService = {
    */
   async acceptProjectInvitation(token: string): Promise<AcceptProjectInvitationResponse> {
     return apiClient.post<AcceptProjectInvitationResponse>(
-      `/api/auth/invitations/project/accept?token=${encodeURIComponent(token)}`,
+      `/auth/invitations/project/accept?token=${encodeURIComponent(token)}`,
     );
   },
 
@@ -69,7 +69,7 @@ export const authService = {
 
   /** GET /api/auth/me — the only source of companyId and projectRoles. */
   async getMe(token?: string): Promise<UserProfileResponse> {
-    return apiClient.get<UserProfileResponse>("/api/auth/me", { token });
+    return apiClient.get<UserProfileResponse>("/auth/me", { token });
   },
 
   // ─── session helpers (delegate to lib/auth so storage lives in one place) ───

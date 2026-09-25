@@ -13,7 +13,7 @@ export function DeveloperDashboard() {
   const { user } = useAuth();
   const pullRequests = useMyPullRequests(
     activeProject ? Number(activeProject.id) : undefined,
-    user?.fullName,
+    user ? { fullName: user.fullName, email: user.email } : undefined,
     20,
   );
 

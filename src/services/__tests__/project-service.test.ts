@@ -28,7 +28,7 @@ describe("project API service", () => {
     getMock.mockResolvedValue({ projects });
 
     await expect(projectService.getAll()).resolves.toEqual(projects);
-    expect(getMock).toHaveBeenCalledWith("/api/projects");
+    expect(getMock).toHaveBeenCalledWith("/projects");
   });
 
   it("creates a project using the backend field names", async () => {
@@ -44,7 +44,7 @@ describe("project API service", () => {
       }),
     ).resolves.toBe(response);
 
-    expect(postMock).toHaveBeenCalledWith("/api/projects", {
+    expect(postMock).toHaveBeenCalledWith("/projects", {
       projectName: "Example Project",
       description: "Project description",
       githubRepoUrl: "https://github.com/owner/repository",
@@ -57,7 +57,21 @@ describe("project API service", () => {
     getMock.mockResolvedValue({ connectUrl });
 
     await expect(projectService.getConnectUrl(12)).resolves.toEqual({ connectUrl });
-    expect(getMock).toHaveBeenCalledWith("/api/integrations/projects/12/github/connect-url");
+    expect(getMock).toHaveBeenCalledWith("/integrations/projects/12/github/connect-url");
+  });
+
+  it("fetches available GitHub repos via GET /api/integrations/projects/:id/github/available-repos", async () => {
+    const response = {
+      installed: true,
+      connectUrl: "https://github.com/apps/devpulse/installations/new?state=12",
+      repositories: [
+        { id: 123, name: "repo-name", fullName: "owner/repo-name", repoUrl: "https://github.com/owner/repo-name" },
+      ],
+    };
+    getMock.mockResolvedValue(response);
+
+    await expect(projectService.getGithubAvailableRepos(12)).resolves.toEqual(response);
+    expect(getMock).toHaveBeenCalledWith("/api/integrations/projects/12/github/available-repos");
   });
 
   it("links GitHub using the integration endpoint", async () => {
@@ -68,7 +82,7 @@ describe("project API service", () => {
     });
 
     expect(postMock).toHaveBeenCalledWith(
-      "/api/integrations/projects/12/github/link",
+      "/integrations/projects/12/github/link",
       {
         repoUrl: "https://github.com/owner/repository",
       },
@@ -86,7 +100,7 @@ describe("project API service", () => {
       })
     ).resolves.toBe(response);
 
-    expect(putMock).toHaveBeenCalledWith("/api/projects/12", {
+    expect(putMock).toHaveBeenCalledWith("/projects/12", {
       projectName: "Updated Project",
       description: "New description",
     });
@@ -96,14 +110,14 @@ describe("project API service", () => {
     deleteMock.mockResolvedValue(undefined);
 
     await projectService.remove(12);
-    expect(deleteMock).toHaveBeenCalledWith("/api/projects/12");
+    expect(deleteMock).toHaveBeenCalledWith("/projects/12");
   });
 
   it("updates member role using PUT /api/projects/:id/members/:memberId", async () => {
     putMock.mockResolvedValue({ memberId: 5, role: "MANAGER" });
 
     await projectService.updateMemberRole(12, 5, "MANAGER");
-    expect(putMock).toHaveBeenCalledWith("/api/projects/12/members/5", {
+    expect(putMock).toHaveBeenCalledWith("/projects/12/members/5", {
       role: "MANAGER",
     });
   });
@@ -112,7 +126,7 @@ describe("project API service", () => {
     deleteMock.mockResolvedValue(undefined);
 
     await projectService.removeMember(12, 5);
-    expect(deleteMock).toHaveBeenCalledWith("/api/projects/12/members/5");
+    expect(deleteMock).toHaveBeenCalledWith("/projects/12/members/5");
   });
 });
 

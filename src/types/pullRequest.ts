@@ -46,6 +46,7 @@ export interface PullRequest {
   title: string;
   description: string | null;
   author: string;
+  authorEmail?: string | null;
   authorAvatar: string | null;
   repositoryId: string;
   repositoryName: string;

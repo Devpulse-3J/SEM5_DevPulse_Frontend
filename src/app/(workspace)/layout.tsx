@@ -43,10 +43,16 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   const companyName =
     user && "companyName" in user ? (user.companyName as string | undefined) : undefined;
 
+  const rawRole = String(activeProject.role || "").toUpperCase();
+  const effectiveRole =
+    rawRole === "MANAGER" || rawRole === "ADMIN" || user?.systemRole === "admin"
+      ? "MANAGER"
+      : "DEVELOPER";
+
   return (
     <div className="flex h-screen flex-col bg-app">
       <Header
-        role={activeProject.role}
+        role={effectiveRole}
         initials={initials(userFullName)}
         userName={userFullName}
         email={userEmail}
@@ -54,7 +60,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
         onLogout={logout}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar role={activeProject.role} />
+        <Sidebar role={effectiveRole} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
