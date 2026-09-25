@@ -25,7 +25,10 @@ describe("apiClient endpoint convention", () => {
       const text = readFileSync(file, "utf8");
       // apiClient.<verb>( optionally generic, optionally on the next line, then a "/api/ or `/api/ literal
       const call = /apiClient\s*\.\s*(?:get|post|put|patch|delete)\s*(?:<[^()]*>)?\s*\(\s*["`]\/api\//g;
-      if (call.test(text)) offenders.push(file.replace(process.cwd() + "/", ""));
+      // hand-built fallback URLs: `${base}/api/...` where base already ends in /api.
+      // `${window.location.origin}/api/...` is a correct public URL, so it is exempt.
+      const built = /\$\{(?![^}]*location\.origin)[^}]*\}\/api\//;
+      if (call.test(text) || built.test(text)) offenders.push(file.replace(process.cwd() + "/", ""));
     }
     expect(offenders).toEqual([]);
   });
