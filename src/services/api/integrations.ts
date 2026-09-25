@@ -168,7 +168,7 @@ export const integrationsApiService = {
     } catch (err) {
       console.error("Failed to fetch Jira OAuth installUrl:", err);
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      return `${baseUrl.replace(/\/+$/, "")}/api/integrations/jira/oauth/install`;
+      return `${baseUrl.replace(/\/+$/, "")}/integrations/jira/oauth/install`;
     }
   },
 
@@ -212,7 +212,7 @@ export const integrationsApiService = {
       return res.installUrl || res.url || "";
     } catch {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      return `${baseUrl.replace(/\/+$/, "")}/api/slack/oauth/install`;
+      return `${baseUrl.replace(/\/+$/, "")}/slack/oauth/install`;
     }
   },
 
