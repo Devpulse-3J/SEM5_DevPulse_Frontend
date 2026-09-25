@@ -97,6 +97,17 @@ export interface UserProfileResponse {
   githubId?: number | null;
 }
 
+/** Who a GitHub username resolves to, shown for confirmation before it is linked. */
+export interface GithubPreview {
+  githubId: number;
+  githubLogin: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  profileUrl?: string | null;
+  /** True when a different DevPulse user already has this account linked. */
+  linkedToAnotherUser: boolean;
+}
+
 /** Body of PUT /api/auth/me/github: the GitHub account now linked. */
 export interface LinkGithubResponse {
   githubId: number;

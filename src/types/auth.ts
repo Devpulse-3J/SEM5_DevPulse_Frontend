@@ -14,6 +14,7 @@ export type {
   ProjectRoleName,
   CompanyMembership,
   LinkGithubResponse,
+  GithubPreview,
   LoginRequest,
   RegisterRequest,
   AuthResponse,
