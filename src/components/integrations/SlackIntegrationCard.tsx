@@ -70,7 +70,10 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
   }, []);
 
   useEffect(() => {
-    void fetchChannels();
+    const timeoutId = window.setTimeout(() => {
+      void fetchChannels();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchChannels]);
 
   const handleAddToSlack = async () => {

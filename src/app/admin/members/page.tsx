@@ -212,9 +212,12 @@ export default function MembersPage() {
   }, [companyId]);
 
   useEffect(() => {
-    void fetchData();
-    void fetchMembers();
-    void fetchJoinRequests();
+    const timeoutId = window.setTimeout(() => {
+      void fetchData();
+      void fetchMembers();
+      void fetchJoinRequests();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData, fetchMembers, fetchJoinRequests]);
 
   // Handle Role Change
@@ -399,7 +402,9 @@ export default function MembersPage() {
           ) : members.length === 0 ? (
             <div className="rounded-panel border border-dashed border-border p-8 text-center bg-surface">
               <p className="text-sm font-semibold text-ink">No members found</p>
-              <p className="mt-1 text-xs text-subtle">Use the "Invite Member" button above to onboard team members.</p>
+              <p className="mt-1 text-xs text-subtle">
+                Use the &quot;Invite Member&quot; button above to onboard team members.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-panel border border-border bg-surface">
@@ -570,7 +575,7 @@ export default function MembersPage() {
 
                       {req.message && (
                         <p className="text-xs text-subtle italic bg-surface-raised/60 border border-border/40 p-2.5 rounded-lg">
-                          "{req.message}"
+                          &quot;{req.message}&quot;
                         </p>
                       )}
 

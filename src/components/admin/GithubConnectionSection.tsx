@@ -53,27 +53,24 @@ export function GithubConnectionSection({
   const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [availableData, setAvailableData] = useState<GithubAvailableReposResponse | null>(null);
   const [selectedRepoUrl, setSelectedRepoUrl] = useState("");
-  const [returnedFromGithub, setReturnedFromGithub] = useState(false);
+  const [returnedFromGithub, setReturnedFromGithub] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(
+      params.get("installation_id") || params.get("setup_action") === "install" || params.get("code")
+    );
+  });
 
   // Check URL query params for returning from GitHub installation redirect
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const isGithubReturn = Boolean(
-        params.get("installation_id") ||
-          params.get("setup_action") === "install" ||
-          params.get("code")
+    if (returnedFromGithub) {
+      showToast(
+        "success",
+        "GitHub App Installed",
+        "App authorized! Select your repository below to complete linking."
       );
-      if (isGithubReturn) {
-        setReturnedFromGithub(true);
-        showToast(
-          "success",
-          "GitHub App Installed",
-          "App authorized! Select your repository below to complete linking."
-        );
-      }
     }
-  }, [showToast]);
+  }, [returnedFromGithub, showToast]);
 
   const fetchAvailableRepos = useCallback(async () => {
     if (!projectId) return;
@@ -97,7 +94,10 @@ export function GithubConnectionSection({
   }, [projectId]);
 
   useEffect(() => {
-    void fetchAvailableRepos();
+    const timeoutId = window.setTimeout(() => {
+      void fetchAvailableRepos();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchAvailableRepos]);
 
   const handleInstallApp = async () => {

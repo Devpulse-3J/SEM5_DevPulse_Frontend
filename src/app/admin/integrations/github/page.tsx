@@ -21,7 +21,13 @@ export default function GithubIntegrationPage() {
   const [loadingAvailableRepos, setLoadingAvailableRepos] = useState(false);
   const [availableReposData, setAvailableReposData] = useState<GithubAvailableReposResponse | null>(null);
   const [selectedRepoDropdownUrl, setSelectedRepoDropdownUrl] = useState<string>("");
-  const [returnedFromGithub, setReturnedFromGithub] = useState(false);
+  const [returnedFromGithub, setReturnedFromGithub] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(
+      params.get("installation_id") || params.get("setup_action") === "install" || params.get("code")
+    );
+  });
 
   // Flow 1 State
   const [loadingAppUrl, setLoadingAppUrl] = useState(false);
@@ -40,21 +46,6 @@ export default function GithubIntegrationPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  // Check URL query params for returning from GitHub installation redirect
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const isReturn = Boolean(
-        params.get("installation_id") ||
-          params.get("setup_action") === "install" ||
-          params.get("code")
-      );
-      if (isReturn) {
-        setReturnedFromGithub(true);
-      }
-    }
-  }, []);
 
   async function fetchStatus(projectId: string) {
     if (!projectId) return;

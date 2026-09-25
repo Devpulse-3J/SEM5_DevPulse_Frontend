@@ -31,7 +31,10 @@ export function JiraOAuthButton({ onStatusChange, className = "" }: JiraOAuthBut
   }, [onStatusChange]);
 
   useEffect(() => {
-    void checkStatus();
+    const timeoutId = window.setTimeout(() => {
+      void checkStatus();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [checkStatus]);
 
   const handleConnect = async () => {

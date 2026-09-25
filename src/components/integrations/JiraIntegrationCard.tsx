@@ -42,7 +42,10 @@ export function JiraIntegrationCard() {
   }, []);
 
   useEffect(() => {
-    void fetchIngestionStatus();
+    const timeoutId = window.setTimeout(() => {
+      void fetchIngestionStatus();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchIngestionStatus]);
 
   const handleCopyWebhookUrl = () => {
