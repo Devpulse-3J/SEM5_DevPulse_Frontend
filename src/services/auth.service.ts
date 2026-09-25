@@ -63,7 +63,7 @@ export const authService = {
    */
   async switchCompany(companyId: number): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>(
-      `/api/auth/companies/${encodeURIComponent(String(companyId))}/switch`,
+      `/auth/companies/${encodeURIComponent(String(companyId))}/switch`,
     );
   },
 

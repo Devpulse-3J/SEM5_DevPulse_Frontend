@@ -86,7 +86,7 @@ export const adminApiService = {
   /** GET /api/workspaces/{companyId}/join-requests */
   async getJoinRequests(companyId: number | string): Promise<JoinRequest[]> {
     try {
-      return await apiClient.get<JoinRequest[]>(`/api/workspaces/${companyId}/join-requests`);
+      return await apiClient.get<JoinRequest[]>(`/workspaces/${companyId}/join-requests`);
     } catch {
       return [];
     }
@@ -98,7 +98,7 @@ export const adminApiService = {
     requestId: number | string
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.post<{ success: boolean; message?: string }>(
-      `/api/workspaces/${companyId}/join-requests/${requestId}/approve`
+      `/workspaces/${companyId}/join-requests/${requestId}/approve`
     );
   },
 
@@ -108,7 +108,7 @@ export const adminApiService = {
     requestId: number | string
   ): Promise<{ success: boolean; message?: string }> {
     return apiClient.post<{ success: boolean; message?: string }>(
-      `/api/workspaces/${companyId}/join-requests/${requestId}/reject`
+      `/workspaces/${companyId}/join-requests/${requestId}/reject`
     );
   },
 };

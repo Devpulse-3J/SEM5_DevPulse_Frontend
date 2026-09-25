@@ -85,7 +85,7 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
     } catch (err) {
       console.error("Failed to initiate Slack OAuth:", err);
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      window.location.href = apiBase ? `${apiBase}/api/slack/oauth/install` : "/api/slack/oauth/install";
+      window.location.href = apiBase ? `${apiBase}/slack/oauth/install` : "/api/slack/oauth/install";
     }
   };
 
