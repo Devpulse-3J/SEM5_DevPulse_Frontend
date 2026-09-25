@@ -67,6 +67,17 @@ describe("metrics API services", () => {
     });
   });
 
+  it("asks the server to rebuild the stored daily snapshots, without the /api prefix", async () => {
+    postMock.mockResolvedValue({ snapshotsRebuilt: 30 });
+
+    const result = await doraService.rebuildSnapshots(8, 30);
+
+    expect(postMock).toHaveBeenCalledWith("/metrics/dora/snapshots/rebuild", undefined, {
+      params: { projectId: 8, days: 30 },
+    });
+    expect(result.snapshotsRebuilt).toBe(30);
+  });
+
   it("passes only supported deployment filters", async () => {
     getMock.mockResolvedValue([]);
 

@@ -135,6 +135,19 @@ export const doraService = {
     return normalizeDoraSummary(res);
   },
 
+  /**
+   * POST /api/metrics/dora/snapshots/rebuild (company admins only). Recalculates the
+   * stored daily snapshots for the last `days` days from the data as it is now, so the
+   * history reflects fixes made after those days were first calculated. Safe to repeat.
+   */
+  rebuildSnapshots(projectId: number, days = 30): Promise<{ snapshotsRebuilt: number }> {
+    return apiClient.post<{ snapshotsRebuilt: number }>(
+      "/metrics/dora/snapshots/rebuild",
+      undefined,
+      { params: { projectId, days } },
+    );
+  },
+
   getWorkload(query: WorkloadQuery): Promise<WorkloadEntry[]> {
     return apiClient.get<WorkloadEntry[]>("/metrics/workload", { params: { ...query } });
   },
