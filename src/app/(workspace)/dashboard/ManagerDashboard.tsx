@@ -5,6 +5,8 @@ import type { RootState } from "@/store";
 import { useDeployments, useDoraSummary, useWorkload } from "@/hooks/useDora";
 import { DoraMetricGrid } from "@/features/dora/DoraMetricGrid";
 import { WorkloadChart } from "@/components/charts/WorkloadChart";
+import { ReviewVelocityCard } from "@/components/dashboard/ReviewVelocityCard";
+import { DevExWorkloadView } from "@/components/dashboard/DevExWorkloadView";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
 import { Spinner } from "@/components/ui/Spinner";
@@ -36,8 +38,14 @@ export function ManagerDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <DoraMetricGrid summary={dora.data} />
+
+      {/* Code Review Velocity Overview */}
+      <ReviewVelocityCard projectId={projectId} windowDays={windowDays} />
+
+      {/* DevEx Workload Balance & Cognitive Health */}
+      <DevExWorkloadView projectId={projectId} windowDays={windowDays} />
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="min-h-[340px]">
