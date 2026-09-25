@@ -48,6 +48,15 @@ export const pullRequestService = {
     return Array.isArray(pullRequests) ? pullRequests : [];
   },
 
+  /**
+   * POST /api/metrics/authors/relink. Attributes the caller's earlier PRs (those
+   * that arrived before their GitHub account was linked, or before they joined
+   * the company) to them. Safe to repeat; only fills PRs that have no author.
+   */
+  async relinkMyAuthored(): Promise<{ linkedPullRequests: number }> {
+    return apiClient.post<{ linkedPullRequests: number }>("/metrics/authors/relink");
+  },
+
   async getPullRequestById(query: PullRequestQuery, id: string): Promise<PullRequest> {
     const pullRequests = await this.getPullRequests({ ...query, limit: 500, offset: 0 });
     const pullRequest = pullRequests.find((item) => item.id === id);

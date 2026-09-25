@@ -93,4 +93,12 @@ export interface UserProfileResponse {
   projectRoles: ProjectRole[];
   /** Every company the user belongs to. Absent on older backends. */
   companies?: CompanyMembership[];
+  /** Numeric id of the linked GitHub account; null/absent when none is linked. */
+  githubId?: number | null;
+}
+
+/** Body of PUT /api/auth/me/github: the GitHub account now linked. */
+export interface LinkGithubResponse {
+  githubId: number;
+  githubLogin: string;
 }
