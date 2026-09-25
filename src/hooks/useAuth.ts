@@ -138,6 +138,29 @@ export function useAuth() {
     [dispatch, persistSession]
   );
 
+  /**
+   * Re-scopes the session to another company the user belongs to.
+   *
+   * Replaces the stored token with one that carries the target companyId, then
+   * reloads the profile so companyId / companyName / systemRole describe the
+   * company now in effect. The user's home company is untouched server-side.
+   */
+  const switchCompany = useCallback(
+    async (targetCompanyId: number): Promise<UserProfileResponse | null> => {
+      const authResponse = await authService.switchCompany(targetCompanyId);
+      persistSession(authResponse);
+      try {
+        const profile = await authService.getMe(authResponse.accessToken);
+        dispatch(setUserProfile(profile));
+        session.setStoredUser(profile);
+        return profile;
+      } catch {
+        return null;
+      }
+    },
+    [dispatch, persistSession]
+  );
+
   const logout = useCallback(() => {
     session.clearSession();
     dispatch(logoutAction());
@@ -178,6 +201,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    switchCompany,
     fetchProfile,
     clearErrors,
   };

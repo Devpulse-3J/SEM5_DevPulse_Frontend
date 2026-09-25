@@ -12,6 +12,7 @@ export type {
   SystemRole,
   ProjectRole,
   ProjectRoleName,
+  CompanyMembership,
   LoginRequest,
   RegisterRequest,
   AuthResponse,

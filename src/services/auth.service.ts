@@ -54,6 +54,19 @@ export const authService = {
     );
   },
 
+  /**
+   * POST /api/auth/companies/{id}/switch → 200, a NEW token scoped to that
+   * company. Needed to open a project that belongs to a company other than the
+   * one the current token names: every downstream service scopes by the token's
+   * companyId, so the old token gets a 404 for it. 403 if the caller does not
+   * belong to that company.
+   */
+  async switchCompany(companyId: number): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>(
+      `/api/auth/companies/${encodeURIComponent(String(companyId))}/switch`,
+    );
+  },
+
   /** GET /api/auth/me — the only source of companyId and projectRoles. */
   async getMe(token?: string): Promise<UserProfileResponse> {
     return apiClient.get<UserProfileResponse>("/api/auth/me", { token });

@@ -78,3 +78,18 @@ describe("authService.acceptProjectInvitation", () => {
     );
   });
 });
+
+describe("authService.switchCompany", () => {
+  beforeEach(() => {
+    postMock.mockReset();
+    postMock.mockResolvedValue({ accessToken: "switched", companyId: 15, systemRole: "member" });
+  });
+
+  it("posts to the gateway switch route for that company, authenticated", async () => {
+    const result = await authService.switchCompany(15);
+
+    // No `requiresAuth: false`: the caller must present their current token.
+    expect(postMock).toHaveBeenCalledWith("/api/auth/companies/15/switch");
+    expect(result.accessToken).toBe("switched");
+  });
+});

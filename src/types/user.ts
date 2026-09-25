@@ -17,6 +17,21 @@ export type ProjectRoleName = "manager" | "developer";
 export interface ProjectRole {
   projectId: number;
   role: ProjectRoleName;
+  /**
+   * The company the project lives in. A user can hold project roles in several
+   * companies but a token is scoped to one, so this is what tells the picker it
+   * must switch company before opening the project. Absent on older backends.
+   */
+  companyId?: number;
+  companyName?: string;
+  projectName?: string;
+}
+
+/** A company the user belongs to and their role there ("admin" or "member"). */
+export interface CompanyMembership {
+  companyId: number;
+  companyName?: string;
+  role: SystemRole;
 }
 
 export interface LoginRequest {
@@ -59,6 +74,8 @@ export interface AuthResponse {
   email: string;
   fullName: string;
   systemRole: SystemRole;
+  /** The company this token is scoped to. Absent on older backends. */
+  companyId?: number | null;
 }
 
 /**
@@ -70,7 +87,10 @@ export interface UserProfileResponse {
   email: string;
   fullName: string;
   systemRole: SystemRole;
+  /** The company the current token is scoped to (not always the home company). */
   companyId: number;
   companyName: string;
   projectRoles: ProjectRole[];
+  /** Every company the user belongs to. Absent on older backends. */
+  companies?: CompanyMembership[];
 }

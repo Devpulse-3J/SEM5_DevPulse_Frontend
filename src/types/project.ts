@@ -13,7 +13,8 @@ export type { ProjectRole, ProjectRoleName };
 /** A membership as returned inside the user profile. */
 export type ProjectMembership = ProjectRole;
 
-/** Display label for a project we only know by id. */
-export function projectLabel(projectId: number): string {
-  return `Project #${projectId}`;
+/** Display label: the project's name when the API supplied it, else "Project #<id>". */
+export function projectLabel(projectId: number, projectName?: string | null): string {
+  const name = projectName?.trim();
+  return name ? name : `Project #${projectId}`;
 }
