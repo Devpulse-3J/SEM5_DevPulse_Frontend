@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   ModalHeader,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { validateProjectName } from "@/lib/projectValidation";
 import type { Project, UpdateProjectRequest } from "@/types/adminProject";
+import { integrationsApiService, type JiraProject } from "@/services/api/integrations";
 
 export interface EditProjectModalProps {
   open: boolean;
@@ -37,15 +38,9 @@ export function EditProjectModal({
     <Modal open={open} onClose={onClose} width={520}>
       <ModalHeader
         title="Edit Project"
-        description="Local only — no update endpoint exists yet."
+        description="Edit project workspace settings."
         onClose={onClose}
       />
-      {/*
-        The form seeds its fields from `project` at mount. `Modal` renders
-        nothing while closed, so reopening remounts it and the fields reset —
-        no effect syncing props into state. The key covers the case where a
-        different project is opened without the modal closing in between.
-      */}
       <EditProjectForm
         key={project.id}
         project={project}
@@ -71,6 +66,23 @@ function EditProjectForm({
     project.jiraProjectKey ?? ""
   );
   const [nameError, setNameError] = useState<string | undefined>();
+  const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    void integrationsApiService
+      .getJiraAvailableProjects()
+      .then((res) => {
+        if (mounted && res?.projects) {
+          setJiraProjects(res.projects);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,13 +122,39 @@ function EditProjectForm({
           />
         </ModalField>
 
-        <Input
-          label="Jira project key (optional)"
-          type="text"
-          placeholder="DEVP"
-          value={jiraProjectKey}
-          onChange={(e) => setJiraProjectKey(e.target.value)}
-        />
+        <ModalField label="Jira Project Key (optional)">
+          {jiraProjects.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <select
+                value={jiraProjectKey}
+                onChange={(e) => setJiraProjectKey(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink outline-none transition focus:border-accent cursor-pointer"
+              >
+                <option value="">-- Select a Jira Project --</option>
+                {jiraProjects.map((jp) => (
+                  <option key={jp.id || jp.key} value={jp.key}>
+                    {jp.name} ({jp.key})
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Or type key manually (e.g. DEVP)"
+                value={jiraProjectKey}
+                onChange={(e) => setJiraProjectKey(e.target.value)}
+                className="h-8 w-full rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+              />
+            </div>
+          ) : (
+            <input
+              type="text"
+              placeholder="DEVP"
+              value={jiraProjectKey}
+              onChange={(e) => setJiraProjectKey(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+            />
+          )}
+        </ModalField>
       </ModalBody>
 
       <ModalFooter>

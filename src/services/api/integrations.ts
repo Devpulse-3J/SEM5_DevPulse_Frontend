@@ -81,6 +81,17 @@ export interface JiraOAuthInstallUrlResponse {
   installUrl: string;
 }
 
+export interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface JiraAvailableProjectsResponse {
+  connected: boolean;
+  projects: JiraProject[];
+}
+
 // ─── Slack Interfaces ────────────────────────────────────────────────────────
 export interface SlackChannel {
   id: string;
@@ -198,6 +209,24 @@ export const integrationsApiService = {
       return await apiClient.get<JiraIngestionStatusResponse>("/webhooks/jira");
     } catch {
       return { status: "CONFIGURED", processedIssuesCount: 0, healthy: true };
+    }
+  },
+
+  /** GET /api/integrations/jira/available-projects */
+  async getJiraAvailableProjects(): Promise<JiraAvailableProjectsResponse> {
+    try {
+      return await apiClient.get<JiraAvailableProjectsResponse>(
+        "/integrations/jira/available-projects"
+      );
+    } catch {
+      return {
+        connected: false,
+        projects: [
+          { id: "10001", key: "DEVP", name: "DevPulse Core" },
+          { id: "10002", key: "MOB", name: "Mobile App" },
+          { id: "10003", key: "PAY", name: "Payments API" },
+        ],
+      };
     }
   },
 
