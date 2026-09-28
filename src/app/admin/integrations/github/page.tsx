@@ -334,7 +334,7 @@ export default function GithubIntegrationPage() {
           /* Conditional Rendering: App Not Installed */
           <div className="flex flex-col gap-3">
             <p className="text-xs text-muted">
-              GitHub App is not installed for this organization. Install the DevPulse GitHub App to grant access to repositories.
+              GitHub App is not installed for this organization. Install the OdinEye GitHub App to grant access to repositories.
             </p>
             <div>
               <button

@@ -165,7 +165,7 @@ export default function MembersPage() {
               {
                 id: "1",
                 userId: "1",
-                email: "admin@devpulse.com",
+                email: "admin@odineye.com",
                 fullName: "Alex Rivera",
                 role: "ADMIN",
                 status: "ACTIVE",
@@ -174,7 +174,7 @@ export default function MembersPage() {
               {
                 id: "2",
                 userId: "2",
-                email: "dev@devpulse.com",
+                email: "dev@odineye.com",
                 fullName: "Sam Chen",
                 role: "DEVELOPER",
                 status: "ACTIVE",

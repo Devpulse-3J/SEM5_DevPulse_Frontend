@@ -113,7 +113,7 @@ export interface GithubPreview {
   name?: string | null;
   avatarUrl?: string | null;
   profileUrl?: string | null;
-  /** True when a different DevPulse user already has this account linked. */
+  /** True when a different OdinEye user already has this account linked. */
   linkedToAnotherUser: boolean;
 }
 

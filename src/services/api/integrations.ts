@@ -222,7 +222,7 @@ export const integrationsApiService = {
       return {
         connected: false,
         projects: [
-          { id: "10001", key: "DEVP", name: "DevPulse Core" },
+          { id: "10001", key: "ODIN", name: "OdinEye Core" },
           { id: "10002", key: "MOB", name: "Mobile App" },
           { id: "10003", key: "PAY", name: "Payments API" },
         ],

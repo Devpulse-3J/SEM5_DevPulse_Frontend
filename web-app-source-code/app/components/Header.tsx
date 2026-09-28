@@ -12,7 +12,7 @@ export function Header() {
       {/* Left section */}
       <div className="flex items-center gap-4.5">
         <span className="font-mono font-bold text-[15px] tracking-wide text-[var(--dp-text-primary)] flex items-center gap-2">
-          <span className="text-[var(--dp-accent)]">◆</span> DEVPULSE
+          <span className="text-[var(--dp-accent)]">◆</span> OdinEye
         </span>
 
         <div
