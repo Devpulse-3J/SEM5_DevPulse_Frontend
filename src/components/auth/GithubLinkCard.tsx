@@ -17,7 +17,7 @@ interface GithubLinkCardProps {
 function messageOf(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
     if (err.status === 409) {
-      return "This GitHub account is already connected to another DevPulse user.";
+      return "This GitHub account is already connected to another OdinEye user.";
     }
     return err.message || fallback;
   }
@@ -27,7 +27,7 @@ function messageOf(err: unknown, fallback: string): string {
 /**
  * 1-Click GitHub Identity Connection Card.
  *
- * Redirects developers to GitHub to authorize DevPulse, automatically fetching
+ * Redirects developers to GitHub to authorize OdinEye, automatically fetching
  * and storing their numeric GitHub User ID and username.
  */
 export function GithubLinkCard({ githubId, onLinked }: GithubLinkCardProps) {
@@ -44,12 +44,16 @@ export function GithubLinkCard({ githubId, onLinked }: GithubLinkCardProps) {
     const msgParam = searchParams?.get("message");
 
     if (githubParam === "connected") {
-      setNote("GitHub account connected successfully! Your pull requests are now attributed to you.");
+      setTimeout(() => {
+        setNote("GitHub account connected successfully! Your pull requests are now attributed to you.");
+      }, 0);
       // Trigger background relink
       pullRequestService.relinkMyAuthored().catch(() => undefined);
       onLinked();
     } else if (githubParam === "error") {
-      setError(msgParam || "Failed to connect GitHub account.");
+      setTimeout(() => {
+        setError(msgParam || "Failed to connect GitHub account.");
+      }, 0);
     }
   }, [searchParams, onLinked]);
 
@@ -137,7 +141,7 @@ export function GithubLinkCard({ githubId, onLinked }: GithubLinkCardProps) {
       ) : isConnected ? (
         <div className="mt-2 flex flex-col gap-2">
           <p className="text-[11px] text-muted">
-            Connected{username ? ` as @${username}` : ""}. Your pull requests and commits are automatically attributed to your DevPulse user profile.
+            Connected{username ? ` as @${username}` : ""}. Your pull requests and commits are automatically attributed to your OdinEye user profile.
           </p>
           <div className="flex items-center gap-2">
             <button

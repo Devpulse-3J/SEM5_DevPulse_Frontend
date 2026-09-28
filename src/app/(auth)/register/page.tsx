@@ -100,10 +100,10 @@ function RegisterForm() {
       <div className="text-center">
         <h1 className="text-xl font-bold mb-1 tracking-tight text-ink">
           {isInvited
-            ? "Join your team on Odin Eye"
+            ? "Join your team on OdinEye"
             : mode === "COMPANY"
               ? "Register your Company"
-              : "Get started with Odin Eye"}
+              : "Get started with OdinEye"}
         </h1>
         <p className="text-xs text-muted">
           {isInvited

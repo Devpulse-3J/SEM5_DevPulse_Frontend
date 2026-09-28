@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAdmin } from "@/lib/auth-guard";
 import { initials } from "@/utils/helpers";
@@ -40,9 +41,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/overview"
-            className="font-mono text-[15px] font-bold text-ink no-underline hover:no-underline"
+            className="flex items-center gap-2 font-mono text-[15px] font-bold text-ink no-underline hover:no-underline"
           >
-            ◆ Odin Eye
+            <Image
+              src="/icons/icon.png"
+              alt="OdinEye"
+              width={22}
+              height={22}
+              className="rounded object-contain"
+            />
+            <span>OdinEye</span>
           </Link>
           <div className="h-5 w-px bg-border" />
           <span className="font-mono text-[12px] tracking-widest text-subtle">

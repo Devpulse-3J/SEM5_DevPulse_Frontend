@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { ApiError } from "@/services/api-client";
 
-export default function GithubCallbackPage() {
+function GithubCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export default function GithubCallbackPage() {
         let msg = "Failed to connect GitHub account";
         if (err instanceof ApiError) {
           if (err.status === 409) {
-            msg = "This GitHub account is already connected to another DevPulse user.";
+            msg = "This GitHub account is already connected to another OdinEye user.";
           } else if (err.message) {
             msg = err.message;
           }
@@ -74,5 +74,19 @@ export default function GithubCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GithubCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
+      <GithubCallbackContent />
+    </Suspense>
   );
 }

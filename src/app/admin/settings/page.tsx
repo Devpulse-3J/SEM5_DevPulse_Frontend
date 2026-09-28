@@ -64,9 +64,9 @@ export default function SettingsPage() {
           setOrgSlug("companyName" in stored && stored.companyName ? stored.companyName.toLowerCase().replace(/[^a-z0-9]/g, "") : "myorg");
           setAdminEmail(stored.email || "");
         } else {
-          setOrgName("DevPulse Workspace");
-          setOrgSlug("devpulse");
-          setAdminEmail("admin@devpulse.com");
+          setOrgName("OdinEye Workspace");
+          setOrgSlug("odineye");
+          setAdminEmail("admin@odineye.com");
         }
       } finally {
         setLoading(false);

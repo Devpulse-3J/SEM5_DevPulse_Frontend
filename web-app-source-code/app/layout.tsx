@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DevPulse — Engineering Productivity & Quality Insights",
+  title: "OdinEye — Engineering Productivity & Quality Insights",
   description: "Automated developer productivity & code quality insights platform for distributed engineering teams.",
 };
 
