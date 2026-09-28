@@ -25,4 +25,4 @@ jobs:
 
             npm run build
 
-            pm2 restart devpulse
+            pm2 restart odineye
