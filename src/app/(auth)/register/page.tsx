@@ -3,7 +3,7 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconGitHub, IconEye, IconEyeOff } from "@/components/icons";
+import { IconEye, IconEyeOff } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
 import { inviteHref, readInviteParams } from "@/lib/invite";
@@ -160,28 +160,6 @@ function RegisterForm() {
               will be added to the project automatically.
             </div>
           </div>
-        )}
-
-        {/* GitHub OAuth Button (Individual only, and not for an invitation: it would drop the token) */}
-        {mode === "INDIVIDUAL" && !isInvited && (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setGeneralError("GitHub OAuth registration is configured via the API Gateway. Use direct form below.");
-              }}
-              className="w-full h-10 rounded-lg bg-canvas border border-border text-ink font-semibold text-xs flex items-center justify-center gap-2 hover:border-accent/40 hover:bg-surface-raised transition-all cursor-pointer mt-1"
-            >
-              <IconGitHub />
-              <span>Sign up with GitHub</span>
-            </button>
-
-            <div className="flex items-center gap-3 text-subtle text-[11px] font-mono my-0.5">
-              <div className="flex-1 h-px bg-border-subtle" />
-              <span>OR</span>
-              <div className="flex-1 h-px bg-border-subtle" />
-            </div>
-          </>
         )}
 
         {/* Company Mode Info Banner */}
