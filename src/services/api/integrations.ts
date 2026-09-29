@@ -81,6 +81,21 @@ export interface JiraOAuthInstallUrlResponse {
   installUrl: string;
 }
 
+export interface JiraIssue {
+  issueId: number;
+  companyId: number;
+  projectId?: number | null;
+  jiraKey: string;
+  summary: string;
+  issueType?: string;
+  priority?: string;
+  status: string;
+  storyPoints?: number | null;
+  assigneeId?: number | null;
+  createdAt?: string;
+  closedAt?: string | null;
+}
+
 // ─── Slack Interfaces ────────────────────────────────────────────────────────
 export interface SlackChannel {
   id: string;
@@ -198,6 +213,15 @@ export const integrationsApiService = {
       return await apiClient.get<JiraIngestionStatusResponse>("/webhooks/jira");
     } catch {
       return { status: "CONFIGURED", processedIssuesCount: 0, healthy: true };
+    }
+  },
+
+  /** GET /api/integrations/jira/issues */
+  async getJiraIssues(): Promise<JiraIssue[]> {
+    try {
+      return await apiClient.get<JiraIssue[]>("/integrations/jira/issues");
+    } catch {
+      return [];
     }
   },
 
