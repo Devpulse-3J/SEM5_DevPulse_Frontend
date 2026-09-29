@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { FaCheckCircle, FaExclamationCircle, FaUnlink } from "react-icons/fa";
 import { Badge } from "@/components/ui/Badge";
 import { integrationsApiService, JiraOAuthStatusResponse } from "@/services/api/integrations";
+import { useAuth } from "@/hooks/useAuth";
 
 interface JiraOAuthButtonProps {
   onStatusChange?: (status: JiraOAuthStatusResponse) => void;
@@ -11,6 +12,7 @@ interface JiraOAuthButtonProps {
 }
 
 export function JiraOAuthButton({ onStatusChange, className = "" }: JiraOAuthButtonProps) {
+  const { user, companyId } = useAuth();
   const [status, setStatus] = useState<JiraOAuthStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -38,8 +40,12 @@ export function JiraOAuthButton({ onStatusChange, className = "" }: JiraOAuthBut
   }, [checkStatus]);
 
   const handleConnect = async () => {
+    if (!companyId) {
+      console.error("Cannot start Jira OAuth: no companyId on the signed-in user");
+      return;
+    }
     try {
-      const installUrl = await integrationsApiService.getJiraOAuthInstallUrl();
+      const installUrl = await integrationsApiService.getJiraOAuthInstallUrl(companyId, user?.userId);
       if (installUrl) {
         window.location.href = installUrl;
       }

@@ -183,18 +183,29 @@ export const integrationsApiService = {
     }
   },
 
-  /** GET /api/integrations/jira/oauth/install */
-  async getJiraOAuthInstallUrl(): Promise<string> {
+  /**
+   * GET /api/integrations/jira/oauth/install
+   *
+   * This path is public at the gateway (Atlassian's redirect back can't carry
+   * our JWT), so the backend can't resolve companyId/userId from headers the
+   * way authenticated endpoints do — they're passed explicitly here and come
+   * back signed in the OAuth `state`, which the callback verifies.
+   */
+  async getJiraOAuthInstallUrl(companyId: number, userId?: number): Promise<string> {
+    const params: Record<string, string> = { companyId: String(companyId) };
+    if (userId) params.userId = String(userId);
     try {
       const res = await apiClient.get<JiraOAuthInstallUrlResponse & { url?: string }>(
-        "/integrations/jira/oauth/install"
+        "/integrations/jira/oauth/install",
+        { params }
       );
       if (typeof res === "string") return res;
       return res.installUrl || res.url || "";
     } catch (err) {
       console.error("Failed to fetch Jira OAuth installUrl:", err);
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      return `${baseUrl.replace(/\/+$/, "")}/integrations/jira/oauth/install`;
+      const query = new URLSearchParams(params).toString();
+      return `${baseUrl.replace(/\/+$/, "")}/integrations/jira/oauth/install?${query}`;
     }
   },
 
