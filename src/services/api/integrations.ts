@@ -94,6 +94,8 @@ export interface JiraIssue {
   assigneeId?: number | null;
   createdAt?: string;
   closedAt?: string | null;
+}
+
 export interface JiraProject {
   id: string;
   key: string;
@@ -231,6 +233,9 @@ export const integrationsApiService = {
       return await apiClient.get<JiraIssue[]>("/integrations/jira/issues");
     } catch {
       return [];
+    }
+  },
+
   /** GET /api/integrations/jira/available-projects */
   async getJiraAvailableProjects(): Promise<JiraAvailableProjectsResponse> {
     try {
