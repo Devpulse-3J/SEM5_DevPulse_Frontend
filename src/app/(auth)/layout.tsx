@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -30,10 +31,17 @@ export default function AuthLayout({
       <div className="relative z-10 mb-6 text-center">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-white no-underline hover:text-white hover:no-underline"
+          className="inline-flex items-center gap-2.5 text-white no-underline hover:text-white hover:no-underline"
         >
+          <Image
+            src="/icons/icon.png"
+            alt="OdinEye"
+            width={32}
+            height={32}
+            className="rounded-lg object-contain"
+          />
           <span className="font-mono text-2xl font-bold tracking-wide">
-            ◆ Odin Eye
+            OdinEye
           </span>
         </Link>
       </div>

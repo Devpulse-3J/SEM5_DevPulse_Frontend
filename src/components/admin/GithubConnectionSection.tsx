@@ -256,7 +256,7 @@ export function GithubConnectionSection({
                   <FaGithub className="h-4 w-4 text-purple-400" /> Install GitHub App
                 </h3>
                 <p className="mt-1 text-xs text-muted max-w-lg">
-                  Install the DevPulse GitHub App to grant access to your repositories and automatically sync pull requests, commits, and metrics.
+                  Install the OdinEye GitHub App to grant access to your repositories and automatically sync pull requests, commits, and metrics.
                 </p>
               </div>
               <button

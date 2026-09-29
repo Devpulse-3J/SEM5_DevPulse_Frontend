@@ -8,6 +8,7 @@ import type {
   UserProfileResponse,
   LinkGithubResponse,
   GithubPreview,
+  UserGithubStatusResponse,
 } from "@/types/user";
 
 /**
@@ -69,6 +70,26 @@ export const authService = {
     );
   },
 
+  /** GET /api/auth/me/github/status → 200. Check GitHub account connection status. */
+  async getUserGithubStatus(): Promise<UserGithubStatusResponse> {
+    return apiClient.get<UserGithubStatusResponse>("/auth/me/github/status");
+  },
+
+  /** GET /api/auth/me/github/connect → 200. Gets GitHub authorization URL for 1-click connect. */
+  async getUserGithubConnectUrl(): Promise<{ url: string }> {
+    return apiClient.get<{ url: string }>("/auth/me/github/connect");
+  },
+
+  /** POST /api/auth/me/github/callback → 200. Exchanges OAuth code for GitHub token and links account. */
+  async callbackUserGithub(code: string): Promise<UserGithubStatusResponse> {
+    return apiClient.post<UserGithubStatusResponse>("/auth/me/github/callback", { code });
+  },
+
+  /** DELETE /api/auth/me/github → 200. Disconnects linked GitHub account. */
+  async disconnectUserGithub(): Promise<UserGithubStatusResponse> {
+    return apiClient.delete<UserGithubStatusResponse>("/auth/me/github");
+  },
+
   /**
    * GET /api/auth/me/github/lookup?username= → 200. Who the username resolves to
    * on GitHub (id, name, avatar, profile URL), so the user can confirm it is
@@ -101,3 +122,4 @@ export const authService = {
   clearSession: session.clearSession,
   isTokenExpired: session.isTokenExpired,
 };
+

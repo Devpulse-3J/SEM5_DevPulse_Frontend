@@ -95,6 +95,15 @@ export interface UserProfileResponse {
   companies?: CompanyMembership[];
   /** Numeric id of the linked GitHub account; null/absent when none is linked. */
   githubId?: number | null;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
+}
+
+export interface UserGithubStatusResponse {
+  connected: boolean;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
+  githubId?: number | null;
 }
 
 /** Who a GitHub username resolves to, shown for confirmation before it is linked. */
@@ -104,7 +113,7 @@ export interface GithubPreview {
   name?: string | null;
   avatarUrl?: string | null;
   profileUrl?: string | null;
-  /** True when a different DevPulse user already has this account linked. */
+  /** True when a different OdinEye user already has this account linked. */
   linkedToAnotherUser: boolean;
 }
 
@@ -113,3 +122,4 @@ export interface LinkGithubResponse {
   githubId: number;
   githubLogin: string;
 }
+

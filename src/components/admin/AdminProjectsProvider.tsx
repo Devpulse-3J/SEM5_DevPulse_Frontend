@@ -50,7 +50,7 @@ const SYNC_POLL_MS = 1800;
 /** Give up polling after this many attempts (~1 min at SYNC_POLL_MS). */
 const MAX_SYNC_POLLS = 40;
 
-const LINKED_REPOS_KEY = "devpulse_linked_repos";
+const LINKED_REPOS_KEY = "odineye_linked_repos";
 
 function loadCachedRepos(): Record<string, LinkedRepo> {
   if (typeof window === "undefined") return {};

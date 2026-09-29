@@ -90,7 +90,7 @@ export function JiraIntegrationCard() {
         <div>
           <h2 className="text-sm font-semibold text-ink">Atlassian OAuth 2.0 (3LO) Connection</h2>
           <p className="mt-0.5 text-xs text-subtle">
-            Authorize DevPulse directly via Atlassian for automatic webhook registration and issue synchronization.
+            Authorize OdinEye directly via Atlassian for automatic webhook registration and issue synchronization.
           </p>
         </div>
         <JiraOAuthButton />

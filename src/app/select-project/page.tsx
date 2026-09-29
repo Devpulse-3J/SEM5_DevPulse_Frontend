@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { setActiveProject, type WorkspaceRole } from "@/store/dashboardSlice";
@@ -59,7 +60,7 @@ const roleBadge: Record<WorkspaceRole, string> = {
   DEVELOPER: "bg-success/15 text-success",
 };
 
-export default function SelectProjectPage() {
+function SelectProjectContent() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { user, logout, companyId: activeCompanyId, switchCompany, fetchProfile } = useAuth();
@@ -130,7 +131,16 @@ export default function SelectProjectPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="font-mono text-lg font-bold text-ink">◆ Odin Eye</div>
+          <div className="flex items-center justify-center gap-2 font-mono text-lg font-bold text-ink">
+            <Image
+              src="/icons/icon.png"
+              alt="OdinEye"
+              width={24}
+              height={24}
+              className="rounded object-contain"
+            />
+            <span>OdinEye</span>
+          </div>
           <h1 className="mt-3 text-xl font-bold text-ink">Choose a project</h1>
           <p className="mt-1 text-sm text-muted">
             Your dashboard depends on your role in the project you pick.
@@ -224,5 +234,19 @@ export default function SelectProjectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SelectProjectPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
+      <SelectProjectContent />
+    </Suspense>
   );
 }

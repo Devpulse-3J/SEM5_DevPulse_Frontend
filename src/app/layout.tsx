@@ -3,10 +3,12 @@ import type { Metadata } from "next";
 import { Providers } from "./providers"; // adjust path if your providers file is elsewhere
 
 export const metadata: Metadata = {
-  title: "DevPulse",
+  title: "OdinEye",
   description: "Engineering Productivity & Developer Analytics Platform",
   icons: {
     icon: "/icons/icon.png",
+    shortcut: "/icons/icon.png",
+    apple: "/icons/icon.png",
   },
 };
 

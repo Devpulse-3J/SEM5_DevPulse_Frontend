@@ -108,7 +108,7 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
       const res = await integrationsApiService.sendTestNotification({
         channelId: selectedChannelId,
         channelName: selectedChan?.name,
-        message: testMessageText || "This is a test notification from DevPulse.",
+        message: testMessageText || "This is a test notification from OdinEye.",
       });
 
       if (res.success || res.deliveredAt) {
