@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { SharedDashboard } from "../dashboard/SharedDashboard";
 import { AlertList } from "@/features/alerts/AlertList";
 import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
@@ -15,10 +17,29 @@ export default function AlertsPage() {
   // companyId comes from GET /api/auth/me — never hardcoded.
   const { companyId, user } = useAuth();
   const currentUserId = user?.userId ?? null;
+  const activeProject = useSelector((s: RootState) => s.dashboard.activeProject);
+
+  const rawRole = String(activeProject?.role || "").toUpperCase();
+  const isManagerOrAdmin =
+    rawRole === "MANAGER" || rawRole === "ADMIN" || user?.systemRole === "admin";
 
   const { data: rules = [], isLoading, error } = useAlertRules(companyId);
   const createRule = useCreateAlertRule(companyId);
   const deleteRule = useDeleteAlertRule(companyId);
+
+  if (!isManagerOrAdmin) {
+    return (
+      <SharedDashboard
+        title="Alert rules"
+        subtitle="Conditions that trigger Slack notifications"
+      >
+        <FeatureUnavailable
+          title="Alert Configuration Restricted"
+          message="Alert rules are managed by team managers and system administrators. Developers do not configure or manage alert rules."
+        />
+      </SharedDashboard>
+    );
+  }
 
   return (
     <SharedDashboard
