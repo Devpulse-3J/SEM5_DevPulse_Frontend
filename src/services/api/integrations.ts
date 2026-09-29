@@ -81,6 +81,19 @@ export interface JiraOAuthInstallUrlResponse {
   installUrl: string;
 }
 
+export interface JiraIssue {
+  issueId: number;
+  companyId: number;
+  projectId?: number | null;
+  jiraKey: string;
+  summary: string;
+  issueType?: string;
+  priority?: string;
+  status: string;
+  storyPoints?: number | null;
+  assigneeId?: number | null;
+  createdAt?: string;
+  closedAt?: string | null;
 export interface JiraProject {
   id: string;
   key: string;
@@ -212,6 +225,12 @@ export const integrationsApiService = {
     }
   },
 
+  /** GET /api/integrations/jira/issues */
+  async getJiraIssues(): Promise<JiraIssue[]> {
+    try {
+      return await apiClient.get<JiraIssue[]>("/integrations/jira/issues");
+    } catch {
+      return [];
   /** GET /api/integrations/jira/available-projects */
   async getJiraAvailableProjects(): Promise<JiraAvailableProjectsResponse> {
     try {
