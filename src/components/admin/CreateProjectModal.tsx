@@ -16,7 +16,11 @@ import {
   validateProjectName,
 } from "@/lib/projectValidation";
 import type { CreateProjectRequest } from "@/types/adminProject";
-import { integrationsApiService, type JiraProject } from "@/services/api/integrations";
+import {
+  integrationsApiService,
+  type JiraProject,
+  type GithubRepository,
+} from "@/services/api/integrations";
 
 export interface CreateProjectModalProps {
   open: boolean;
@@ -36,6 +40,7 @@ export function CreateProjectModal({
   const [isCreating, setIsCreating] = useState(false);
 
   const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
+  const [githubRepos, setGithubRepos] = useState<GithubRepository[]>([]);
   const [nameError, setNameError] = useState<string | undefined>();
   const [urlError, setUrlError] = useState<string | undefined>();
 
@@ -46,6 +51,15 @@ export function CreateProjectModal({
       .then((res) => {
         if (mounted && res?.projects) {
           setJiraProjects(res.projects);
+        }
+      })
+      .catch(() => undefined);
+
+    void integrationsApiService
+      .getGithubAvailableRepos("0")
+      .then((res) => {
+        if (mounted && res?.repositories && res.repositories.length > 0) {
+          setGithubRepos(res.repositories);
         }
       })
       .catch(() => undefined);
@@ -166,17 +180,50 @@ export function CreateProjectModal({
 
           <div className="h-px bg-border" />
 
-          <Input
-            label="GitHub repository URL (optional)"
-            type="text"
-            placeholder="https://github.com/owner/repo"
-            value={githubRepoUrl}
-            error={urlError}
-            onChange={(e) => {
-              setGithubRepoUrl(e.target.value);
-              if (urlError) setUrlError(undefined);
-            }}
-          />
+          <ModalField label="GitHub Repository (optional)">
+            {githubRepos.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <select
+                  value={githubRepoUrl}
+                  onChange={(e) => {
+                    setGithubRepoUrl(e.target.value);
+                    if (urlError) setUrlError(undefined);
+                  }}
+                  className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink outline-none transition focus:border-accent cursor-pointer"
+                >
+                  <option value="">-- Select an Installed GitHub Repo --</option>
+                  {githubRepos.map((repo) => (
+                    <option key={repo.id || repo.repoUrl} value={repo.repoUrl}>
+                      {repo.fullName || repo.name} ({repo.repoUrl})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or paste repository URL manually"
+                  value={githubRepoUrl}
+                  onChange={(e) => {
+                    setGithubRepoUrl(e.target.value);
+                    if (urlError) setUrlError(undefined);
+                  }}
+                  className="h-8 w-full rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+                />
+                {urlError && <p className="text-xs text-danger">{urlError}</p>}
+              </div>
+            ) : (
+              <Input
+                label="GitHub repository URL"
+                type="text"
+                placeholder="https://github.com/owner/repo"
+                value={githubRepoUrl}
+                error={urlError}
+                onChange={(e) => {
+                  setGithubRepoUrl(e.target.value);
+                  if (urlError) setUrlError(undefined);
+                }}
+              />
+            )}
+          </ModalField>
         </ModalBody>
 
         <ModalFooter>
