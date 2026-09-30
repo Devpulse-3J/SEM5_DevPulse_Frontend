@@ -138,6 +138,31 @@ export function useAuth() {
     [dispatch, persistSession]
   );
 
+  const loginWithGithub = useCallback(
+    async (code: string, inviteToken?: string): Promise<AuthResponse> => {
+      dispatch(setAuthLoading(true));
+      dispatch(clearAuthError());
+      try {
+        const authResponse = await authService.loginWithGithub(code, inviteToken);
+        persistSession(authResponse);
+        try {
+          const profile = await authService.getMe(authResponse.accessToken);
+          dispatch(setUserProfile(profile));
+          session.setStoredUser(profile);
+        } catch {
+          // Non-fatal: the user is signed in; screens needing the profile retry.
+        }
+        return authResponse;
+      } catch (err: unknown) {
+        dispatch(setAuthError(toAuthError(err, "Failed to sign in with GitHub.")));
+        throw err;
+      } finally {
+        dispatch(setAuthLoading(false));
+      }
+    },
+    [dispatch, persistSession]
+  );
+
   /**
    * Re-scopes the session to another company the user belongs to.
    *
@@ -199,6 +224,7 @@ export function useAuth() {
     error,
     fieldErrors,
     login,
+    loginWithGithub,
     register,
     logout,
     switchCompany,

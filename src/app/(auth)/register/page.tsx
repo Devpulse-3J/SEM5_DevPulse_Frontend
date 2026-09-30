@@ -3,9 +3,10 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconEye, IconEyeOff } from "@/components/icons";
+import { IconEye, IconEyeOff, IconGitHub } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
+import { getGithubAuthorizeUrl } from "@/lib/github-auth";
 import { inviteHref, readInviteParams } from "@/lib/invite";
 import { validateRegisterForm, type RegisterFormErrors } from "@/lib/validators";
 
@@ -18,8 +19,8 @@ function RegisterForm() {
 
   // Arriving from a project invitation email: /register?invite=<token>&email=<address>.
   // The token joins the inviting company and project, so the company options are
-  // hidden and the address is fixed to the one that was invited.
-  const invite = readInviteParams(useSearchParams());
+  const searchParams = useSearchParams();
+  const invite = readInviteParams(searchParams);
   const isInvited = invite.token !== undefined;
   const emailLocked = isInvited && invite.email !== "";
 
@@ -35,7 +36,27 @@ function RegisterForm() {
   const [companyName, setCompanyName] = useState("");
 
   const [clientErrors, setClientErrors] = useState<RegisterFormErrors>({});
-  const [generalError, setGeneralError] = useState<string | null>(null);
+  const initialGithubError =
+    searchParams?.get("github") === "error" ? searchParams?.get("message") : null;
+  const [generalError, setGeneralError] = useState<string | null>(initialGithubError);
+
+  const handleGithubSignup = () => {
+    setGeneralError(null);
+    clearErrors();
+    try {
+      const url = getGithubAuthorizeUrl({
+        intent: "login",
+        inviteToken: invite.token || null,
+      });
+      window.location.href = url;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setGeneralError(err.message);
+      } else {
+        setGeneralError("Failed to initiate GitHub registration.");
+      }
+    }
+  };
 
   // Rules live in lib/validators so login and register cannot drift apart, and
   // so they stay an exact mirror of the server's checks.
@@ -195,6 +216,29 @@ function RegisterForm() {
               ✕
             </button>
           </div>
+        )}
+
+        {(mode === "INDIVIDUAL" || isInvited) && (
+          <>
+            <button
+              type="button"
+              onClick={handleGithubSignup}
+              disabled={isLoading}
+              className="w-full h-10 rounded-lg bg-surface border border-border hover:bg-canvas text-ink text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="shrink-0 flex items-center justify-center text-ink">
+                <IconGitHub />
+              </span>
+              <span>Sign up with GitHub</span>
+            </button>
+
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-border w-full" />
+              <span className="bg-surface px-2 text-[11px] text-subtle uppercase tracking-wider relative">
+                or register with email
+              </span>
+            </div>
+          </>
         )}
 
         {/* Register Form */}

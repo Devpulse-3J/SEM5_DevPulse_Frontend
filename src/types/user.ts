@@ -76,6 +76,11 @@ export interface AuthResponse {
   systemRole: SystemRole;
   /** The company this token is scoped to. Absent on older backends. */
   companyId?: number | null;
+  avatarUrl?: string | null;
+  githubId?: number | null;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
+  authProvider?: string | null;
 }
 
 /**

@@ -44,6 +44,19 @@ export const authService = {
   },
 
   /**
+   * POST /api/auth/github/login → 200
+   * Sign up or log in using GitHub OAuth code.
+   * If inviteToken is present, automatically associates user with the invited project/company.
+   */
+  async loginWithGithub(code: string, inviteToken?: string): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>(
+      "/auth/github/login",
+      { code, ...(inviteToken ? { inviteToken } : {}) },
+      { requiresAuth: false }
+    );
+  },
+
+  /**
    * POST /api/auth/invitations/project/accept?token= → 200
    * A signed-in user accepts the project invitation emailed to them. The
    * account's email must match the invited address (403 otherwise); 400 if the
