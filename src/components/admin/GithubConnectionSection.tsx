@@ -85,7 +85,7 @@ export function GithubConnectionSection({
       console.warn("Could not fetch available repos", err);
       setAvailableData({
         installed: false,
-        connectUrl: `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(projectId)}`,
+        connectUrl: "",
         repositories: [],
       });
     } finally {
