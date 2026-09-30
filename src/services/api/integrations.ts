@@ -108,6 +108,11 @@ export interface JiraAvailableProjectsResponse {
 }
 
 // ─── Slack Interfaces ────────────────────────────────────────────────────────
+export interface SlackStatusResponse {
+  connected: boolean;
+  message?: string;
+}
+
 export interface SlackChannel {
   id: string;
   name: string;
@@ -280,15 +285,21 @@ export const integrationsApiService = {
     }
   },
 
+  /** GET /api/slack/status */
+  async getSlackStatus(): Promise<SlackStatusResponse> {
+    try {
+      return await apiClient.get<SlackStatusResponse>("/slack/status");
+    } catch {
+      return { connected: false };
+    }
+  },
+
   /** GET /api/slack/channels */
   async getSlackChannels(): Promise<SlackChannel[]> {
     try {
       return await apiClient.get<SlackChannel[]>("/slack/channels");
     } catch {
-      return [
-        { id: "C1001", name: "dev-alerts" },
-        { id: "C1002", name: "general" },
-      ];
+      return [];
     }
   },
 

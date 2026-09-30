@@ -14,10 +14,11 @@ interface SlackIntegrationCardProps {
 }
 
 export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrationCardProps) {
-  // Channels state
+  // Channels & status state
   const [channels, setChannels] = useState<SlackChannel[]>([]);
   const [selectedChannelId, setSelectedChannelId] = useState<string>("");
   const [loadingChannels, setLoadingChannels] = useState(true);
+  const [isConnectedState, setIsConnectedState] = useState<boolean>(initialConnected);
 
   // Custom Incoming Webhook URL state
   const [webhookUrlInput, setWebhookUrlInput] = useState("");
@@ -31,7 +32,7 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const isConnected = initialConnected || channels.length > 0;
+  const isConnected = isConnectedState;
 
   const addToast = (type: ToastMessage["type"], title: string, message: string) => {
     setToasts((prev) => [
@@ -51,19 +52,18 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
 
   const fetchChannels = useCallback(async () => {
     try {
-      const list = await integrationsApiService.getSlackChannels();
+      const [statusRes, list] = await Promise.all([
+        integrationsApiService.getSlackStatus(),
+        integrationsApiService.getSlackChannels(),
+      ]);
       setChannels(list);
+      setIsConnectedState(statusRes.connected || list.length > 0);
       if (list.length > 0) {
         setSelectedChannelId(list[0].id);
       }
     } catch {
-      const fallbackChannels: SlackChannel[] = [
-        { id: "C1001", name: "dev-alerts" },
-        { id: "C1002", name: "general" },
-        { id: "C1003", name: "deployment-logs" },
-      ];
-      setChannels(fallbackChannels);
-      setSelectedChannelId(fallbackChannels[0].id);
+      setChannels([]);
+      setIsConnectedState(false);
     } finally {
       setLoadingChannels(false);
     }
@@ -220,6 +220,10 @@ export function SlackIntegrationCard({ initialConnected = false }: SlackIntegrat
 
         {loadingChannels ? (
           <div className="h-9 w-full max-w-sm animate-pulse rounded bg-surface" />
+        ) : channels.length === 0 ? (
+          <p className="text-xs text-muted">
+            No connected Slack channels available. Click &quot;Add to Slack&quot; above to authorize your Slack workspace.
+          </p>
         ) : (
           <div className="flex flex-col gap-2 max-w-sm">
             <label htmlFor="slack-channel-select" className="text-xs font-medium text-muted">
