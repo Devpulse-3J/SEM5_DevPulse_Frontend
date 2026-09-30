@@ -1,5 +1,9 @@
 name: Deploy Next.js App
 
+# Trivial trigger: re-testing deployment_status delivery after removing and
+# re-adding this repo from the DevPulseIntegration GitHub App's repository
+# access, to force a fresh installation grant.
+
 on:
   push:
     branches:
