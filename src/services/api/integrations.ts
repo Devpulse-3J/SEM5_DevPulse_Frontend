@@ -140,6 +140,18 @@ export const integrationsApiService = {
     );
   },
 
+  /**
+   * POST /api/integrations/projects/{projectId}/github/installation
+   * Records the GitHub App installation GitHub redirected back with, so the
+   * repository dropdown can list the repos that installation was granted.
+   */
+  async claimGithubInstallation(
+    projectId: string,
+    installationId: number
+  ): Promise<{ installationId: number; accountLogin?: string; accountType?: string }> {
+    return apiClient.post(`/integrations/projects/${projectId}/github/installation`, { installationId });
+  },
+
   /** GET /api/integrations/projects/{projectId}/github/available-repos */
   async getGithubAvailableRepos(
     projectId: string
