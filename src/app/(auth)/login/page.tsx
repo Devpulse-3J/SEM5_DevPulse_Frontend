@@ -3,10 +3,11 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconEye, IconEyeOff } from "@/components/icons";
+import { IconEye, IconEyeOff, IconGitHub } from "@/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/api-client";
 import { authService } from "@/services/auth.service";
+import { getGithubAuthorizeUrl } from "@/lib/github-auth";
 import { inviteHref, readInviteParams } from "@/lib/invite";
 import { memberLandingPath } from "@/lib/redirect";
 import { validateLoginForm, type LoginFormErrors } from "@/lib/validators";
@@ -40,9 +41,29 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [clientErrors, setClientErrors] = useState<LoginFormErrors>({});
-  const [generalError, setGeneralError] = useState<string | null>(null);
+  const initialGithubError =
+    searchParams?.get("github") === "error" ? searchParams?.get("message") : null;
+  const [generalError, setGeneralError] = useState<string | null>(initialGithubError);
   // Set when sign-in worked but the invitation could not be accepted.
   const [continueTo, setContinueTo] = useState<string | null>(null);
+
+  const handleGithubLogin = () => {
+    setGeneralError(null);
+    clearErrors();
+    try {
+      const url = getGithubAuthorizeUrl({
+        intent: "login",
+        inviteToken: invite.token || null,
+      });
+      window.location.href = url;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setGeneralError(err.message);
+      } else {
+        setGeneralError("Failed to initiate GitHub login.");
+      }
+    }
+  };
 
   // This is the workspace door: everyone, company admins included, lands in the
   // workspace (project picker, then their per-project role). The admin console
@@ -148,6 +169,25 @@ function LoginForm() {
             </button>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={handleGithubLogin}
+          disabled={isLoading}
+          className="w-full h-10 rounded-lg bg-surface border border-border hover:bg-canvas text-ink text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className="shrink-0 flex items-center justify-center text-ink">
+            <IconGitHub />
+          </span>
+          <span>Continue with GitHub</span>
+        </button>
+
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-border w-full" />
+          <span className="bg-surface px-2 text-[11px] text-subtle uppercase tracking-wider relative">
+            or sign in with email
+          </span>
+        </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">

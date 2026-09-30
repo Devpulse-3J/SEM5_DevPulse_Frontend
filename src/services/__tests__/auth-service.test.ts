@@ -132,3 +132,41 @@ describe("authService.lookupGithub", () => {
     expect(result.githubLogin).toBe("ChanulPathirana");
   });
 });
+
+describe("authService.loginWithGithub", () => {
+  beforeEach(() => {
+    postMock.mockReset();
+    postMock.mockResolvedValue({
+      accessToken: "github-jwt-token",
+      tokenType: "Bearer",
+      expiresIn: 3600,
+      user: {
+        id: 42,
+        email: "octocat@github.com",
+        fullName: "The Octocat",
+        systemRole: "member",
+      },
+    });
+  });
+
+  it("posts code to /auth/github/login without requiring auth", async () => {
+    const result = await authService.loginWithGithub("oauth-code-xyz");
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/auth/github/login",
+      { code: "oauth-code-xyz" },
+      { requiresAuth: false }
+    );
+    expect(result.accessToken).toBe("github-jwt-token");
+  });
+
+  it("passes inviteToken if provided", async () => {
+    await authService.loginWithGithub("oauth-code-xyz", "inv-789");
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/auth/github/login",
+      { code: "oauth-code-xyz", inviteToken: "inv-789" },
+      { requiresAuth: false }
+    );
+  });
+});
