@@ -8,6 +8,13 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Makes GitHub create a real Deployment + deployment_status automatically
+    # (its own built-in Environments feature) — DevPulse's GitHub App already
+    # has the `deployments` permission this needs, and this is the exact
+    # mechanism already populating real deployment data for the backend repo's
+    # cd.yml (see its `deploy` job). Without this, DevPulse's DORA metrics have
+    # no way to know a deploy happened.
+    environment: production
 
     steps:
       - name: Deploy to EC2
