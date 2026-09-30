@@ -1,5 +1,8 @@
 name: Deploy Next.js App
 
+# Re-testing event delivery after a full uninstall/reinstall of the
+# DevPulseIntegration GitHub App on Devpulse-3J.
+
 on:
   push:
     branches:
