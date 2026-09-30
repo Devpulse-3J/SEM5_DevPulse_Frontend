@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/hooks/useAuth";
 import { projectService, ProjectApiResponse } from "@/services/project.service";
+import { repositoryService } from "@/services/repository.service";
 import { adminApiService, CompanyMember } from "@/services/api/admin";
 import { integrationsApiService } from "@/services/api/integrations";
 
@@ -30,6 +31,9 @@ export default function AdminOverviewPage() {
 
   // Stats state
   const [projects, setProjects] = useState<ProjectApiResponse[]>([]);
+  // Project ids with a linked repo per integration-service's `repos` table;
+  // null when that lookup failed and the badge falls back to githubRepoUrl.
+  const [linkedProjectIds, setLinkedProjectIds] = useState<Set<string> | null>(null);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [githubStatus, setGithubStatus] = useState<string>("CHECKING");
   const [jiraStatus, setJiraStatus] = useState<string>("CHECKING");
@@ -42,8 +46,16 @@ export default function AdminOverviewPage() {
 
     // Fetch projects
     try {
-      const projList = await projectService.getAll();
+      const [projList, repositories] = await Promise.all([
+        projectService.getAll(),
+        repositoryService.getRepositories().catch(() => null),
+      ]);
       setProjects(projList);
+      setLinkedProjectIds(
+        repositories
+          ? new Set(repositories.filter((r) => r.projectId != null).map((r) => String(r.projectId)))
+          : null
+      );
 
       // Check GitHub status for first project if available
       if (projList.length > 0) {
@@ -321,7 +333,7 @@ export default function AdminOverviewPage() {
                       <FaJira className="h-3 w-3 mr-1" /> {proj.jiraProjectKey}
                     </Badge>
                   )}
-                  {proj.githubRepoUrl ? (
+                  {(linkedProjectIds ? linkedProjectIds.has(String(proj.projectId)) : Boolean(proj.githubRepoUrl)) ? (
                     <Badge variant="success">
                       <FaGithub className="h-3 w-3 mr-1" /> Linked
                     </Badge>
