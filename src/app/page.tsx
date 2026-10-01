@@ -80,7 +80,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
-            OdinEye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics — all in one dark-mode dashboard.
+            OdinEye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics all in one dark-mode dashboard.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
