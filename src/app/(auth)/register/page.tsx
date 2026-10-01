@@ -233,8 +233,10 @@ function RegisterForm() {
             </button>
 
             <div className="relative flex items-center justify-center">
-              <div className="border-t border-border w-full" />
-              <span className="bg-surface px-2 text-[11px] text-subtle uppercase tracking-wider relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <span className="relative bg-surface px-2 text-[11px] text-subtle uppercase tracking-wider">
                 or register with email
               </span>
             </div>
