@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   IconChart,
   IconShield,
@@ -12,7 +13,13 @@ import {
 } from "@/components/icons";
 import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
+import TechText from "@/components/landing/TechText";
+import GradientWaves from "@/components/landing/GradientWaves";
+import ParticleText from "@/components/landing/ParticleText";
+import TextType from "@/components/landing/TextType";
 import { chart } from "@/styles/theme";
+
+const HERO_LINES = ["Ship faster with clarity,", "not guesswork."];
 
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE — GitHub-style Landing Page
@@ -22,32 +29,43 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-canvas text-ink overflow-x-hidden">
       {/* ─── NAVIGATION ─── */}
-      <nav className="sticky top-0 z-50 h-14 bg-app/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-6 md:px-10">
-        <div className="flex items-center gap-4">
-          <span className="font-mono font-bold text-[15px] tracking-wide text-ink">
-            ◆ Odin Eye
-          </span>
-          <div className="hidden md:flex items-center gap-5 ml-6 text-[13px]">
-            <a href="#features" className="text-muted hover:text-ink transition-colors">Features</a>
-            <a href="#metrics" className="text-muted hover:text-ink transition-colors">Metrics</a>
-            <a href="#integrations" className="text-muted hover:text-ink transition-colors">Integrations</a>
+      <nav className="sticky top-0 z-50 h-14 bg-app/80 backdrop-blur-xl border-b border-border px-6">
+        {/* Same centred container as the sections below, so the logo and the
+            buttons line up with the page content at any window width. */}
+        <div className="mx-auto flex h-full max-w-7xl 2xl:max-w-[1440px] items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 font-mono font-bold text-[15px] tracking-wide text-ink no-underline hover:no-underline">
+              <Image
+                src="/icons/icon.png"
+                alt="OdinEye"
+                width={24}
+                height={24}
+                className="rounded object-contain"
+              />
+              <span>OdinEye</span>
+            </Link>
+            <div className="hidden md:flex items-center gap-5 ml-6 text-[13px]">
+              <a href="#features" className="text-muted hover:text-ink transition-colors">Features</a>
+              <a href="#metrics" className="text-muted hover:text-ink transition-colors">Metrics</a>
+              <a href="#integrations" className="text-muted hover:text-ink transition-colors">Integrations</a>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/adminlogin" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
-            Admin login
-          </Link>
-          <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
-            Sign in
-          </Link>
-          <Link href="/register" className="text-[13px] font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
-            Get Started
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/adminlogin" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
+              Admin login
+            </Link>
+            <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
+              Sign in
+            </Link>
+            <Link href="/register" className="text-[13px] font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
+              Get Started
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* ─── HERO SECTION ─── */}
-      <section className="relative flex flex-col items-center text-center pt-24 pb-20 px-6 overflow-hidden">
+      <section className="relative flex flex-col items-center text-center pt-24 pb-40 px-6 overflow-hidden">
         <div
           className="absolute inset-0 opacity-40"
           style={{
@@ -55,24 +73,85 @@ export default function HomePage() {
             backgroundSize: "28px 28px",
           }}
         />
+        {/* Animated wave field behind the hero. Values are the ones chosen in
+            the React Bits customizer. Masked so it fades out toward the top,
+            where the heading sits, and again at the very bottom so the hero
+            ends without a hard edge. */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] opacity-30 pointer-events-none"
+          aria-hidden
+          className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at center, rgba(255,255,255,0.10), transparent 70%)",
+            maskImage: "linear-gradient(to bottom, transparent 0%, black 62%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 62%, transparent 100%)",
           }}
-        />
+        >
+          <GradientWaves
+            horizonColor="#0b8b58"
+            waveColor="#FF9FFC"
+            crestColor="#FFFFFF"
+            speed={0.3}
+            amplitude={2.5}
+            waveScale={0.4}
+            waveRatio={0.7}
+            swell={60}
+            turbulence={20}
+            tilt={1.11}
+            zoom={1.0}
+            height={5.5}
+            fogDepth={15}
+            detail="medium"
+            brightness={1.5}
+            opacity={0.8}
+            mouseInteraction={true}
+            parallaxStrength={0.5}
+            grain={true}
+            grainIntensity={0.05}
+          />
+        </div>
 
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 max-w-3xl flex flex-col items-center">
+          <div className="w-full h-44 sm:h-56 md:h-64 flex items-center justify-center mb-6">
+            <ParticleText
+              text="OdinEye"
+              particleSize={2}
+              density={4}
+              color="#ffffff"
+              highlightColor="#5fd3a8"
+              scatter={180}
+              gatherDuration={1600}
+              stagger={420}
+              pointerRepel={40}
+              repelRadius={120}
+              idleDrift={0}
+              trigger="mount"
+              fontSize="clamp(3rem, 12vw, 8rem)"
+              fontWeight={650}
+              fontFamily="inherit"
+              glow
+            />
+          </div>
+
           <div className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-accent bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-8">
             DEVELOPER PRODUCTIVITY PLATFORM
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-[56px] font-bold leading-[1.1] tracking-tight mb-6">
-            Ship faster with <span className="text-accent">clarity</span>,<br /> not guesswork.
-          </h1>
+          <div className="mb-6 min-h-[120px] flex items-center justify-center">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white text-center">
+              <TextType
+                text={["Ship faster with clarity,", "not guesswork."]}
+                typingSpeed={65}
+                pauseDuration={1800}
+                deletingSpeed={35}
+                showCursor={true}
+                cursorCharacter="|"
+                cursorClassName="text-[#5fd3a8]"
+                textColors={["#ffffff", "#5fd3a8"]}
+              />
+            </h1>
+          </div>
 
           <p className="text-base md:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
-            Odin Eye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics — all in one dark-mode dashboard.
+            OdinEye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics all in one dark-mode dashboard.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -87,12 +166,16 @@ export default function HomePage() {
       </section>
 
       {/* ─── LIVE METRICS PREVIEW ─── */}
-      <section id="metrics" className="py-16 px-6 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
+      <section id="metrics" className="relative py-16 px-6 scroll-mt-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[min(1100px,90%)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#257f61]/20 blur-3xl"
+        />
+        <div className="relative max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <div className="text-center mb-12">
-            <div className="font-mono text-xs text-subtle tracking-widest mb-2">DORA METRICS AT A GLANCE</div>
+            <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">DORA METRICS AT A GLANCE</div>
             <h2 className="text-2xl md:text-3xl font-bold">
-              Your engineering pulse, <span className="text-accent">quantified</span>
+              Your engineering pulse, <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">quantified</span>
             </h2>
           </div>
 
@@ -109,11 +192,11 @@ export default function HomePage() {
 
       {/* ─── FEATURES ─── */}
       <section id="features" className="py-20 px-6 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
+        <div className="relative max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <div className="text-center mb-14">
-            <div className="font-mono text-xs text-subtle tracking-widest mb-2">CAPABILITIES</div>
+            <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">CAPABILITIES</div>
             <h2 className="text-2xl md:text-3xl font-bold">
-              Everything your team needs to <span className="text-accent">deliver better software</span>
+              Everything your team needs to <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">deliver better software</span>
             </h2>
           </div>
 
@@ -129,47 +212,51 @@ export default function HomePage() {
       </section>
 
       {/* ─── INTEGRATIONS ─── */}
-      <section id="integrations" className="py-20 px-6 scroll-mt-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="font-mono text-xs text-subtle tracking-widest mb-2">INTEGRATIONS</div>
+      <section id="integrations" className="relative py-20 px-6 scroll-mt-20 overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#257f61]/20 blur-3xl"
+        />
+        <div className="relative max-w-5xl mx-auto text-center">
+          <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">INTEGRATIONS</div>
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Plugs into your <span className="text-accent">existing workflow</span>
+            Plugs into your <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">existing workflow</span>
           </h2>
           <p className="text-sm text-muted max-w-lg mx-auto mb-12">
-            Odin Eye connects to GitHub, Jira, and Slack out of the box — no custom scripts, no manual exports. Set up in minutes.
+            OdinEye connects to GitHub, Jira, and Slack out of the box — no custom scripts, no manual exports. Set up in minutes.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center text-[#5fd3a8] transition-colors">
                 <IconGitHub />
               </div>
               <div className="text-sm font-semibold">GitHub</div>
               <div className="text-[11px] text-muted">Repos, PRs, Webhooks</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center text-[#5fd3a8] transition-colors">
                 <IconJira />
               </div>
               <div className="text-sm font-semibold">Jira</div>
               <div className="text-[11px] text-muted">Issues, Sprints, Boards</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-sm font-bold text-ink transition-colors">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center font-mono text-sm font-bold text-[#5fd3a8] transition-colors">
                 SL
               </div>
               <div className="text-sm font-semibold">Slack</div>
               <div className="text-[11px] text-muted">Alerts, Notifications</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
           </div>
@@ -177,14 +264,21 @@ export default function HomePage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t border-border py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="font-mono font-bold text-sm text-ink">◆ Odin Eye</span>
-            <span className="text-xs text-subtle">Developer Productivity Dashboard</span>
+      <footer className="border-t border-[#257f61]/30 py-8 px-6">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/icons/icon.png"
+              alt="OdinEye"
+              width={20}
+              height={20}
+              className="rounded object-contain"
+            />
+            <span className="font-mono font-bold text-sm text-ink">OdinEye</span>
+            <span className="text-xs text-subtle ml-1">Developer Productivity Dashboard</span>
           </div>
           <div className="text-xs text-subtle">
-            © {new Date().getFullYear()} Odin Eye. Built for engineering teams.
+            © {new Date().getFullYear()} OdinEye. Built for engineering teams.
           </div>
         </div>
       </footer>

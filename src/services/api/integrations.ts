@@ -81,7 +81,38 @@ export interface JiraOAuthInstallUrlResponse {
   installUrl: string;
 }
 
+export interface JiraIssue {
+  issueId: number;
+  companyId: number;
+  projectId?: number | null;
+  jiraKey: string;
+  summary: string;
+  issueType?: string;
+  priority?: string;
+  status: string;
+  storyPoints?: number | null;
+  assigneeId?: number | null;
+  createdAt?: string;
+  closedAt?: string | null;
+}
+
+export interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface JiraAvailableProjectsResponse {
+  connected: boolean;
+  projects: JiraProject[];
+}
+
 // ─── Slack Interfaces ────────────────────────────────────────────────────────
+export interface SlackStatusResponse {
+  connected: boolean;
+  message?: string;
+}
+
 export interface SlackChannel {
   id: string;
   name: string;
@@ -107,6 +138,18 @@ export const integrationsApiService = {
     return apiClient.get<GithubConnectUrlResponse>(
       `/integrations/projects/${projectId}/github/connect-url`
     );
+  },
+
+  /**
+   * POST /api/integrations/projects/{projectId}/github/installation
+   * Records the GitHub App installation GitHub redirected back with, so the
+   * repository dropdown can list the repos that installation was granted.
+   */
+  async claimGithubInstallation(
+    projectId: string,
+    installationId: number
+  ): Promise<{ installationId: number; accountLogin?: string; accountType?: string }> {
+    return apiClient.post(`/integrations/projects/${projectId}/github/installation`, { installationId });
   },
 
   /** GET /api/integrations/projects/{projectId}/github/available-repos */
@@ -157,18 +200,29 @@ export const integrationsApiService = {
     }
   },
 
-  /** GET /api/integrations/jira/oauth/install */
-  async getJiraOAuthInstallUrl(): Promise<string> {
+  /**
+   * GET /api/integrations/jira/oauth/install
+   *
+   * This path is public at the gateway (Atlassian's redirect back can't carry
+   * our JWT), so the backend can't resolve companyId/userId from headers the
+   * way authenticated endpoints do — they're passed explicitly here and come
+   * back signed in the OAuth `state`, which the callback verifies.
+   */
+  async getJiraOAuthInstallUrl(companyId: number, userId?: number): Promise<string> {
+    const params: Record<string, string> = { companyId: String(companyId) };
+    if (userId) params.userId = String(userId);
     try {
       const res = await apiClient.get<JiraOAuthInstallUrlResponse & { url?: string }>(
-        "/integrations/jira/oauth/install"
+        "/integrations/jira/oauth/install",
+        { params }
       );
       if (typeof res === "string") return res;
       return res.installUrl || res.url || "";
     } catch (err) {
       console.error("Failed to fetch Jira OAuth installUrl:", err);
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      return `${baseUrl.replace(/\/+$/, "")}/integrations/jira/oauth/install`;
+      const query = new URLSearchParams(params).toString();
+      return `${baseUrl.replace(/\/+$/, "")}/integrations/jira/oauth/install?${query}`;
     }
   },
 
@@ -201,6 +255,33 @@ export const integrationsApiService = {
     }
   },
 
+  /** GET /api/integrations/jira/issues */
+  async getJiraIssues(): Promise<JiraIssue[]> {
+    try {
+      return await apiClient.get<JiraIssue[]>("/integrations/jira/issues");
+    } catch {
+      return [];
+    }
+  },
+
+  /** GET /api/integrations/jira/available-projects */
+  async getJiraAvailableProjects(): Promise<JiraAvailableProjectsResponse> {
+    try {
+      return await apiClient.get<JiraAvailableProjectsResponse>(
+        "/integrations/jira/available-projects"
+      );
+    } catch {
+      return {
+        connected: false,
+        projects: [
+          { id: "10001", key: "ODIN", name: "OdinEye Core" },
+          { id: "10002", key: "MOB", name: "Mobile App" },
+          { id: "10003", key: "PAY", name: "Payments API" },
+        ],
+      };
+    }
+  },
+
   // ─── Slack Integrations ───
   /** GET /api/slack/oauth/install */
   async getSlackOAuthInstallUrl(): Promise<string> {
@@ -216,15 +297,21 @@ export const integrationsApiService = {
     }
   },
 
+  /** GET /api/slack/status */
+  async getSlackStatus(): Promise<SlackStatusResponse> {
+    try {
+      return await apiClient.get<SlackStatusResponse>("/slack/status");
+    } catch {
+      return { connected: false };
+    }
+  },
+
   /** GET /api/slack/channels */
   async getSlackChannels(): Promise<SlackChannel[]> {
     try {
       return await apiClient.get<SlackChannel[]>("/slack/channels");
     } catch {
-      return [
-        { id: "C1001", name: "dev-alerts" },
-        { id: "C1002", name: "general" },
-      ];
+      return [];
     }
   },
 

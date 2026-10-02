@@ -85,7 +85,7 @@ export function GithubConnectionSection({
       console.warn("Could not fetch available repos", err);
       setAvailableData({
         installed: false,
-        connectUrl: `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(projectId)}`,
+        connectUrl: "",
         repositories: [],
       });
     } finally {
@@ -256,7 +256,7 @@ export function GithubConnectionSection({
                   <FaGithub className="h-4 w-4 text-purple-400" /> Install GitHub App
                 </h3>
                 <p className="mt-1 text-xs text-muted max-w-lg">
-                  Install the DevPulse GitHub App to grant access to your repositories and automatically sync pull requests, commits, and metrics.
+                  Install the OdinEye GitHub App to grant access to your repositories and automatically sync pull requests, commits, and metrics.
                 </p>
               </div>
               <button

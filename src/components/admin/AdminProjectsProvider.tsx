@@ -13,6 +13,8 @@ import type { ReactNode } from "react";
 import { Toast } from "@/components/notifications/Toast";
 import type { ToastMessage } from "@/store/notificationSlice";
 import { projectService } from "@/services/project.service";
+import { repositoryService } from "@/services/repository.service";
+import type { Repository } from "@/types/repository";
 import type {
   ProjectApiResponse,
   ProjectMemberApiResponse,
@@ -50,7 +52,7 @@ const SYNC_POLL_MS = 1800;
 /** Give up polling after this many attempts (~1 min at SYNC_POLL_MS). */
 const MAX_SYNC_POLLS = 40;
 
-const LINKED_REPOS_KEY = "devpulse_linked_repos";
+const LINKED_REPOS_KEY = "odineye_linked_repos";
 
 function loadCachedRepos(): Record<string, LinkedRepo> {
   if (typeof window === "undefined") return {};
@@ -89,6 +91,24 @@ function mapApiProject(project: ProjectApiResponse): Project {
   };
 }
 
+/** A row from integration-service's `repos` table: the link the data pipeline actually uses. */
+function mapRepository(repo: Repository & { projectId: number }): LinkedRepo {
+  return {
+    id: `repo-${repo.projectId}`,
+    projectId: String(repo.projectId),
+    url: `https://github.com/${repo.fullName}`,
+    owner: repo.ownerName,
+    name: repo.repoName,
+    status: "CONNECTED",
+    lastSyncedAt: repo.lastSyncedAt ?? undefined,
+  };
+}
+
+/**
+ * Fallback only, when integration-service is unreachable. `projects.github_repo_url`
+ * is set by Create/Edit Project and is NOT updated by the GitHub page's link flow,
+ * so it can say "no repo" for a project that is linked.
+ */
 function mapApiProjectRepo(project: ProjectApiResponse): LinkedRepo | undefined {
   if (!project.githubRepoUrl) return undefined;
   const url = normaliseGithubRepoUrl(project.githubRepoUrl);
@@ -227,17 +247,46 @@ export function AdminProjectsProvider({ children }: { children: ReactNode }) {
   const refreshProjects = useCallback(async () => {
     setIsLoadingProjects(true);
     try {
-      const response = await projectService.getAll();
+      const [response, repositories] = await Promise.all([
+        projectService.getAll(),
+        repositoryService.getRepositories().catch((err: unknown) => {
+          console.warn("Could not load linked repositories; falling back to project records", err);
+          return null;
+        }),
+      ]);
       const loadedProjects = response.map(mapApiProject);
       setProjects(loadedProjects);
-      const cached = loadCachedRepos();
-      const serverRepos = Object.fromEntries(
-        response.map((project) => [
-          String(project.projectId),
-          mapApiProjectRepo(project) ?? cached[String(project.projectId)],
-        ])
-      );
-      setReposByProject((prev) => ({ ...cached, ...serverRepos, ...prev }));
+
+      if (repositories) {
+        // Authoritative: which repo each project is linked to, as the pipeline sees it.
+        // Replaces cached/in-memory entries so a stale browser cache can't linger;
+        // only a transient status (e.g. an in-flight SYNCING) is kept for the same repo.
+        const linked = new Map(
+          repositories
+            .filter((repo): repo is Repository & { projectId: number } => repo.projectId != null)
+            .map((repo) => [String(repo.projectId), mapRepository(repo)])
+        );
+        setReposByProject((prev) => {
+          const next: Record<string, LinkedRepo | undefined> = {};
+          for (const project of loadedProjects) {
+            const server = linked.get(project.id);
+            const current = prev[project.id];
+            next[project.id] =
+              server && current?.url === server.url ? { ...server, status: current.status } : server;
+            saveCachedRepo(project.id, next[project.id]);
+          }
+          return next;
+        });
+      } else {
+        const cached = loadCachedRepos();
+        const fallbackRepos = Object.fromEntries(
+          response.map((project) => [
+            String(project.projectId),
+            mapApiProjectRepo(project) ?? cached[String(project.projectId)],
+          ])
+        );
+        setReposByProject((prev) => ({ ...cached, ...fallbackRepos, ...prev }));
+      }
       setMembersByProject((previous) =>
         Object.fromEntries(
           loadedProjects.map((project) => [project.id, previous[project.id] ?? []])

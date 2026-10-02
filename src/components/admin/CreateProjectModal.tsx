@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   ModalHeader,
@@ -16,6 +16,11 @@ import {
   validateProjectName,
 } from "@/lib/projectValidation";
 import type { CreateProjectRequest } from "@/types/adminProject";
+import {
+  integrationsApiService,
+  type JiraProject,
+  type GithubRepository,
+} from "@/services/api/integrations";
 
 export interface CreateProjectModalProps {
   open: boolean;
@@ -34,8 +39,35 @@ export function CreateProjectModal({
   const [githubRepoUrl, setGithubRepoUrl] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
+  const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
+  const [githubRepos, setGithubRepos] = useState<GithubRepository[]>([]);
   const [nameError, setNameError] = useState<string | undefined>();
   const [urlError, setUrlError] = useState<string | undefined>();
+
+  useEffect(() => {
+    let mounted = true;
+    void integrationsApiService
+      .getJiraAvailableProjects()
+      .then((res) => {
+        if (mounted && res?.projects) {
+          setJiraProjects(res.projects);
+        }
+      })
+      .catch(() => undefined);
+
+    void integrationsApiService
+      .getGithubAvailableRepos("0")
+      .then((res) => {
+        if (mounted && res?.repositories && res.repositories.length > 0) {
+          setGithubRepos(res.repositories);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const reset = () => {
     setName("");
@@ -112,27 +144,86 @@ export function CreateProjectModal({
             />
           </ModalField>
 
-          <Input
-            label="Jira project key (optional)"
-            type="text"
-            placeholder="DEVP"
-            value={jiraProjectKey}
-            onChange={(e) => setJiraProjectKey(e.target.value)}
-          />
+          <ModalField label="Jira Project Key (optional)">
+            {jiraProjects.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <select
+                  value={jiraProjectKey}
+                  onChange={(e) => setJiraProjectKey(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink outline-none transition focus:border-accent cursor-pointer"
+                >
+                  <option value="">-- Select a Jira Project --</option>
+                  {jiraProjects.map((jp) => (
+                    <option key={jp.id || jp.key} value={jp.key}>
+                      {jp.name} ({jp.key})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or type key manually (e.g. DEVP)"
+                  value={jiraProjectKey}
+                  onChange={(e) => setJiraProjectKey(e.target.value)}
+                  className="h-8 w-full rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+                />
+              </div>
+            ) : (
+              <input
+                type="text"
+                placeholder="DEVP"
+                value={jiraProjectKey}
+                onChange={(e) => setJiraProjectKey(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+              />
+            )}
+          </ModalField>
 
           <div className="h-px bg-border" />
 
-          <Input
-            label="GitHub repository URL (optional)"
-            type="text"
-            placeholder="https://github.com/owner/repo"
-            value={githubRepoUrl}
-            error={urlError}
-            onChange={(e) => {
-              setGithubRepoUrl(e.target.value);
-              if (urlError) setUrlError(undefined);
-            }}
-          />
+          <ModalField label="GitHub Repository (optional)">
+            {githubRepos.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <select
+                  value={githubRepoUrl}
+                  onChange={(e) => {
+                    setGithubRepoUrl(e.target.value);
+                    if (urlError) setUrlError(undefined);
+                  }}
+                  className="h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-ink outline-none transition focus:border-accent cursor-pointer"
+                >
+                  <option value="">-- Select an Installed GitHub Repo --</option>
+                  {githubRepos.map((repo) => (
+                    <option key={repo.id || repo.repoUrl} value={repo.repoUrl}>
+                      {repo.fullName || repo.name} ({repo.repoUrl})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or paste repository URL manually"
+                  value={githubRepoUrl}
+                  onChange={(e) => {
+                    setGithubRepoUrl(e.target.value);
+                    if (urlError) setUrlError(undefined);
+                  }}
+                  className="h-8 w-full rounded-lg border border-border bg-surface-raised px-3 text-xs text-ink placeholder:text-subtle outline-none transition focus:border-accent"
+                />
+                {urlError && <p className="text-xs text-danger">{urlError}</p>}
+              </div>
+            ) : (
+              <Input
+                label="GitHub repository URL"
+                type="text"
+                placeholder="https://github.com/owner/repo"
+                value={githubRepoUrl}
+                error={urlError}
+                onChange={(e) => {
+                  setGithubRepoUrl(e.target.value);
+                  if (urlError) setUrlError(undefined);
+                }}
+              />
+            )}
+          </ModalField>
         </ModalBody>
 
         <ModalFooter>

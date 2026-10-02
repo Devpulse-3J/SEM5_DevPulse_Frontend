@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { setActiveProject, type WorkspaceRole } from "@/store/dashboardSlice";
@@ -11,6 +12,8 @@ import { useMyMemberships } from "@/hooks/useProjects";
 import { projectLabel } from "@/types/project";
 import type { ProjectMembership } from "@/types/project";
 import { FeatureUnavailable } from "@/components/ui/FeatureUnavailable";
+import { GithubLinkCard } from "@/components/auth/GithubLinkCard";
+import { pullRequestService } from "@/services/pullRequest.service";
 
 /**
  * Post-login project picker — the page that establishes the user's role.
@@ -57,10 +60,11 @@ const roleBadge: Record<WorkspaceRole, string> = {
   DEVELOPER: "bg-success/15 text-success",
 };
 
-export default function SelectProjectPage() {
+function SelectProjectContent() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { user, logout, companyId: activeCompanyId, switchCompany } = useAuth();
+  const { user, logout, companyId: activeCompanyId, switchCompany, fetchProfile } = useAuth();
+  const githubId = user && "githubId" in user ? user.githubId : undefined;
   const hasMounted = useHasMounted();
   const { data: memberships, isLoading, isError, error } = useMyMemberships();
   const [openingId, setOpeningId] = useState<number | null>(null);
@@ -101,6 +105,13 @@ export default function SelectProjectPage() {
     }
 
     const role = toWorkspaceRole(m.role, systemRole);
+
+    // Catch up PRs that arrived before this user was linked or before they joined
+    // this company. Best-effort and idempotent; must run after the company switch
+    // so it acts in the right company.
+    if (typeof githubId === "number") {
+      await pullRequestService.relinkMyAuthored().catch(() => undefined);
+    }
     dispatch(
       setActiveProject({
         id: String(m.projectId),
@@ -120,7 +131,16 @@ export default function SelectProjectPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="font-mono text-lg font-bold text-ink">◆ Odin Eye</div>
+          <div className="flex items-center justify-center gap-2 font-mono text-lg font-bold text-ink">
+            <Image
+              src="/icons/icon.png"
+              alt="OdinEye"
+              width={24}
+              height={24}
+              className="rounded object-contain"
+            />
+            <span>OdinEye</span>
+          </div>
           <h1 className="mt-3 text-xl font-bold text-ink">Choose a project</h1>
           <p className="mt-1 text-sm text-muted">
             Your dashboard depends on your role in the project you pick.
@@ -196,6 +216,8 @@ export default function SelectProjectPage() {
           </div>
         )}
 
+        <GithubLinkCard githubId={githubId} onLinked={fetchProfile} />
+
         <div className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-subtle">
           {user?.email && (
             <span>
@@ -212,5 +234,19 @@ export default function SelectProjectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SelectProjectPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
+      <SelectProjectContent />
+    </Suspense>
   );
 }

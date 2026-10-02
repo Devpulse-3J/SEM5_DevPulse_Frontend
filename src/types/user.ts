@@ -76,6 +76,11 @@ export interface AuthResponse {
   systemRole: SystemRole;
   /** The company this token is scoped to. Absent on older backends. */
   companyId?: number | null;
+  avatarUrl?: string | null;
+  githubId?: number | null;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
+  authProvider?: string | null;
 }
 
 /**
@@ -93,4 +98,33 @@ export interface UserProfileResponse {
   projectRoles: ProjectRole[];
   /** Every company the user belongs to. Absent on older backends. */
   companies?: CompanyMembership[];
+  /** Numeric id of the linked GitHub account; null/absent when none is linked. */
+  githubId?: number | null;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
 }
+
+export interface UserGithubStatusResponse {
+  connected: boolean;
+  githubUserId?: number | null;
+  githubUsername?: string | null;
+  githubId?: number | null;
+}
+
+/** Who a GitHub username resolves to, shown for confirmation before it is linked. */
+export interface GithubPreview {
+  githubId: number;
+  githubLogin: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  profileUrl?: string | null;
+  /** True when a different OdinEye user already has this account linked. */
+  linkedToAnotherUser: boolean;
+}
+
+/** Body of PUT /api/auth/me/github: the GitHub account now linked. */
+export interface LinkGithubResponse {
+  githubId: number;
+  githubLogin: string;
+}
+

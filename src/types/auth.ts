@@ -13,6 +13,8 @@ export type {
   ProjectRole,
   ProjectRoleName,
   CompanyMembership,
+  LinkGithubResponse,
+  GithubPreview,
   LoginRequest,
   RegisterRequest,
   AuthResponse,

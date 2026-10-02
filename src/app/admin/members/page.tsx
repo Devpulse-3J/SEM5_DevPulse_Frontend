@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { FaUserPlus, FaCrown, FaUserCheck, FaClock, FaCheck, FaTimes, FaProjectDiagram, FaGithub } from "react-icons/fa";
+import { FaCrown, FaUserCheck, FaClock, FaCheck, FaTimes, FaProjectDiagram, FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/Modal";
@@ -165,7 +165,7 @@ export default function MembersPage() {
               {
                 id: "1",
                 userId: "1",
-                email: "admin@devpulse.com",
+                email: "admin@odineye.com",
                 fullName: "Alex Rivera",
                 role: "ADMIN",
                 status: "ACTIVE",
@@ -174,7 +174,7 @@ export default function MembersPage() {
               {
                 id: "2",
                 userId: "2",
-                email: "dev@devpulse.com",
+                email: "dev@odineye.com",
                 fullName: "Sam Chen",
                 role: "DEVELOPER",
                 status: "ACTIVE",
@@ -351,15 +351,6 @@ export default function MembersPage() {
             Manage company members, review pending workspace join requests, and send team invitations.
           </p>
         </div>
-
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => setIsInviteModalOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <FaUserPlus className="h-3.5 w-3.5" /> Invite Member
-        </Button>
       </div>
 
       {/* Navigation Tabs */}
@@ -441,7 +432,7 @@ export default function MembersPage() {
                         <td className="px-4 py-3">
                           {member.role === "ADMIN" ? (
                             <Badge variant="info" className="flex items-center gap-1 w-fit">
-                              <FaCrown className="h-3 w-3 text-amber-400" /> Admin
+                              <FaCrown className="h-3 w-3 text-warning" /> Admin
                             </Badge>
                           ) : member.role === "MANAGER" ? (
                             <Badge variant="warning" className="flex items-center gap-1 w-fit">
@@ -601,7 +592,7 @@ export default function MembersPage() {
                         loading={isProcessing}
                         disabled={isProcessing}
                         onClick={() => handleApproveRequest(req.requestId || req.id, req.email)}
-                        className="bg-success hover:bg-success/90 text-white flex items-center gap-1.5 border-none"
+                        className="bg-success hover:bg-success/90 text-white dark:text-[#0b0d11] flex items-center gap-1.5 border-none"
                       >
                         <FaCheck className="h-3 w-3" /> Approve
                       </Button>

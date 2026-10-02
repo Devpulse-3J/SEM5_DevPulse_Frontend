@@ -24,6 +24,7 @@ const managerNav: NavGroup[] = [
       { label: "DORA Metrics", href: "/dora", icon: "◧" },
       { label: "PR Risk & Insights", href: "/pull-requests", icon: "▲" },
       { label: "Team & Workload", href: "/team", icon: "◫" },
+      { label: "Alert Rules", href: "/alerts", icon: "◎" },
     ],
   },
 ];
@@ -35,7 +36,6 @@ const developerNav: NavGroup[] = [
       { label: "Overview", href: "/dashboard", icon: "▣" },
       { label: "My PRs", href: "/my-prs", icon: "◧" },
       { label: "Repositories", href: "/repositories", icon: "📦" },
-      { label: "Alerts & Rules", href: "/alerts", icon: "◎" },
     ],
   },
   {

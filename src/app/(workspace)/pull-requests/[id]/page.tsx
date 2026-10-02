@@ -65,6 +65,45 @@ export default function PullRequestDetailPage() {
         </div>
       </Card>
 
+      {/* Review Velocity & Turnaround Metrics */}
+      <Card className="flex flex-col gap-3">
+        <p className="text-xs font-semibold text-ink uppercase tracking-wider">
+          Review Velocity & Feedback Speed
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {pullRequest.timeToFirstReviewHours !== undefined &&
+          pullRequest.timeToFirstReviewHours !== null ? (
+            <div className="rounded-md border border-border bg-surface-raised px-3 py-2">
+              <span className="text-[10px] uppercase text-subtle block">Time to First Review</span>
+              <span className="font-mono text-sm font-bold text-ink">
+                First review in {pullRequest.timeToFirstReviewHours.toFixed(1)}h
+              </span>
+            </div>
+          ) : (
+            <div className="rounded-md border border-border bg-surface-raised px-3 py-2 text-subtle text-xs">
+              Awaiting first review
+            </div>
+          )}
+
+          <div className="rounded-md border border-border bg-surface-raised px-3 py-2">
+            <span className="text-[10px] uppercase text-subtle block">Review Cycles</span>
+            <span className="font-mono text-sm font-bold text-ink">
+              {pullRequest.reviewIterations ?? (pullRequest.reviews.length > 0 ? 1 : 0)} iterations
+            </span>
+          </div>
+
+          {pullRequest.reviewTurnaroundHours !== undefined &&
+            pullRequest.reviewTurnaroundHours !== null && (
+              <div className="rounded-md border border-border bg-surface-raised px-3 py-2">
+                <span className="text-[10px] uppercase text-subtle block">Turnaround Time</span>
+                <span className="font-mono text-sm font-bold text-ink">
+                  {pullRequest.reviewTurnaroundHours.toFixed(1)}h from 1st review to merge
+                </span>
+              </div>
+            )}
+        </div>
+      </Card>
+
       <PRRiskCard pullRequest={pullRequest} />
     </div>
   );

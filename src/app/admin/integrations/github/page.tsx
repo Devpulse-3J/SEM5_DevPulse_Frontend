@@ -21,13 +21,20 @@ export default function GithubIntegrationPage() {
   const [loadingAvailableRepos, setLoadingAvailableRepos] = useState(false);
   const [availableReposData, setAvailableReposData] = useState<GithubAvailableReposResponse | null>(null);
   const [selectedRepoDropdownUrl, setSelectedRepoDropdownUrl] = useState<string>("");
-  const [returnedFromGithub, setReturnedFromGithub] = useState(() => {
-    if (typeof window === "undefined") return false;
+  // GitHub's Setup URL redirect: ?installation_id=…&setup_action=install&state=<projectId>.
+  // Read once; the query is stripped after the installation is claimed.
+  const [githubReturn] = useState(() => {
+    if (typeof window === "undefined") return { installationId: null as number | null, projectId: null as string | null };
     const params = new URLSearchParams(window.location.search);
-    return Boolean(
-      params.get("installation_id") || params.get("setup_action") === "install" || params.get("code")
-    );
+    const installationId = Number(params.get("installation_id"));
+    return {
+      installationId: Number.isInteger(installationId) && installationId > 0 ? installationId : null,
+      projectId: params.get("state"),
+    };
   });
+  // Only true once the backend has confirmed and stored the installation.
+  const [returnedFromGithub, setReturnedFromGithub] = useState(false);
+  const [installError, setInstallError] = useState<string | null>(null);
 
   // Flow 1 State
   const [loadingAppUrl, setLoadingAppUrl] = useState(false);
@@ -81,7 +88,7 @@ export default function GithubIntegrationPage() {
       console.warn("Could not fetch available repos", err);
       setAvailableReposData({
         installed: false,
-        connectUrl: `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(projectId)}`,
+        connectUrl: "",
         repositories: [],
       });
     } finally {
@@ -95,8 +102,25 @@ export default function GithubIntegrationPage() {
         const list = await projectService.getAll();
         setProjects(list);
         if (list.length > 0) {
-          const initialProjectId = String(list[0].projectId);
+          // Return to the project the admin started the install from (GitHub echoes it as `state`).
+          const fromGithub = list.find((p) => String(p.projectId) === githubReturn.projectId);
+          const initialProjectId = String((fromGithub ?? list[0]).projectId);
           setSelectedProjectId(initialProjectId);
+
+          if (githubReturn.installationId) {
+            try {
+              await integrationsApiService.claimGithubInstallation(initialProjectId, githubReturn.installationId);
+              setReturnedFromGithub(true);
+            } catch (err: unknown) {
+              setInstallError(
+                err instanceof ApiError || err instanceof Error
+                  ? err.message
+                  : "Could not connect the GitHub App installation."
+              );
+            }
+            window.history.replaceState(null, "", window.location.pathname);
+          }
+
           fetchStatus(initialProjectId);
           fetchAvailableRepos(initialProjectId);
         }
@@ -107,6 +131,8 @@ export default function GithubIntegrationPage() {
       }
     }
     loadProjects();
+    // githubReturn is read once from the initial URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleProjectChange = (projectId: string) => {
@@ -120,17 +146,15 @@ export default function GithubIntegrationPage() {
     if (!selectedProjectId) return;
     setLoadingAppUrl(true);
     setAppUrlError(null);
-    const targetUrl =
-      availableReposData?.connectUrl ||
-      `https://github.com/apps/devpulse-app/installations/new?state=${encodeURIComponent(selectedProjectId)}`;
     try {
       const res = await integrationsApiService.getGithubConnectUrl(selectedProjectId);
-      window.location.assign(res.connectUrl || targetUrl);
+      const url = res.connectUrl || availableReposData?.connectUrl;
+      if (!url) throw new Error("The GitHub App install link is unavailable.");
+      window.location.assign(url);
     } catch (err: unknown) {
       const msg =
         err instanceof ApiError || err instanceof Error ? err.message : "Failed to obtain GitHub App URL.";
       setAppUrlError(msg);
-      window.location.assign(targetUrl);
     } finally {
       setLoadingAppUrl(false);
     }
@@ -321,11 +345,18 @@ export default function GithubIntegrationPage() {
 
         {appUrlError && <p className="text-xs text-danger">{appUrlError}</p>}
 
+        {installError && (
+          <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger font-medium">
+            <FaExclamationTriangle className="h-4 w-4 flex-shrink-0" />
+            <span>GitHub App installation could not be connected: {installError}</span>
+          </div>
+        )}
+
         {returnedFromGithub && (
           <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success font-medium">
             <FaCheckCircle className="h-4 w-4 flex-shrink-0 text-success" />
             <span>
-              GitHub App authorized successfully! Select or enter your repository below and click <strong>Link Repository</strong> to finish setup.
+              GitHub App installed. Select a repository below and click <strong>Link Repository</strong> to finish setup.
             </span>
           </div>
         )}
@@ -334,7 +365,7 @@ export default function GithubIntegrationPage() {
           /* Conditional Rendering: App Not Installed */
           <div className="flex flex-col gap-3">
             <p className="text-xs text-muted">
-              GitHub App is not installed for this organization. Install the DevPulse GitHub App to grant access to repositories.
+              GitHub App is not installed for this organization. Install the OdinEye GitHub App to grant access to repositories.
             </p>
             <div>
               <button

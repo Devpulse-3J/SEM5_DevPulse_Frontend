@@ -48,10 +48,4 @@ export interface Deployment {
   leadTimeHours: number | null;
 }
 
-export interface WorkloadEntry {
-  userId: string;
-  name: string;
-  activePrs: number;
-  loadPct: number;
-  cycleTimeHours: number | null;
-}
+export type { WorkloadEntry, WorkloadStatus } from "./metrics";
