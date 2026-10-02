@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Renderer, Program, Mesh, Triangle } from 'ogl';
+import './GradientWaves.css';
+
 
 export type GradientWavesDetail = 'low' | 'medium' | 'high';
 
@@ -161,7 +163,7 @@ type GradientWavesCtx = {
 const ctxMap = new WeakMap<HTMLDivElement, GradientWavesCtx>();
 
 const GradientWaves: React.FC<GradientWavesProps> = ({
-  horizonColor = '#5227FF',
+  horizonColor = '#0b8b58',
   waveColor = '#FF9FFC',
   crestColor = '#FFFFFF',
   speed = 0.4,
@@ -399,7 +401,7 @@ const GradientWaves: React.FC<GradientWavesProps> = ({
     parallaxStrength
   ]);
 
-  return <div ref={containerRef} className={`relative h-full w-full overflow-hidden ${className}`.trim()} />;
+  return <div ref={containerRef} className={`gradient-waves-container ${className}`.trim()} />;
 };
 
 export default GradientWaves;

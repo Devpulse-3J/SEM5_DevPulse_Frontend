@@ -31,34 +31,34 @@ export default function HomePage() {
         {/* Same centred container as the sections below, so the logo and the
             buttons line up with the page content at any window width. */}
         <div className="mx-auto flex h-full max-w-7xl 2xl:max-w-[1440px] items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 font-mono font-bold text-[15px] tracking-wide text-ink no-underline hover:no-underline">
-            <Image
-              src="/icons/icon.png"
-              alt="OdinEye"
-              width={24}
-              height={24}
-              className="rounded object-contain"
-            />
-            <span>OdinEye</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-5 ml-6 text-[13px]">
-            <a href="#features" className="text-muted hover:text-ink transition-colors">Features</a>
-            <a href="#metrics" className="text-muted hover:text-ink transition-colors">Metrics</a>
-            <a href="#integrations" className="text-muted hover:text-ink transition-colors">Integrations</a>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 font-mono font-bold text-[15px] tracking-wide text-ink no-underline hover:no-underline">
+              <Image
+                src="/icons/icon.png"
+                alt="OdinEye"
+                width={24}
+                height={24}
+                className="rounded object-contain"
+              />
+              <span>OdinEye</span>
+            </Link>
+            <div className="hidden md:flex items-center gap-5 ml-6 text-[13px]">
+              <a href="#features" className="text-muted hover:text-ink transition-colors">Features</a>
+              <a href="#metrics" className="text-muted hover:text-ink transition-colors">Metrics</a>
+              <a href="#integrations" className="text-muted hover:text-ink transition-colors">Integrations</a>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/adminlogin" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
-            Admin login
-          </Link>
-          <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
-            Sign in
-          </Link>
-          <Link href="/register" className="text-[13px] font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
-            Get Started
-          </Link>
-        </div>
+          <div className="flex items-center gap-3">
+            <Link href="/adminlogin" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
+              Admin login
+            </Link>
+            <Link href="/login" className="text-[13px] font-medium text-muted hover:text-ink transition-colors px-3 py-1.5 no-underline hover:no-underline">
+              Sign in
+            </Link>
+            <Link href="/register" className="text-[13px] font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 hover:text-black transition-colors no-underline hover:no-underline">
+              Get Started
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -84,26 +84,26 @@ export default function HomePage() {
           }}
         >
           <GradientWaves
-            horizonColor="#257f61"
-            waveColor="#ff9ffc"
-            crestColor="#ffffff"
-            speed={0.45}
-            amplitude={0.5}
-            waveScale={1.1}
-            waveRatio={0.5}
-            swell={40}
-            turbulence={45}
-            tilt={1.03}
-            zoom={1}
-            height={5.8}
-            fogDepth={13}
+            horizonColor="#0b8b58"
+            waveColor="#FF9FFC"
+            crestColor="#FFFFFF"
+            speed={0.3}
+            amplitude={2.5}
+            waveScale={0.4}
+            waveRatio={0.7}
+            swell={60}
+            turbulence={20}
+            tilt={1.11}
+            zoom={1.0}
+            height={5.5}
+            fogDepth={15}
             detail="medium"
-            brightness={1.05}
-            opacity={1}
+            brightness={1.5}
+            opacity={0.8}
             mouseInteraction={true}
-            parallaxStrength={1}
-            grain={false}
-            grainIntensity={0.11}
+            parallaxStrength={0.5}
+            grain={true}
+            grainIntensity={0.05}
           />
         </div>
 
