@@ -20,7 +20,7 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <div
-      className="bg-surface border border-border rounded-card p-4"
+      className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-4 transition-colors hover:border-[#5fd3a8]/70"
       style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
     >
       <div className="text-xs text-muted mb-2.5">{label}</div>
