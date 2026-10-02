@@ -14,6 +14,7 @@ import {
 import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
 import TechText from "@/components/landing/TechText";
+import GradientWaves from "@/components/landing/GradientWaves";
 import { chart } from "@/styles/theme";
 
 const HERO_LINES = ["Ship faster with clarity,", "not guesswork."];
@@ -58,7 +59,7 @@ export default function HomePage() {
       </nav>
 
       {/* ─── HERO SECTION ─── */}
-      <section className="relative flex flex-col items-center text-center pt-24 pb-20 px-6 overflow-hidden">
+      <section className="relative flex flex-col items-center text-center pt-24 pb-40 px-6 overflow-hidden">
         <div
           className="absolute inset-0 opacity-40"
           style={{
@@ -66,12 +67,40 @@ export default function HomePage() {
             backgroundSize: "28px 28px",
           }}
         />
+        {/* Animated wave field behind the hero. Grayscale to match the
+            monochrome chrome, and masked so it fades out toward the top,
+            where the heading sits. */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] opacity-30 pointer-events-none"
+          aria-hidden
+          className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at center, rgba(255,255,255,0.10), transparent 70%)",
+            maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
           }}
-        />
+        >
+          <GradientWaves
+            horizonColor="#000000"
+            waveColor="#161616"
+            crestColor="#ffffff"
+            speed={0.45}
+            amplitude={2.5}
+            waveScale={0.6}
+            waveRatio={0.9}
+            swell={35}
+            turbulence={20}
+            tilt={1.11}
+            zoom={1.0}
+            height={5.5}
+            fogDepth={15}
+            detail="medium"
+            brightness={1}
+            opacity={1}
+            mouseInteraction={true}
+            parallaxStrength={1}
+            grain={false}
+            grainIntensity={0.11}
+          />
+        </div>
 
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-accent bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-8">
