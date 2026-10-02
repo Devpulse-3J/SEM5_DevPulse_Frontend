@@ -41,8 +41,16 @@ export default function AdminOverviewPage() {
 
   const [loading, setLoading] = useState(true);
 
+  // Plain values, so the callback below depends on these and not on `user`.
+  const userEmail = user?.email;
+  const userFullName = user?.fullName;
+  const userId = user?.userId;
+
   const fetchOverviewData = useCallback(async () => {
     setLoading(true);
+
+    // Kept outside the try so the member count below can walk the projects.
+    let loadedProjects: ProjectApiResponse[] = [];
 
     // Fetch projects
     try {
@@ -50,6 +58,7 @@ export default function AdminOverviewPage() {
         projectService.getAll(),
         repositoryService.getRepositories().catch(() => null),
       ]);
+      loadedProjects = projList;
       setProjects(projList);
       setLinkedProjectIds(
         repositories
@@ -72,22 +81,52 @@ export default function AdminOverviewPage() {
       setProjects([]);
     }
 
-    // Fetch company members
-    try {
-      const memList = await adminApiService.getCompanyMembers();
-      setMembers(memList);
-    } catch {
-      setMembers([
-        {
-          id: "1",
-          userId: "1",
-          email: user?.email || "admin@company.com",
-          fullName: user?.fullName || "System Admin",
-          role: "ADMIN",
-          status: "ACTIVE",
-        },
-      ]);
+    // Team members.
+    //
+    // The gateway has no company-members endpoint, so getCompanyMembers()
+    // resolves to [] and this card used to read 0. Like the Members page, the
+    // people are collected from each project's member list and de-duplicated
+    // by email (someone on three projects is one person).
+    const memberMap = new Map<string, CompanyMember>();
+    const companyMembers = await adminApiService.getCompanyMembers();
+    companyMembers.forEach((m) => {
+      if (m.email) memberMap.set(m.email.toLowerCase(), m);
+    });
+    await Promise.all(
+      loadedProjects.map(async (proj) => {
+        try {
+          const projMembers = await projectService.getMembers(proj.projectId);
+          projMembers.forEach((pm) => {
+            if (!pm.email) return;
+            const key = pm.email.toLowerCase();
+            if (memberMap.has(key)) return;
+            const pmRole = String(pm.role ?? "").toUpperCase();
+            memberMap.set(key, {
+              id: String(pm.memberId ?? pm.id ?? pm.userId ?? key),
+              userId: String(pm.userId ?? pm.id ?? key),
+              email: pm.email,
+              fullName: pm.fullName ?? pm.name,
+              role: pmRole === "ADMIN" ? "ADMIN" : pmRole === "MANAGER" ? "MANAGER" : "DEVELOPER",
+              status: String(pm.status ?? "").toUpperCase() === "PENDING" ? "INVITE_PENDING" : "ACTIVE",
+            });
+          });
+        } catch {
+          // One project failing must not blank the whole count.
+        }
+      })
+    );
+    // The signed-in admin belongs to the company even when on no project.
+    if (userEmail && !memberMap.has(userEmail.toLowerCase())) {
+      memberMap.set(userEmail.toLowerCase(), {
+        id: String(userId),
+        userId: String(userId),
+        email: userEmail,
+        fullName: userFullName,
+        role: "ADMIN",
+        status: "ACTIVE",
+      });
     }
+    setMembers(Array.from(memberMap.values()));
 
     // Check Jira status
     try {
@@ -106,7 +145,7 @@ export default function AdminOverviewPage() {
     }
 
     setLoading(false);
-  }, [user?.email, user?.fullName]);
+  }, [userEmail, userFullName, userId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -179,8 +218,9 @@ export default function AdminOverviewPage() {
               {loading ? "…" : Math.max(members.length, activeMembersCount)}
             </span>
             <p className="mt-1 text-[11px] text-ink">
-              {members.filter((m) => m.role === "ADMIN").length} Admin,{" "}
-              {members.filter((m) => m.role === "DEVELOPER").length} Devs
+              {members.filter((m) => m.role === "ADMIN").length} admin ·{" "}
+              {members.filter((m) => m.role === "MANAGER").length} managers ·{" "}
+              {members.filter((m) => m.role === "DEVELOPER").length} developers
             </p>
           </div>
         </div>
