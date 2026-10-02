@@ -126,7 +126,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-ink">Admin Console Overview</h1>
-          <p className="mt-1 text-xs text-subtle font-mono">
+          <p className="mt-1 text-xs text-ink font-mono">
             {companyName || "Organization"} · Company #{companyId || "12"} · Administrator Dashboard
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function AdminOverviewPage() {
         {/* Total Projects Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Total Projects
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -158,7 +158,7 @@ export default function AdminOverviewPage() {
             <span className="text-3xl font-bold font-mono text-ink">
               {loading ? "…" : projects.length}
             </span>
-            <p className="mt-1 text-[11px] text-muted flex items-center gap-1">
+            <p className="mt-1 text-[11px] text-ink flex items-center gap-1">
               Active repository workspaces
             </p>
           </div>
@@ -167,7 +167,7 @@ export default function AdminOverviewPage() {
         {/* Total Members Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Team Members
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -178,7 +178,7 @@ export default function AdminOverviewPage() {
             <span className="text-3xl font-bold font-mono text-ink">
               {loading ? "…" : Math.max(members.length, activeMembersCount)}
             </span>
-            <p className="mt-1 text-[11px] text-muted">
+            <p className="mt-1 text-[11px] text-ink">
               {members.filter((m) => m.role === "ADMIN").length} Admin,{" "}
               {members.filter((m) => m.role === "DEVELOPER").length} Devs
             </p>
@@ -188,7 +188,7 @@ export default function AdminOverviewPage() {
         {/* Connected Integrations Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Integrations
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -208,7 +208,7 @@ export default function AdminOverviewPage() {
         {/* Security & Access Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Access Control
             </span>
             <Badge variant="success">ADMIN</Badge>
@@ -217,7 +217,7 @@ export default function AdminOverviewPage() {
             <span className="text-sm font-semibold text-ink block truncate">
               {user?.fullName || "Company Admin"}
             </span>
-            <span className="text-[11px] font-mono text-subtle block truncate">
+            <span className="text-[11px] font-mono text-ink block truncate">
               {user?.email || "admin@company.com"}
             </span>
           </div>
@@ -228,7 +228,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface-raised/40 p-6">
         <div>
           <h2 className="text-sm font-bold text-ink">Quick Management Actions</h2>
-          <p className="mt-0.5 text-xs text-subtle">
+          <p className="mt-0.5 text-xs text-ink">
             Shortcuts to configure company resources, members, and data sources.
           </p>
         </div>
@@ -243,7 +243,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Manage Projects</span>
-              <span className="text-[11px] text-subtle">Create or update projects</span>
+              <span className="text-[11px] text-ink">Create or update projects</span>
             </div>
           </Link>
 
@@ -256,7 +256,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Invite Members</span>
-              <span className="text-[11px] text-subtle">Single or bulk invitations</span>
+              <span className="text-[11px] text-ink">Single or bulk invitations</span>
             </div>
           </Link>
 
@@ -269,7 +269,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Integrations</span>
-              <span className="text-[11px] text-subtle">GitHub, Jira, &amp; Slack</span>
+              <span className="text-[11px] text-ink">GitHub, Jira, &amp; Slack</span>
             </div>
           </Link>
 
@@ -282,7 +282,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Settings</span>
-              <span className="text-[11px] text-subtle">Company configuration</span>
+              <span className="text-[11px] text-ink">Company configuration</span>
             </div>
           </Link>
         </div>
@@ -293,7 +293,7 @@ export default function AdminOverviewPage() {
         <div className="flex items-center justify-between border-b border-border/60 pb-4">
           <div>
             <h2 className="text-sm font-bold text-ink">Active Company Projects ({projects.length})</h2>
-            <p className="mt-0.5 text-xs text-subtle">
+            <p className="mt-0.5 text-xs text-ink">
               Overview of configured projects, linked repos, and member counts.
             </p>
           </div>
@@ -311,7 +311,7 @@ export default function AdminOverviewPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="rounded-panel border border-dashed border-border p-8 text-center">
-            <p className="text-xs text-muted">No projects found. Use the button above to add your first project.</p>
+            <p className="text-xs text-ink">No projects found. Use the button above to add your first project.</p>
           </div>
         ) : (
           <div className="divide-y divide-border/40">
@@ -322,7 +322,7 @@ export default function AdminOverviewPage() {
               >
                 <div className="flex flex-col gap-1">
                   <span className="font-semibold text-ink text-sm">{proj.projectName}</span>
-                  <span className="text-subtle font-mono text-[11px]">
+                  <span className="text-ink font-mono text-[11px]">
                     ID: {proj.projectId} {proj.description ? `· ${proj.description}` : ""}
                   </span>
                 </div>
@@ -340,7 +340,7 @@ export default function AdminOverviewPage() {
                   ) : (
                     <Badge variant="warning">No GitHub Repo</Badge>
                   )}
-                  <span className="text-subtle text-[11px] font-mono">
+                  <span className="text-ink text-[11px] font-mono">
                     {proj.memberCount ?? 0} members
                   </span>
                 </div>
