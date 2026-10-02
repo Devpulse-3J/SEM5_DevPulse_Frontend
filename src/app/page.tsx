@@ -27,7 +27,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-canvas text-ink overflow-x-hidden">
       {/* ─── NAVIGATION ─── */}
-      <nav className="sticky top-0 z-50 h-14 bg-app/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-6 md:px-10">
+      <nav className="sticky top-0 z-50 h-14 bg-app/80 backdrop-blur-xl border-b border-border px-6">
+        {/* Same centred container as the sections below, so the logo and the
+            buttons line up with the page content at any window width. */}
+        <div className="mx-auto flex h-full max-w-7xl 2xl:max-w-[1440px] items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2 font-mono font-bold text-[15px] tracking-wide text-ink no-underline hover:no-underline">
             <Image
@@ -56,6 +59,7 @@ export default function HomePage() {
             Get Started
           </Link>
         </div>
+        </div>
       </nav>
 
       {/* ─── HERO SECTION ─── */}
@@ -67,33 +71,34 @@ export default function HomePage() {
             backgroundSize: "28px 28px",
           }}
         />
-        {/* Animated wave field behind the hero. Grayscale to match the
-            monochrome chrome, and masked so it fades out toward the top,
-            where the heading sits. */}
+        {/* Animated wave field behind the hero. Values are the ones chosen in
+            the React Bits customizer. Masked so it fades out toward the top,
+            where the heading sits, and again at the very bottom so the hero
+            ends without a hard edge. */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
-            maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
-            WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+            maskImage: "linear-gradient(to bottom, transparent 0%, black 62%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 62%, transparent 100%)",
           }}
         >
           <GradientWaves
-            horizonColor="#000000"
-            waveColor="#161616"
+            horizonColor="#257f61"
+            waveColor="#ff9ffc"
             crestColor="#ffffff"
             speed={0.45}
-            amplitude={2.5}
-            waveScale={0.6}
-            waveRatio={0.9}
-            swell={35}
-            turbulence={20}
-            tilt={1.11}
-            zoom={1.0}
-            height={5.5}
-            fogDepth={15}
+            amplitude={0.5}
+            waveScale={1.1}
+            waveRatio={0.5}
+            swell={40}
+            turbulence={45}
+            tilt={1.03}
+            zoom={1}
+            height={5.8}
+            fogDepth={13}
             detail="medium"
-            brightness={1}
+            brightness={1.05}
             opacity={1}
             mouseInteraction={true}
             parallaxStrength={1}
@@ -150,12 +155,16 @@ export default function HomePage() {
       </section>
 
       {/* ─── LIVE METRICS PREVIEW ─── */}
-      <section id="metrics" className="py-16 px-6 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
+      <section id="metrics" className="relative py-16 px-6 scroll-mt-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[min(1100px,90%)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#257f61]/20 blur-3xl"
+        />
+        <div className="relative max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <div className="text-center mb-12">
-            <div className="font-mono text-xs text-subtle tracking-widest mb-2">DORA METRICS AT A GLANCE</div>
+            <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">DORA METRICS AT A GLANCE</div>
             <h2 className="text-2xl md:text-3xl font-bold">
-              Your engineering pulse, <span className="text-accent">quantified</span>
+              Your engineering pulse, <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">quantified</span>
             </h2>
           </div>
 
@@ -172,11 +181,11 @@ export default function HomePage() {
 
       {/* ─── FEATURES ─── */}
       <section id="features" className="py-20 px-6 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
+        <div className="relative max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <div className="text-center mb-14">
-            <div className="font-mono text-xs text-subtle tracking-widest mb-2">CAPABILITIES</div>
+            <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">CAPABILITIES</div>
             <h2 className="text-2xl md:text-3xl font-bold">
-              Everything your team needs to <span className="text-accent">deliver better software</span>
+              Everything your team needs to <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">deliver better software</span>
             </h2>
           </div>
 
@@ -192,47 +201,51 @@ export default function HomePage() {
       </section>
 
       {/* ─── INTEGRATIONS ─── */}
-      <section id="integrations" className="py-20 px-6 scroll-mt-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="font-mono text-xs text-subtle tracking-widest mb-2">INTEGRATIONS</div>
+      <section id="integrations" className="relative py-20 px-6 scroll-mt-20 overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[820px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#257f61]/20 blur-3xl"
+        />
+        <div className="relative max-w-5xl mx-auto text-center">
+          <div className="font-mono text-xs text-[#5fd3a8] tracking-widest mb-2">INTEGRATIONS</div>
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Plugs into your <span className="text-accent">existing workflow</span>
+            Plugs into your <span className="bg-gradient-to-r from-[#5fd3a8] to-[#ff9ffc] bg-clip-text text-transparent">existing workflow</span>
           </h2>
           <p className="text-sm text-muted max-w-lg mx-auto mb-12">
             OdinEye connects to GitHub, Jira, and Slack out of the box — no custom scripts, no manual exports. Set up in minutes.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center text-[#5fd3a8] transition-colors">
                 <IconGitHub />
               </div>
               <div className="text-sm font-semibold">GitHub</div>
               <div className="text-[11px] text-muted">Repos, PRs, Webhooks</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center text-ink transition-colors">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center text-[#5fd3a8] transition-colors">
                 <IconJira />
               </div>
               <div className="text-sm font-semibold">Jira</div>
               <div className="text-[11px] text-muted">Issues, Sprints, Boards</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
 
-            <div className="bg-surface border border-border rounded-card p-5 flex flex-col items-center gap-3 group hover:border-white/40 transition-all">
-              <div className="w-12 h-12 rounded-lg bg-surface-raised flex items-center justify-center font-mono text-sm font-bold text-ink transition-colors">
+            <div className="bg-[#257f61]/[0.07] border border-[#257f61]/30 rounded-card p-5 flex flex-col items-center gap-3 group hover:border-[#5fd3a8]/70 hover:-translate-y-0.5 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-[#257f61]/25 flex items-center justify-center font-mono text-sm font-bold text-[#5fd3a8] transition-colors">
                 SL
               </div>
               <div className="text-sm font-semibold">Slack</div>
               <div className="text-[11px] text-muted">Alerts, Notifications</div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-surface-raised text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" /> SUPPORTED
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#257f61]/20 text-[#5fd3a8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5fd3a8]" /> SUPPORTED
               </span>
             </div>
           </div>
@@ -240,8 +253,8 @@ export default function HomePage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t border-border py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-[#257f61]/30 py-8 px-6">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <Image
               src="/icons/icon.png"
