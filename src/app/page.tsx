@@ -13,7 +13,10 @@ import {
 } from "@/components/icons";
 import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
+import TechText from "@/components/landing/TechText";
 import { chart } from "@/styles/theme";
+
+const HERO_LINES = ["Ship faster with clarity,", "not guesswork."];
 
 /* ═══════════════════════════════════════════════════════════════
    HOME PAGE — GitHub-style Landing Page
@@ -75,9 +78,32 @@ export default function HomePage() {
             DEVELOPER PRODUCTIVITY PLATFORM
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-[56px] font-bold leading-[1.1] tracking-tight mb-6">
-            Ship faster with <span className="text-accent">clarity</span>,<br /> not guesswork.
-          </h1>
+          {/* The heading is drawn on a canvas by TechText (one instance per
+              line, since it lays out a single line). Canvas text is invisible
+              to screen readers and search engines, so the real <h1> stays in
+              the DOM, visually hidden, and the canvases are aria-hidden. */}
+          <div className="mb-6">
+            <h1 className="sr-only">Ship faster with clarity, not guesswork.</h1>
+            <div aria-hidden>
+              {/* Each box is taller than its line so the effect's labels have
+                  room; the negative margin pulls the lines back together. */}
+              {HERO_LINES.map((line) => (
+                <div
+                  key={line}
+                  className="h-[52px] not-first:-mt-4 sm:h-[72px] sm:not-first:-mt-[22px] md:h-[84px] md:not-first:-mt-6 lg:h-[100px] lg:not-first:-mt-[30px]"
+                >
+                  <TechText
+                    text={line}
+                    fontSize={56}
+                    fontWeight={700}
+                    letterSpacing={-0.03}
+                    color="#ffffff"
+                    accentColor="#ffffff"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           <p className="text-base md:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
             OdinEye gives engineering teams DORA metrics, ML-powered PR risk scoring, real-time bottleneck alerts, and workload analytics all in one dark-mode dashboard.
