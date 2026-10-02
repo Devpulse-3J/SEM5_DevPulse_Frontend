@@ -15,6 +15,8 @@ import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
 import TechText from "@/components/landing/TechText";
 import GradientWaves from "@/components/landing/GradientWaves";
+import DepthText from "@/components/landing/DepthText";
+import TextType from "@/components/landing/TextType";
 import { chart } from "@/styles/theme";
 
 const HERO_LINES = ["Ship faster with clarity,", "not guesswork."];
@@ -107,36 +109,43 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 max-w-3xl flex flex-col items-center">
+          <div className="mb-6 flex justify-center">
+            <DepthText
+              text="OdinEye"
+              layers={34}
+              depth={4}
+              faceColor="#f8fafc"
+              depthColor="#0b8b58"
+              tilt={7.5}
+              pointerTracking
+              smoothing={0.14}
+              perspective={875}
+              autoOrbit
+              orbitSpeed={0.5}
+              fontSize="clamp(3.5rem, 9vw, 6.5rem)"
+              fontWeight={900}
+              shadow
+            />
+          </div>
+
           <div className="inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-accent bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-8">
             DEVELOPER PRODUCTIVITY PLATFORM
           </div>
 
-          {/* The heading is drawn on a canvas by TechText (one instance per
-              line, since it lays out a single line). Canvas text is invisible
-              to screen readers and search engines, so the real <h1> stays in
-              the DOM, visually hidden, and the canvases are aria-hidden. */}
-          <div className="mb-6">
-            <h1 className="sr-only">Ship faster with clarity, not guesswork.</h1>
-            <div aria-hidden>
-              {/* Each box is taller than its line so the effect's labels have
-                  room; the negative margin pulls the lines back together. */}
-              {HERO_LINES.map((line) => (
-                <div
-                  key={line}
-                  className="h-[52px] not-first:-mt-4 sm:h-[72px] sm:not-first:-mt-[22px] md:h-[84px] md:not-first:-mt-6 lg:h-[100px] lg:not-first:-mt-[30px]"
-                >
-                  <TechText
-                    text={line}
-                    fontSize={56}
-                    fontWeight={700}
-                    letterSpacing={-0.03}
-                    color="#ffffff"
-                    accentColor="#ffffff"
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="mb-6 min-h-[120px] flex items-center justify-center">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white text-center">
+              <TextType
+                text={["Ship faster with clarity,", "not guesswork."]}
+                typingSpeed={65}
+                pauseDuration={1800}
+                deletingSpeed={35}
+                showCursor={true}
+                cursorCharacter="|"
+                cursorClassName="text-[#5fd3a8]"
+                textColors={["#ffffff", "#5fd3a8"]}
+              />
+            </h1>
           </div>
 
           <p className="text-base md:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
