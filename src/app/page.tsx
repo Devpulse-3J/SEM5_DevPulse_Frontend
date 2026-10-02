@@ -15,7 +15,7 @@ import { FeatureCard } from "@/components/landing/FeatureCard";
 import { MetricCard } from "@/components/landing/MetricCard";
 import TechText from "@/components/landing/TechText";
 import GradientWaves from "@/components/landing/GradientWaves";
-import DepthText from "@/components/landing/DepthText";
+import ParticleText from "@/components/landing/ParticleText";
 import TextType from "@/components/landing/TextType";
 import { chart } from "@/styles/theme";
 
@@ -110,22 +110,24 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 max-w-3xl flex flex-col items-center">
-          <div className="mb-6 flex justify-center">
-            <DepthText
+          <div className="w-full h-44 sm:h-56 md:h-64 flex items-center justify-center mb-6">
+            <ParticleText
               text="OdinEye"
-              layers={34}
-              depth={4}
-              faceColor="#f8fafc"
-              depthColor="#0b8b58"
-              tilt={7.5}
-              pointerTracking
-              smoothing={0.14}
-              perspective={875}
-              autoOrbit
-              orbitSpeed={0.5}
-              fontSize="clamp(3.5rem, 9vw, 6.5rem)"
-              fontWeight={900}
-              shadow
+              particleSize={2}
+              density={4}
+              color="#ffffff"
+              highlightColor="#5fd3a8"
+              scatter={180}
+              gatherDuration={1600}
+              stagger={420}
+              pointerRepel={40}
+              repelRadius={120}
+              idleDrift={0}
+              trigger="mount"
+              fontSize="clamp(3rem, 12vw, 8rem)"
+              fontWeight={650}
+              fontFamily="inherit"
+              glow
             />
           </div>
 
