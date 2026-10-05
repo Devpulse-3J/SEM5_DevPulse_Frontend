@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { clearActiveProject } from "@/store/dashboardSlice";
+import { replayManagerTour } from "@/components/onboarding/ManagerTour";
 
 export interface HeaderProps {
   role: "ADMIN" | "MANAGER" | "DEVELOPER" | string;
@@ -86,6 +87,18 @@ export function Header({
           <span>{project}</span>
           <span className="text-subtle text-xs"> ⌄</span>
         </div>
+        {/* Replays the manager guide (ManagerTour). Managers only, since the
+            guide walks through the manager sidebar. */}
+        {(role || "").toUpperCase() === "MANAGER" && (
+          <button
+            type="button"
+            onClick={replayManagerTour}
+            className="flex cursor-pointer items-center gap-1.5 rounded-[7px] border border-[#257f61]/60 bg-[#257f61]/15 px-2.5 py-1.5 text-[13px] font-medium text-[#5fd3a8] transition-colors hover:bg-[#257f61]/30"
+          >
+            <span aria-hidden>?</span>
+            <span>Guide</span>
+          </button>
+        )}
       </div>
 
       {/* Right */}

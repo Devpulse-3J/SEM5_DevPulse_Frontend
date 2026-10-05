@@ -68,6 +68,8 @@ export function Sidebar({ role }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                // Lets the manager guide (ManagerTour) point at this link.
+                data-tour={item.href}
                 className={clsx(
                   "flex items-center gap-2.5 rounded-[7px] px-2.5 py-[9px] text-[13px] no-underline transition-colors",
                   active
