@@ -7,6 +7,7 @@ import { authService } from "@/services/auth.service";
 import { ApiError } from "@/services/api-client";
 import * as session from "@/lib/auth";
 import { parseGithubAuthState } from "@/lib/github-auth";
+import { memberLandingPath } from "@/lib/redirect";
 
 function GithubCallbackContent() {
   const router = useRouter();
@@ -23,6 +24,19 @@ function GithubCallbackContent() {
     const code = searchParams?.get("code");
     const error = searchParams?.get("error");
     const errorDescription = searchParams?.get("error_description");
+    const installationId = searchParams?.get("installation_id");
+    const setupAction = searchParams?.get("setup_action");
+
+    // If redirected here from GitHub App installation (repo integration), forward to admin integration page
+    if (installationId) {
+      const stateParam = searchParams?.get("state");
+      const forwardParams = new URLSearchParams();
+      forwardParams.set("installation_id", installationId);
+      if (setupAction) forwardParams.set("setup_action", setupAction);
+      if (stateParam) forwardParams.set("state", stateParam);
+      router.replace(`/admin/integrations/github?${forwardParams.toString()}`);
+      return;
+    }
 
     const fallbackUrl = isLoginFlow ? "/login" : "/select-project";
 
@@ -42,13 +56,12 @@ function GithubCallbackContent() {
     async function processCallback() {
       try {
         if (isLoginFlow) {
-          const authResponse = await loginWithGithub(code!, stateData.inviteToken || undefined);
+          await loginWithGithub(code!, stateData.inviteToken || undefined);
           if (active) {
-            if (authResponse.systemRole === "admin") {
-              router.replace("/admin/overview");
-            } else {
-              router.replace("/select-project");
-            }
+            // GitHub login is exclusively for developer/manager workspace profiles.
+            // Workspace doors always land on memberLandingPath (/select-project), never the admin console.
+            const target = memberLandingPath(stateData.callbackUrl);
+            router.replace(target);
           }
         } else {
           // Account linking for user who is already authenticated
@@ -83,7 +96,7 @@ function GithubCallbackContent() {
     return () => {
       active = false;
     };
-  }, [searchParams, router, isLoginFlow, loginWithGithub, stateData.inviteToken]);
+  }, [searchParams, router, isLoginFlow, loginWithGithub, stateData.inviteToken, stateData.callbackUrl]);
 
   const headingText = isLoginFlow ? "Signing you in with GitHub…" : "Connecting your GitHub account…";
 

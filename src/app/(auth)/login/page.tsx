@@ -54,6 +54,7 @@ function LoginForm() {
       const url = getGithubAuthorizeUrl({
         intent: "login",
         inviteToken: invite.token || null,
+        callbackUrl: callbackUrl || null,
       });
       window.location.href = url;
     } catch (err: unknown) {
