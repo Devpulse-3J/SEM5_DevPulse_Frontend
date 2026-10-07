@@ -1,6 +1,7 @@
 export interface GithubAuthState {
   intent: "login" | "link";
   inviteToken?: string | null;
+  callbackUrl?: string | null;
 }
 
 /**
@@ -11,8 +12,12 @@ export interface GithubAuthState {
 export function getGithubAuthorizeUrl(options: {
   intent?: "login" | "link";
   inviteToken?: string | null;
+  callbackUrl?: string | null;
 } = {}): string {
-  const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID?.trim() || "";
+  const clientId =
+    process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID?.trim() ||
+    process.env.GITHUB_CLIENT_ID?.trim() ||
+    "";
   if (!clientId) {
     throw new Error(
       "GitHub Client ID is not configured. Please set NEXT_PUBLIC_GITHUB_CLIENT_ID in your environment variables."
@@ -24,11 +29,15 @@ export function getGithubAuthorizeUrl(options: {
       ? `${window.location.origin}/auth/github/callback`
       : "https://odineye.cse23.org/auth/github/callback";
 
-  const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URI?.trim() || defaultRedirect;
+  const redirectUri =
+    process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URI?.trim() ||
+    process.env.GITHUB_REDIRECT_URI?.trim() ||
+    defaultRedirect;
 
   const statePayload: GithubAuthState = {
     intent: options.intent || "login",
     inviteToken: options.inviteToken || null,
+    callbackUrl: options.callbackUrl || null,
   };
 
   const rawJson = JSON.stringify(statePayload);
@@ -64,6 +73,7 @@ export function parseGithubAuthState(rawState: string | null | undefined): Githu
     return {
       intent: parsed.intent === "link" ? "link" : "login",
       inviteToken: typeof parsed.inviteToken === "string" ? parsed.inviteToken : null,
+      callbackUrl: typeof parsed.callbackUrl === "string" ? parsed.callbackUrl : null,
     };
   } catch {
     if (rawState === "link" || rawState === "login") {

@@ -15,6 +15,7 @@ describe("github-auth utility", () => {
   describe("getGithubAuthorizeUrl", () => {
     it("throws an error if NEXT_PUBLIC_GITHUB_CLIENT_ID is missing", () => {
       delete process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+      delete process.env.GITHUB_CLIENT_ID;
       expect(() => getGithubAuthorizeUrl()).toThrow(/GitHub Client ID is not configured/);
     });
 
@@ -22,7 +23,7 @@ describe("github-auth utility", () => {
       process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID = "test-client-id";
       process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URI = "https://odineye.cse23.org/auth/github/callback";
 
-      const url = getGithubAuthorizeUrl({ intent: "login", inviteToken: "inv-123" });
+      const url = getGithubAuthorizeUrl({ intent: "login", inviteToken: "inv-123", callbackUrl: "/dashboard" });
       const parsed = new URL(url);
 
       expect(parsed.origin).toBe("https://github.com");
@@ -37,6 +38,7 @@ describe("github-auth utility", () => {
       const decoded = parseGithubAuthState(stateRaw);
       expect(decoded.intent).toBe("login");
       expect(decoded.inviteToken).toBe("inv-123");
+      expect(decoded.callbackUrl).toBe("/dashboard");
     });
   });
 
@@ -52,9 +54,9 @@ describe("github-auth utility", () => {
     });
 
     it("decodes valid base64 payload", () => {
-      const payload = JSON.stringify({ intent: "link", inviteToken: null });
+      const payload = JSON.stringify({ intent: "link", inviteToken: null, callbackUrl: "/team" });
       const encoded = Buffer.from(payload).toString("base64");
-      expect(parseGithubAuthState(encoded)).toEqual({ intent: "link", inviteToken: null });
+      expect(parseGithubAuthState(encoded)).toEqual({ intent: "link", inviteToken: null, callbackUrl: "/team" });
     });
   });
 });
