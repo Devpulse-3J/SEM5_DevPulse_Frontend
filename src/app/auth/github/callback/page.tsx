@@ -7,7 +7,7 @@ import { authService } from "@/services/auth.service";
 import { ApiError } from "@/services/api-client";
 import * as session from "@/lib/auth";
 import { parseGithubAuthState } from "@/lib/github-auth";
-import { memberLandingPath } from "@/lib/redirect";
+import { adminLandingPath, memberLandingPath } from "@/lib/redirect";
 
 function GithubCallbackContent() {
   const router = useRouter();
@@ -56,11 +56,14 @@ function GithubCallbackContent() {
     async function processCallback() {
       try {
         if (isLoginFlow) {
-          await loginWithGithub(code!, stateData.inviteToken || undefined);
+          const authResponse = await loginWithGithub(code!, stateData.inviteToken || undefined);
           if (active) {
-            // GitHub login is exclusively for developer/manager workspace profiles.
-            // Workspace doors always land on memberLandingPath (/select-project), never the admin console.
-            const target = memberLandingPath(stateData.callbackUrl);
+            // Company admins land in the admin console, like /adminlogin; everyone
+            // else lands in the workspace, like /login.
+            const target =
+              authResponse.systemRole === "admin"
+                ? adminLandingPath(stateData.callbackUrl)
+                : memberLandingPath(stateData.callbackUrl);
             router.replace(target);
           }
         } else {
