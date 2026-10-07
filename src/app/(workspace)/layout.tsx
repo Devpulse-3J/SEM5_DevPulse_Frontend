@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { ManagerTour } from "@/components/onboarding/ManagerTour";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/lib/auth-guard";
 import { initials } from "@/utils/helpers";
@@ -63,6 +64,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
         <Sidebar role={effectiveRole} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+      {effectiveRole === "MANAGER" && <ManagerTour userId={user?.userId} />}
     </div>
   );
 }

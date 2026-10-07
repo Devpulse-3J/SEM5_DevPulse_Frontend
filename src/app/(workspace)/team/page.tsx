@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { projectService, type ProjectMemberApiResponse } from "@/services/project.service";
 import { integrationsApiService, type SlackChannel } from "@/services/api/integrations";
 import { notificationService } from "@/services/notification.service";
+import { DeveloperWorkloadView } from "@/components/dashboard/DeveloperWorkloadView";
 
 type MessageChannel = "EMAIL" | "SLACK";
 
@@ -107,7 +108,17 @@ export default function TeamPage() {
   };
 
   if (!activeProject || activeProject.role !== "MANAGER") {
-    return <div className="p-6 md:p-7"><Card><CardTitle>Manager access required</CardTitle><p className="mt-2 text-xs text-muted">Only project managers can message team members.</p></Card></div>;
+    return (
+      <div className="flex flex-col gap-6 p-6 md:p-7">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-ink">Team &amp; Workload</h1>
+          <p className="mt-1 font-mono text-xs text-subtle">
+            View your assigned Jira tasks, story points, and active workload capacity
+          </p>
+        </div>
+        <DeveloperWorkloadView />
+      </div>
+    );
   }
   if (loading) return <div className="flex min-h-[320px] items-center justify-center"><Spinner /></div>;
 

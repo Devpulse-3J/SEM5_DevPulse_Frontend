@@ -8,6 +8,13 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Makes GitHub create a real Deployment + deployment_status automatically
+    # (its own built-in Environments feature) — DevPulse's GitHub App already
+    # has the `deployments` permission this needs, and this is the exact
+    # mechanism already populating real deployment data for the backend repo's
+    # cd.yml (see its `deploy` job). Without this, DevPulse's DORA metrics have
+    # no way to know a deploy happened.
+    environment: production
 
     steps:
       - name: Deploy to EC2
@@ -26,3 +33,35 @@ jobs:
             npm run build
 
             pm2 restart odineye
+
+      # Workaround for a GitHub-side issue: live webhook delivery has never
+      # worked for this specific repo's installation of DevPulseIntegration
+      # (confirmed empty in raw_event_log across the repo's entire history,
+      # and unaffected by removing/re-adding the repo and a full app
+      # reinstall) despite the same app delivering real events for the
+      # backend repo. Rather than depend on GitHub fixing that, this reports
+      # the deploy directly to the same endpoint a real webhook would hit,
+      # signed the same way, so DevPulse's DORA metrics have real deployment
+      # data regardless. `if: always()` + `continue-on-error` so a hiccup
+      # here can never fail or block the actual deploy above.
+      - name: Report deployment to DevPulse
+        if: always()
+        continue-on-error: true
+        env:
+          WEBHOOK_SECRET: ${{ secrets.DEVPULSE_WEBHOOK_SECRET }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          CONCLUSION="failure"
+          if [ "$JOB_STATUS" = "success" ]; then CONCLUSION="success"; fi
+
+          PAYLOAD=$(printf '{"action":"completed","workflow_job":{"id":%s,"name":"deploy","head_sha":"%s","conclusion":"%s"},"repository":{"id":1296161496}}' \
+            "${{ github.run_id }}" "${{ github.sha }}" "$CONCLUSION")
+
+          SIGNATURE=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')
+
+          curl -fsS -X POST https://odineye.cse23.org/api/webhooks/github \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: workflow_job" \
+            -H "X-Hub-Signature-256: sha256=$SIGNATURE" \
+            -d "$PAYLOAD" \
+            || echo "Deployment report failed (non-fatal, does not affect the deploy above)"

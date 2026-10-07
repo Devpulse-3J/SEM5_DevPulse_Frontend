@@ -2,9 +2,11 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAdmin } from "@/lib/auth-guard";
 import { initials } from "@/utils/helpers";
+import { AdminTour, replayAdminTour } from "@/components/onboarding/AdminTour";
 
 /* ─── Admin Shell Layout
    Gated on systemRole === "admin". That check is a UX gate only — the gateway
@@ -40,9 +42,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/overview"
-            className="font-mono text-[15px] font-bold text-ink no-underline hover:no-underline"
+            className="flex items-center gap-2 font-mono text-[15px] font-bold text-ink no-underline hover:no-underline"
           >
-            ◆ Odin Eye
+            <Image
+              src="/icons/icon.png"
+              alt="OdinEye"
+              width={22}
+              height={22}
+              className="rounded object-contain"
+            />
+            <span>OdinEye</span>
           </Link>
           <div className="h-5 w-px bg-border" />
           <span className="font-mono text-[12px] tracking-widest text-subtle">
@@ -54,6 +63,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <span className="text-xs text-muted">{companyName}</span>
             </>
           )}
+          {/* Replays the admin guide (AdminTour): project setup and integrations. */}
+          <button
+            type="button"
+            onClick={replayAdminTour}
+            className="flex cursor-pointer items-center gap-1.5 rounded-[7px] border border-[#257f61]/60 bg-[#257f61]/15 px-2.5 py-1 text-xs font-medium text-[#5fd3a8] transition-colors hover:bg-[#257f61]/30"
+          >
+            <span aria-hidden>?</span>
+            <span>Guide</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -79,6 +97,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link
               key={href}
               href={href}
+              // Lets the admin guide (AdminTour) point at this link.
+              data-tour={href}
               className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-muted no-underline transition-colors hover:bg-surface-raised hover:text-ink hover:no-underline"
             >
               <span className="w-4 text-center">{icon}</span>
@@ -89,6 +109,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 overflow-auto p-6 md:p-8">{children}</main>
       </div>
+      <AdminTour userId={user?.userId} />
     </div>
   );
 }

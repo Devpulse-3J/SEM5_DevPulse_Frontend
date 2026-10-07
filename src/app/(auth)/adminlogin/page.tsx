@@ -136,7 +136,7 @@ function AdminLoginForm() {
                   setClientErrors((prev) => ({ ...prev, email: undefined }));
                 }
               }}
-              placeholder="admin@devpulse.io"
+              placeholder="admin@odineye.io"
               disabled={isLoading}
               className={`h-10 px-3 rounded-lg bg-canvas border text-ink text-xs transition-colors placeholder:text-subtle focus:outline-none ${
                 emailError

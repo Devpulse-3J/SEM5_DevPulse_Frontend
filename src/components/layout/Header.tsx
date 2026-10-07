@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { clearActiveProject } from "@/store/dashboardSlice";
+import { replayManagerTour } from "@/components/onboarding/ManagerTour";
 
 export interface HeaderProps {
   role: "ADMIN" | "MANAGER" | "DEVELOPER" | string;
@@ -30,7 +33,7 @@ export function Header({
   role,
   initials = "SC",
   userName = "Developer",
-  email = "user@devpulse.io",
+  email = "user@odineye.io",
   project = "platform-core",
   onLogout,
 }: HeaderProps) {
@@ -66,14 +69,36 @@ export function Header({
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-app px-5 relative z-40">
       {/* Left */}
       <div className="flex items-center gap-[18px]">
-        <span className="font-mono text-[15px] font-bold tracking-wide text-ink">
-          ◆ DEVPULSE
-        </span>
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 font-mono text-[15px] font-bold tracking-wide text-ink no-underline hover:no-underline"
+        >
+          <Image
+            src="/icons/icon.png"
+            alt="OdinEye"
+            width={22}
+            height={22}
+            className="rounded object-contain"
+          />
+          <span>OdinEye</span>
+        </Link>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-1.5 rounded-[7px] border border-border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-ink">
           <span>{project}</span>
           <span className="text-subtle text-xs"> ⌄</span>
         </div>
+        {/* Replays the manager guide (ManagerTour). Managers only, since the
+            guide walks through the manager sidebar. */}
+        {(role || "").toUpperCase() === "MANAGER" && (
+          <button
+            type="button"
+            onClick={replayManagerTour}
+            className="flex cursor-pointer items-center gap-1.5 rounded-[7px] border border-[#257f61]/60 bg-[#257f61]/15 px-2.5 py-1.5 text-[13px] font-medium text-[#5fd3a8] transition-colors hover:bg-[#257f61]/30"
+          >
+            <span aria-hidden>?</span>
+            <span>Guide</span>
+          </button>
+        )}
       </div>
 
       {/* Right */}

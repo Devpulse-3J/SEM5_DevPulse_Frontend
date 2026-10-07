@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/constants";
 import { doraService, type DeploymentQuery } from "@/services/dora.service";
 
@@ -38,5 +38,19 @@ export function useDeployments(
     queryFn: () => doraService.getDeployments({ projectId: projectId as number, ...filters }),
     enabled: validProject(projectId),
     staleTime: 60_000,
+  });
+}
+
+/** Recalculates the stored daily snapshots, then reloads every DORA query. */
+export function useRebuildDoraHistory(projectId: number | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (days: number = 30) => {
+      if (!validProject(projectId)) {
+        return Promise.reject(new Error("No project selected."));
+      }
+      return doraService.rebuildSnapshots(projectId, days);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["metrics", "dora"] }),
   });
 }

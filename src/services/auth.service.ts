@@ -6,6 +6,9 @@ import type {
   AuthResponse,
   AcceptProjectInvitationResponse,
   UserProfileResponse,
+  LinkGithubResponse,
+  GithubPreview,
+  UserGithubStatusResponse,
 } from "@/types/user";
 
 /**
@@ -41,6 +44,19 @@ export const authService = {
   },
 
   /**
+   * POST /api/auth/github/login → 200
+   * Sign up or log in using GitHub OAuth code.
+   * If inviteToken is present, automatically associates user with the invited project/company.
+   */
+  async loginWithGithub(code: string, inviteToken?: string): Promise<AuthResponse> {
+    return apiClient.post<AuthResponse>(
+      "/auth/github/login",
+      { code, ...(inviteToken ? { inviteToken } : {}) },
+      { requiresAuth: false }
+    );
+  },
+
+  /**
    * POST /api/auth/invitations/project/accept?token= → 200
    * A signed-in user accepts the project invitation emailed to them. The
    * account's email must match the invited address (403 otherwise); 400 if the
@@ -67,6 +83,45 @@ export const authService = {
     );
   },
 
+  /** GET /api/auth/me/github/status → 200. Check GitHub account connection status. */
+  async getUserGithubStatus(): Promise<UserGithubStatusResponse> {
+    return apiClient.get<UserGithubStatusResponse>("/auth/me/github/status");
+  },
+
+  /** GET /api/auth/me/github/connect → 200. Gets GitHub authorization URL for 1-click connect. */
+  async getUserGithubConnectUrl(): Promise<{ url: string }> {
+    return apiClient.get<{ url: string }>("/auth/me/github/connect");
+  },
+
+  /** POST /api/auth/me/github/callback → 200. Exchanges OAuth code for GitHub token and links account. */
+  async callbackUserGithub(code: string): Promise<UserGithubStatusResponse> {
+    return apiClient.post<UserGithubStatusResponse>("/auth/me/github/callback", { code });
+  },
+
+  /** DELETE /api/auth/me/github → 200. Disconnects linked GitHub account. */
+  async disconnectUserGithub(): Promise<UserGithubStatusResponse> {
+    return apiClient.delete<UserGithubStatusResponse>("/auth/me/github");
+  },
+
+  /**
+   * GET /api/auth/me/github/lookup?username= → 200. Who the username resolves to
+   * on GitHub (id, name, avatar, profile URL), so the user can confirm it is
+   * theirs. Saves nothing. 404 if GitHub has no such user.
+   */
+  async lookupGithub(username: string): Promise<GithubPreview> {
+    return apiClient.get<GithubPreview>("/auth/me/github/lookup", { params: { username } });
+  },
+
+  /**
+   * PUT /api/auth/me/github → 200. Links the caller's GitHub account by
+   * username; the server saves the account's numeric id, which is what PR and
+   * commit authors are matched against. 404 if GitHub has no such user, 409 if
+   * that account is already linked to someone else, 502 if GitHub is unreachable.
+   */
+  async linkGithub(githubUsername: string): Promise<LinkGithubResponse> {
+    return apiClient.put<LinkGithubResponse>("/auth/me/github", { githubUsername });
+  },
+
   /** GET /api/auth/me — the only source of companyId and projectRoles. */
   async getMe(token?: string): Promise<UserProfileResponse> {
     return apiClient.get<UserProfileResponse>("/auth/me", { token });
@@ -80,3 +135,4 @@ export const authService = {
   clearSession: session.clearSession,
   isTokenExpired: session.isTokenExpired,
 };
+

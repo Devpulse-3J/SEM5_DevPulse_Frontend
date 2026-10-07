@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/hooks/useAuth";
 import { projectService, ProjectApiResponse } from "@/services/project.service";
+import { repositoryService } from "@/services/repository.service";
 import { adminApiService, CompanyMember } from "@/services/api/admin";
 import { integrationsApiService } from "@/services/api/integrations";
 
@@ -30,6 +31,9 @@ export default function AdminOverviewPage() {
 
   // Stats state
   const [projects, setProjects] = useState<ProjectApiResponse[]>([]);
+  // Project ids with a linked repo per integration-service's `repos` table;
+  // null when that lookup failed and the badge falls back to githubRepoUrl.
+  const [linkedProjectIds, setLinkedProjectIds] = useState<Set<string> | null>(null);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [githubStatus, setGithubStatus] = useState<string>("CHECKING");
   const [jiraStatus, setJiraStatus] = useState<string>("CHECKING");
@@ -37,13 +41,30 @@ export default function AdminOverviewPage() {
 
   const [loading, setLoading] = useState(true);
 
+  // Plain values, so the callback below depends on these and not on `user`.
+  const userEmail = user?.email;
+  const userFullName = user?.fullName;
+  const userId = user?.userId;
+
   const fetchOverviewData = useCallback(async () => {
     setLoading(true);
 
+    // Kept outside the try so the member count below can walk the projects.
+    let loadedProjects: ProjectApiResponse[] = [];
+
     // Fetch projects
     try {
-      const projList = await projectService.getAll();
+      const [projList, repositories] = await Promise.all([
+        projectService.getAll(),
+        repositoryService.getRepositories().catch(() => null),
+      ]);
+      loadedProjects = projList;
       setProjects(projList);
+      setLinkedProjectIds(
+        repositories
+          ? new Set(repositories.filter((r) => r.projectId != null).map((r) => String(r.projectId)))
+          : null
+      );
 
       // Check GitHub status for first project if available
       if (projList.length > 0) {
@@ -60,22 +81,52 @@ export default function AdminOverviewPage() {
       setProjects([]);
     }
 
-    // Fetch company members
-    try {
-      const memList = await adminApiService.getCompanyMembers();
-      setMembers(memList);
-    } catch {
-      setMembers([
-        {
-          id: "1",
-          userId: "1",
-          email: user?.email || "admin@company.com",
-          fullName: user?.fullName || "System Admin",
-          role: "ADMIN",
-          status: "ACTIVE",
-        },
-      ]);
+    // Team members.
+    //
+    // The gateway has no company-members endpoint, so getCompanyMembers()
+    // resolves to [] and this card used to read 0. Like the Members page, the
+    // people are collected from each project's member list and de-duplicated
+    // by email (someone on three projects is one person).
+    const memberMap = new Map<string, CompanyMember>();
+    const companyMembers = await adminApiService.getCompanyMembers();
+    companyMembers.forEach((m) => {
+      if (m.email) memberMap.set(m.email.toLowerCase(), m);
+    });
+    await Promise.all(
+      loadedProjects.map(async (proj) => {
+        try {
+          const projMembers = await projectService.getMembers(proj.projectId);
+          projMembers.forEach((pm) => {
+            if (!pm.email) return;
+            const key = pm.email.toLowerCase();
+            if (memberMap.has(key)) return;
+            const pmRole = String(pm.role ?? "").toUpperCase();
+            memberMap.set(key, {
+              id: String(pm.memberId ?? pm.id ?? pm.userId ?? key),
+              userId: String(pm.userId ?? pm.id ?? key),
+              email: pm.email,
+              fullName: pm.fullName ?? pm.name,
+              role: pmRole === "ADMIN" ? "ADMIN" : pmRole === "MANAGER" ? "MANAGER" : "DEVELOPER",
+              status: String(pm.status ?? "").toUpperCase() === "PENDING" ? "INVITE_PENDING" : "ACTIVE",
+            });
+          });
+        } catch {
+          // One project failing must not blank the whole count.
+        }
+      })
+    );
+    // The signed-in admin belongs to the company even when on no project.
+    if (userEmail && !memberMap.has(userEmail.toLowerCase())) {
+      memberMap.set(userEmail.toLowerCase(), {
+        id: String(userId),
+        userId: String(userId),
+        email: userEmail,
+        fullName: userFullName,
+        role: "ADMIN",
+        status: "ACTIVE",
+      });
     }
+    setMembers(Array.from(memberMap.values()));
 
     // Check Jira status
     try {
@@ -94,7 +145,7 @@ export default function AdminOverviewPage() {
     }
 
     setLoading(false);
-  }, [user?.email, user?.fullName]);
+  }, [userEmail, userFullName, userId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -114,7 +165,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-ink">Admin Console Overview</h1>
-          <p className="mt-1 text-xs text-subtle font-mono">
+          <p className="mt-1 text-xs text-ink font-mono">
             {companyName || "Organization"} · Company #{companyId || "12"} · Administrator Dashboard
           </p>
         </div>
@@ -135,7 +186,7 @@ export default function AdminOverviewPage() {
         {/* Total Projects Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Total Projects
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -146,7 +197,7 @@ export default function AdminOverviewPage() {
             <span className="text-3xl font-bold font-mono text-ink">
               {loading ? "…" : projects.length}
             </span>
-            <p className="mt-1 text-[11px] text-muted flex items-center gap-1">
+            <p className="mt-1 text-[11px] text-ink flex items-center gap-1">
               Active repository workspaces
             </p>
           </div>
@@ -155,7 +206,7 @@ export default function AdminOverviewPage() {
         {/* Total Members Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Team Members
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -166,9 +217,10 @@ export default function AdminOverviewPage() {
             <span className="text-3xl font-bold font-mono text-ink">
               {loading ? "…" : Math.max(members.length, activeMembersCount)}
             </span>
-            <p className="mt-1 text-[11px] text-muted">
-              {members.filter((m) => m.role === "ADMIN").length} Admin,{" "}
-              {members.filter((m) => m.role === "DEVELOPER").length} Devs
+            <p className="mt-1 text-[11px] text-ink">
+              {members.filter((m) => m.role === "ADMIN").length} admin ·{" "}
+              {members.filter((m) => m.role === "MANAGER").length} managers ·{" "}
+              {members.filter((m) => m.role === "DEVELOPER").length} developers
             </p>
           </div>
         </div>
@@ -176,7 +228,7 @@ export default function AdminOverviewPage() {
         {/* Connected Integrations Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Integrations
             </span>
             <div className="rounded-lg bg-surface-raised p-2 text-accent">
@@ -196,7 +248,7 @@ export default function AdminOverviewPage() {
         {/* Security & Access Card */}
         <div className="flex flex-col justify-between rounded-panel border border-border bg-surface p-5 transition hover:border-accent/40">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-subtle uppercase tracking-wider">
+            <span className="text-xs font-semibold text-ink uppercase tracking-wider">
               Access Control
             </span>
             <Badge variant="success">ADMIN</Badge>
@@ -205,7 +257,7 @@ export default function AdminOverviewPage() {
             <span className="text-sm font-semibold text-ink block truncate">
               {user?.fullName || "Company Admin"}
             </span>
-            <span className="text-[11px] font-mono text-subtle block truncate">
+            <span className="text-[11px] font-mono text-ink block truncate">
               {user?.email || "admin@company.com"}
             </span>
           </div>
@@ -216,7 +268,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col gap-4 rounded-panel border border-border bg-surface-raised/40 p-6">
         <div>
           <h2 className="text-sm font-bold text-ink">Quick Management Actions</h2>
-          <p className="mt-0.5 text-xs text-subtle">
+          <p className="mt-0.5 text-xs text-ink">
             Shortcuts to configure company resources, members, and data sources.
           </p>
         </div>
@@ -231,7 +283,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Manage Projects</span>
-              <span className="text-[11px] text-subtle">Create or update projects</span>
+              <span className="text-[11px] text-ink">Create or update projects</span>
             </div>
           </Link>
 
@@ -244,7 +296,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Invite Members</span>
-              <span className="text-[11px] text-subtle">Single or bulk invitations</span>
+              <span className="text-[11px] text-ink">Single or bulk invitations</span>
             </div>
           </Link>
 
@@ -257,7 +309,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Integrations</span>
-              <span className="text-[11px] text-subtle">GitHub, Jira, &amp; Slack</span>
+              <span className="text-[11px] text-ink">GitHub, Jira, &amp; Slack</span>
             </div>
           </Link>
 
@@ -270,7 +322,7 @@ export default function AdminOverviewPage() {
             </div>
             <div>
               <span className="block font-semibold">Settings</span>
-              <span className="text-[11px] text-subtle">Company configuration</span>
+              <span className="text-[11px] text-ink">Company configuration</span>
             </div>
           </Link>
         </div>
@@ -281,7 +333,7 @@ export default function AdminOverviewPage() {
         <div className="flex items-center justify-between border-b border-border/60 pb-4">
           <div>
             <h2 className="text-sm font-bold text-ink">Active Company Projects ({projects.length})</h2>
-            <p className="mt-0.5 text-xs text-subtle">
+            <p className="mt-0.5 text-xs text-ink">
               Overview of configured projects, linked repos, and member counts.
             </p>
           </div>
@@ -299,7 +351,7 @@ export default function AdminOverviewPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="rounded-panel border border-dashed border-border p-8 text-center">
-            <p className="text-xs text-muted">No projects found. Use the button above to add your first project.</p>
+            <p className="text-xs text-ink">No projects found. Use the button above to add your first project.</p>
           </div>
         ) : (
           <div className="divide-y divide-border/40">
@@ -310,7 +362,7 @@ export default function AdminOverviewPage() {
               >
                 <div className="flex flex-col gap-1">
                   <span className="font-semibold text-ink text-sm">{proj.projectName}</span>
-                  <span className="text-subtle font-mono text-[11px]">
+                  <span className="text-ink font-mono text-[11px]">
                     ID: {proj.projectId} {proj.description ? `· ${proj.description}` : ""}
                   </span>
                 </div>
@@ -321,14 +373,14 @@ export default function AdminOverviewPage() {
                       <FaJira className="h-3 w-3 mr-1" /> {proj.jiraProjectKey}
                     </Badge>
                   )}
-                  {proj.githubRepoUrl ? (
+                  {(linkedProjectIds ? linkedProjectIds.has(String(proj.projectId)) : Boolean(proj.githubRepoUrl)) ? (
                     <Badge variant="success">
                       <FaGithub className="h-3 w-3 mr-1" /> Linked
                     </Badge>
                   ) : (
                     <Badge variant="warning">No GitHub Repo</Badge>
                   )}
-                  <span className="text-subtle text-[11px] font-mono">
+                  <span className="text-ink text-[11px] font-mono">
                     {proj.memberCount ?? 0} members
                   </span>
                 </div>

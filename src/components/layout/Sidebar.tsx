@@ -24,6 +24,7 @@ const managerNav: NavGroup[] = [
       { label: "DORA Metrics", href: "/dora", icon: "◧" },
       { label: "PR Risk & Insights", href: "/pull-requests", icon: "▲" },
       { label: "Team & Workload", href: "/team", icon: "◫" },
+      { label: "Alert Rules", href: "/alerts", icon: "◎" },
     ],
   },
 ];
@@ -35,7 +36,6 @@ const developerNav: NavGroup[] = [
       { label: "Overview", href: "/dashboard", icon: "▣" },
       { label: "My PRs", href: "/my-prs", icon: "◧" },
       { label: "Repositories", href: "/repositories", icon: "📦" },
-      { label: "Alerts & Rules", href: "/alerts", icon: "◎" },
     ],
   },
   {
@@ -68,6 +68,8 @@ export function Sidebar({ role }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                // Lets the manager guide (ManagerTour) point at this link.
+                data-tour={item.href}
                 className={clsx(
                   "flex items-center gap-2.5 rounded-[7px] px-2.5 py-[9px] text-[13px] no-underline transition-colors",
                   active
